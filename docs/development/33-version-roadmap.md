@@ -1715,6 +1715,7 @@ python -m build && twine check dist/*
 | V1 中的 Adapter/Router | **0.3.0-adapter-mvp** | 旧误称「V1」常指此层 — **应称 0.3** |
 | V1 中的 SQLite/恢复/调度 | **0.4.0-recovery-and-automation** | 旧「V1」的每日自动化主体 |
 | V2 Connector/核验扩展 | **0.3 部分 + 0.4 部分 + 1.0** | 按能力拆入各版 |
+| 评测 / benchmark / 模型对比 | **0.7.0-evaluation-benchmark** | 非 0.6 插件范围 |
 | V3 长期稳定 | **1.0.0-stable** | 个人/团队生产 + 稳定插件 API（经 0.9 RC） |
 
 ---
@@ -1743,7 +1744,6 @@ python -m build && twine check dist/*
 | `docs/evaluation/`（0.7 规划） | 评测 harness、指标、模型对比、rubric-runner 集成 |
 | `docs/plugins/`（0.6 规划） | 插件作者指南 |
 | `docs/team/`（0.8 规划） | 团队协作、RBAC、Dashboard |
-| `docs/evaluation/`（0.7 规划） | 评测与 benchmark 指南 |
 | `docs/stability/`（0.9–1.0 规划） | api-freeze、deprecation-policy、security-review |
 
 ## Prompt 文件

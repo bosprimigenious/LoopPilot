@@ -14,7 +14,7 @@
 - 0.4 状态：SQLite、事务检查点、恢复、审批、调度、daily-summary（**旧称「V1」每日自动化 = 0.4，不是 0.3**）。
 - 0.5 状态：PyPI、开源 README、`init demo`、examples、release CI、CONTRIBUTING/SECURITY（**旧 V1 PyPI/开源 = 0.5，不是 0.4**）。
 - 0.6 状态：本地插件生态（Loop/Skill/Connector/Adapter 扩展框架）。
-- 0.7 状态：Evaluation Harness、benchmark 套件、模型对比与 eval report。
+- 0.7 状态：Evaluation Harness、`loop-pilot eval`、benchmarks/、指标、Golden Case、模型对比、agentic-rubric-runner 外部 evaluator（**文档规划**）。
 - 0.8 状态：本地优先团队协作（多项目 RBAC、共享审批、用量核算、Dashboard preview；**非** cloud SaaS）。
 - 0.9 状态：RC 稳定化（API/配置/DB 冻结、conformance、安全审计、7 天长跑）。
 - 1.0 状态：**生产就绪稳定承诺**（非功能堆叠；见 [33-version-roadmap.md §1.0](33-version-roadmap.md#100-stable--stableproduction-ready)）。
