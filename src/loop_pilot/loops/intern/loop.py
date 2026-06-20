@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import shutil
 import subprocess
-import tempfile
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +19,8 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import EvaluationVerdict, RunOutcome, RunPhase
+from loop_pilot.loops.fixture_validation import validate_intern_fixture
+from loop_pilot.loops.intern.workspace import cleanup_workspace, git_diff_summary, prepare_git_worktree
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -56,6 +57,13 @@ class InternLoop:
         artifacts: list[ArtifactReference] = []
         adapter = MockAdapter(fixture_dir)
 
+        validation = validate_intern_fixture(fixture_dir)
+        if not validation.ok:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = validation.blocked_reason
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
+
         self._enter_observing(record, trace)
         self._transition(record, RunPhase.SELECTING, trace)
         self._transition(record, RunPhase.PLANNING, trace)
@@ -73,8 +81,9 @@ class InternLoop:
             return self._finalize_blocked(record, trace, run_dir, record.terminal_reason, artifacts, rounds)
 
         work_dir: Path | None = None
+        temp_root: Path | None = None
         try:
-            work_dir = self._prepare_workspace(fixture_dir, run_dir, request.dry_run)
+            work_dir, temp_root = self._prepare_workspace(fixture_dir, request.dry_run)
             tests_passed = False
             max_rounds = record.budgets.max_rounds
 
@@ -166,15 +175,10 @@ class InternLoop:
             return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         finally:
-            if work_dir and work_dir.exists() and str(work_dir).startswith(tempfile.gettempdir()):
-                shutil.rmtree(work_dir, ignore_errors=True)
+            cleanup_workspace(temp_root)
 
-    def _prepare_workspace(self, fixture_dir: Path, run_dir: Path, dry_run: bool) -> Path:
-        input_dir = fixture_dir / "input"
-        work_dir = Path(tempfile.mkdtemp(prefix="loop-pilot-intern-"))
-        if input_dir.exists():
-            shutil.copytree(input_dir, work_dir / "repo", dirs_exist_ok=True)
-        return work_dir / "repo"
+    def _prepare_workspace(self, fixture_dir: Path, dry_run: bool) -> tuple[Path, Path | None]:
+        return prepare_git_worktree(fixture_dir / "input", dry_run)
 
     def _apply_fix(self, work_dir: Path) -> None:
         target = work_dir / "src" / "calculator.py"
@@ -196,7 +200,7 @@ class InternLoop:
             return "exit_code=1\n\nstdout:\nno workspace\n"
 
         result = subprocess.run(
-            ["python", "-m", "pytest", "-q"],
+            [sys.executable, "-m", "pytest", "-q"],
             cwd=work_dir,
             capture_output=True,
             text=True,
@@ -230,10 +234,7 @@ class InternLoop:
     def _build_diff_summary(self, work_dir: Path | None, dry_run: bool) -> str:
         if dry_run or work_dir is None:
             return "Dry-run: would patch src/calculator.py (a - b -> a + b)"
-        target = work_dir / "src" / "calculator.py"
-        if target.exists():
-            return f"Modified: {target.name}\n{target.read_text(encoding='utf-8')}"
-        return "No changes"
+        return git_diff_summary(work_dir)
 
     def _save_text(self, run_dir: Path, name: str, content: str, created_by: str) -> ArtifactReference:
         path = run_dir / name

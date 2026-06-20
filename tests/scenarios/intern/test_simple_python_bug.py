@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -64,3 +65,41 @@ class TestInternLoop:
         record = RunRecord(run_id=request.run_id, loop_type="intern", phase=RunPhase.CREATED)
         _, _, rounds = loop.run(request, record)
         assert rounds[0].decision != "pass"
+
+    def test_pytest_uses_current_python_executable(
+        self, artifact_dir: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
+        captured: dict[str, object] = {}
+
+        def fake_run(command, **kwargs):  # noqa: ANN001
+            captured["command"] = command
+
+            class Result:
+                returncode = 0
+                stdout = "1 passed\n"
+                stderr = ""
+
+            return Result()
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+        report = loop._run_pytest(Path("."), dry_run=False, fixture_dir=Path("."), round_num=2)
+
+        assert "1 passed" in report
+        assert captured["command"][0] == sys.executable
+
+    def test_non_dry_run_generates_real_git_diff(self, artifact_dir: Path) -> None:
+        loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
+        request = RunRequest(
+            run_id="test-intern-git-diff",
+            loop_type="intern",
+            fixture="simple_python_bug",
+        )
+        record = RunRecord(run_id=request.run_id, loop_type="intern", phase=RunPhase.CREATED)
+        record, _, _ = loop.run(request, record)
+
+        diff = artifact_dir / "intern" / request.run_id / "diff-summary.md"
+        text = diff.read_text(encoding="utf-8")
+        assert "diff --git" in text
+        assert "-    return a - b" in text
+        assert "+    return a + b" in text

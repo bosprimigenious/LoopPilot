@@ -81,3 +81,18 @@ class TestDailyNewsLoop:
         content = report.read_text(encoding="utf-8")
         assert content.startswith("---")
         assert "artifact_manifest:" in content
+
+    def test_missing_fixture_blocks_without_success(self, artifact_dir: Path) -> None:
+        loop = DailyNewsLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
+        request = RunRequest(
+            run_id="test-news-missing",
+            loop_type="daily_news",
+            fixture="missing_fixture",
+        )
+        record = RunRecord(run_id=request.run_id, loop_type="daily_news", phase=RunPhase.CREATED)
+
+        record, _, _ = loop.run(request, record, snapshot_day="day2")
+
+        assert record.outcome in {RunOutcome.BLOCKED, RunOutcome.FAILED}
+        assert record.outcome != RunOutcome.SUCCEEDED
+        assert "fixture" in (record.terminal_reason or "").lower()

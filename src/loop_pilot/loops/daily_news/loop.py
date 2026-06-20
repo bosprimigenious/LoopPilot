@@ -17,6 +17,7 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.loops.fixture_validation import validate_daily_news_fixture
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -54,6 +55,13 @@ class DailyNewsLoop:
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
         adapter = MockAdapter(fixture_dir)
+
+        validation = validate_daily_news_fixture(fixture_dir)
+        if not validation.ok:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = validation.blocked_reason
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         self._enter_observing(record, trace)
         for phase in (

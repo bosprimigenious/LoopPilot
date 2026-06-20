@@ -113,9 +113,10 @@ class Orchestrator:
         return new_run_id(loop_type)
 
     def _mark_failed(self, record: RunRecord, exc: Exception) -> RunRecord:
+        failed_phase = record.phase.value
         record.phase = RunPhase.TERMINATED
         record.outcome = RunOutcome.FAILED
-        record.terminal_reason = f"{type(exc).__name__}: {exc}"
+        record.terminal_reason = f"Failed during {failed_phase}: {type(exc).__name__}: {exc}"
         record.finished_at = rfc3339()
         record.report_status = "failed"
         return record

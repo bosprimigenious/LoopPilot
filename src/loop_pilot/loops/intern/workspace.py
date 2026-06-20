@@ -5,6 +5,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tempfile
+import os
 from pathlib import Path
 
 
@@ -13,12 +14,18 @@ class GitWorkspaceError(Exception):
 
 
 def _run_git(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env.setdefault("GIT_AUTHOR_NAME", "LoopPilot Mini")
+    env.setdefault("GIT_AUTHOR_EMAIL", "loop-pilot@example.com")
+    env.setdefault("GIT_COMMITTER_NAME", "LoopPilot Mini")
+    env.setdefault("GIT_COMMITTER_EMAIL", "loop-pilot@example.com")
     return subprocess.run(
         ["git", *args],
         cwd=cwd,
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
 
 
@@ -32,6 +39,7 @@ def prepare_git_worktree(fixture_input: Path, dry_run: bool) -> tuple[Path, Path
 
     temp_root = Path(tempfile.mkdtemp(prefix="loop-pilot-intern-"))
     repo_dir = temp_root / "repo"
+    worktree_dir = temp_root / "worktree"
     shutil.copytree(fixture_input, repo_dir, dirs_exist_ok=True)
 
     init = _run_git(["init"], repo_dir)
@@ -39,8 +47,6 @@ def prepare_git_worktree(fixture_input: Path, dry_run: bool) -> tuple[Path, Path
         shutil.rmtree(temp_root, ignore_errors=True)
         raise GitWorkspaceError(f"git init failed: {init.stderr}")
 
-    _run_git(["config", "user.email", "loop-pilot@example.com"], repo_dir)
-    _run_git(["config", "user.name", "LoopPilot Mini"], repo_dir)
     add = _run_git(["add", "."], repo_dir)
     if add.returncode != 0:
         shutil.rmtree(temp_root, ignore_errors=True)
@@ -51,7 +57,12 @@ def prepare_git_worktree(fixture_input: Path, dry_run: bool) -> tuple[Path, Path
         shutil.rmtree(temp_root, ignore_errors=True)
         raise GitWorkspaceError(f"git commit failed: {commit.stderr}")
 
-    return repo_dir, temp_root
+    worktree = _run_git(["worktree", "add", "--detach", str(worktree_dir), "HEAD"], repo_dir)
+    if worktree.returncode != 0:
+        shutil.rmtree(temp_root, ignore_errors=True)
+        raise GitWorkspaceError(f"git worktree add failed: {worktree.stderr}")
+
+    return worktree_dir, temp_root
 
 
 def git_diff_summary(work_dir: Path) -> str:

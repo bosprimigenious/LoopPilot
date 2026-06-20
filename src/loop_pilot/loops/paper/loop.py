@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 from loop_pilot.adapters.mock_adapter import MockAdapter
@@ -18,6 +17,8 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import EvaluationVerdict, RunOutcome, RunPhase
+from loop_pilot.loops.fixture_validation import validate_paper_fixture
+from loop_pilot.loops.paper.bibtex import assess_citation_support, parse_bibtex
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -51,6 +52,13 @@ class PaperLoop:
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
         adapter = MockAdapter(fixture_dir)
+
+        validation = validate_paper_fixture(fixture_dir)
+        if not validation.ok:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = validation.blocked_reason
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         self._enter_observing(record, trace)
         for phase in (
@@ -142,14 +150,21 @@ class PaperLoop:
     ) -> list[dict[str, object]]:
         adapter.execute({"role": "research"})
         mapped: list[dict[str, object]] = []
-        trusted_keys = re.findall(r"@\w+", citations)
+        entries = parse_bibtex(citations)
         for claim in claims:
-            support = "partial" if trusted_keys else "unsupported"
+            supporting_keys: list[str] = []
+            support = "unsupported"
+            for key, entry in entries.items():
+                assessed = assess_citation_support(claim["text"], entry)
+                if assessed in {"supported", "partial"}:
+                    supporting_keys.append(key)
+                    support = assessed
+                    break
             mapped.append(
                 {
                     "claim_id": claim["claim_id"],
                     "text": claim["text"],
-                    "evidence_ids": trusted_keys[:1],
+                    "evidence_ids": supporting_keys,
                     "support_status": support,
                 }
             )
@@ -163,15 +178,17 @@ class PaperLoop:
         for item in evidence_map:
             if item.get("support_status") == "unsupported":
                 original = str(item["text"])
-                replacement = f"{original} [SOURCE REQUIRED]"
+                replacement = "This claim requires additional evidence before inclusion. [SOURCE REQUIRED]"
                 if original in text:
                     text = text.replace(original, replacement)
                     revisions.append(f"Marked SOURCE REQUIRED: {item['claim_id']}")
             elif item.get("support_status") == "partial":
                 original = str(item["text"])
+                evidence_ids = item.get("evidence_ids") or []
+                citation = str(evidence_ids[0]) if evidence_ids else "SOURCE REQUIRED"
                 qualified = original.replace(
                     "significantly outperforms all baselines",
-                    "shows competitive results on selected benchmarks (Smith2024)",
+                    f"shows competitive results on selected benchmarks ({citation})",
                 )
                 if qualified != original:
                     text = text.replace(original, qualified)
