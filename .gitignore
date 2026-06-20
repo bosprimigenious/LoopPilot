@@ -1,0 +1,98 @@
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# Editors and local AI tooling
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Python bytecode and environments
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+.python-version.local
+
+# Test, type-check and coverage caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+.tox/
+.nox/
+pip-wheel-metadata/
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+credentials.*.json
+secrets/
+**/secrets/
+auth/
+tokens/
+
+# LoopPilot private workspaces and runtime state
+/workspaces/
+/outputs/
+/memory/
+/source_cache/
+/var/
+/private/
+/local/
+/runtime/
+/checkpoints/
+/artifacts/
+/logs/
+
+# Personal research, company and experiment material
+/papers/private/
+/research/private/
+/experiments/private/
+/data/private/
+/company/
+/internship/
+
+# Local databases, traces and transcripts
+# Root-level local databases and transcripts
+/*.sqlite
+/*.sqlite3
+/*.db
+/*.db-journal
+/*.transcript.txt
+
+# Crawler/download caches
+.cache/
+downloads/
+http_cache/
+playwright-report/
+
+# Temporary files
+/tmp/
+/temp/
+*.tmp
+*.bak

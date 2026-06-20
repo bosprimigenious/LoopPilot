@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loop-pilot"
+version = "0.0.0"
+description = "A controlled runtime for loop-engineered personal AI workflows."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [
+  {name = "bosprimigenious"},
+]
+dependencies = []
+
+[project.scripts]
+loop-pilot = "loop_pilot.cli:app"
+
+[project.optional-dependencies]
+dev = []
+news = []
+all = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
