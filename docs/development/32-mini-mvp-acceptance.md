@@ -16,7 +16,7 @@
 |---|---|---|
 | 1 | `pip install -e ".[dev]"` 本地安装 | ✅ |
 | 2 | `loop-pilot doctor` 成功 | ✅ |
-| 3 | `pytest -q` 全部通过 | ✅ (93 passed) |
+| 3 | `pytest -q` + `ruff check .` | ✅ (85 passed) |
 | 4 | 三条 Loop 各自 dry-run 成功 | ✅ |
 | 5 | `loop-pilot run all --fixture-set mini --dry-run` | ✅ |
 | 6 | `status` / `inspect` 可用 | ✅ |
@@ -45,10 +45,11 @@ Doctor: OK
 → PASS
 ```
 
-### 3. Pytest
+### 3. Pytest + Ruff
 
 ```text
-93 passed in ~34s
+ruff check .  →  All checks passed
+85 passed in ~21s
 → PASS
 ```
 
@@ -92,7 +93,7 @@ status  →  列出最近 run（loop_type / phase / outcome）
 
 | 阶段 | 完成度 | 说明 |
 |---|---|---|
-| **Mini-MVP (0.1.0-mini)** | **~95%** | Phase A 清单全部通过；剩余为 tag 发布与可选 bootstrap 文档润色 |
+| **Mini-MVP (0.1.0-mini)** | **100%** | Phase A 清单全部通过；待打 tag `0.1.0-mini` |
 | Practical MVP (0.2.0) | ~15% | 工作区 allowlist、CursorCLIAdapter、真实源未开始 |
 | V1 stable | ~25% | SQLite/恢复/审批代码在库中，CLI 未暴露，非本阶段目标 |
 
