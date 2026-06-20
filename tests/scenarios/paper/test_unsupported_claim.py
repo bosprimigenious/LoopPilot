@@ -100,3 +100,21 @@ class TestPaperLoop:
         text = revised.read_text(encoding="utf-8")
         assert "Smith2024" not in text
         assert "SOURCE REQUIRED" in text
+        assert record.outcome in {RunOutcome.PARTIAL, RunOutcome.BLOCKED}
+        assert record.outcome != RunOutcome.SUCCEEDED
+
+    def test_unsupported_claim_outcome_is_partial_not_succeeded(self, artifact_dir: Path) -> None:
+        loop = PaperLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
+        request = RunRequest(
+            run_id="test-paper-outcome",
+            loop_type="paper",
+            fixture="unsupported_claim",
+        )
+        record = RunRecord(run_id=request.run_id, loop_type="paper", phase=RunPhase.CREATED)
+        record, _, _ = loop.run(request, record)
+
+        assert record.outcome == RunOutcome.PARTIAL
+        report = artifact_dir / "paper" / request.run_id / "paper-development-report.md"
+        content = report.read_text(encoding="utf-8")
+        assert "## Source Required" in content
+        assert "\nyes\n" in content or content.strip().endswith("yes")

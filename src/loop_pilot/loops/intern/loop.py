@@ -5,9 +5,9 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from loop_pilot.adapters.mock_adapter import MockAdapter
+from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -20,7 +20,13 @@ from loop_pilot.domain.models import (
 )
 from loop_pilot.domain.states import EvaluationVerdict, RunOutcome, RunPhase
 from loop_pilot.loops.fixture_validation import validate_intern_fixture
-from loop_pilot.loops.intern.workspace import cleanup_workspace, git_diff_summary, prepare_git_worktree
+from loop_pilot.loops.intern.workspace import (
+    cleanup_workspace,
+    create_approved_worktree,
+    git_diff_summary,
+    prepare_git_worktree,
+)
+from loop_pilot.models.router import ModelRouter
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -37,14 +43,24 @@ class InternLoop:
         policy: PolicyEngine,
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
+        router: ModelRouter | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=8))
+        self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
         self.state_machine = StateMachine()
 
-    def run(self, request: RunRequest, record: RunRecord) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+    def run(
+        self,
+        request: RunRequest,
+        record: RunRecord,
+        *,
+        phase_hook: Callable[[RunRecord], None] | None = None,
+        resume_from: dict[str, Any] | None = None,
+    ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+        self._phase_hook = phase_hook
         record.dry_run = request.dry_run
         record.fixture = request.fixture
         fixture_name = request.fixture or "simple_python_bug"
@@ -55,7 +71,18 @@ class InternLoop:
 
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
-        adapter = MockAdapter(fixture_dir)
+        try:
+            adapter = create_adapter(
+                self.router,
+                "coding_agent",
+                fixture_dir=fixture_dir,
+                artifact_dir=self.artifact_dir,
+            )
+        except AdapterBlockedError as exc:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = exc.message
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         validation = validate_intern_fixture(fixture_dir)
         if not validation.ok:
@@ -64,9 +91,25 @@ class InternLoop:
             record.terminal_reason = validation.blocked_reason
             return self._finalize(record, trace, run_dir, artifacts, rounds)
 
-        self._enter_observing(record, trace)
-        self._transition(record, RunPhase.SELECTING, trace)
-        self._transition(record, RunPhase.PLANNING, trace)
+        resume_phase = RunPhase(resume_from["phase"]) if resume_from else None
+        resume_payload = resume_from.get("payload", {}) if resume_from else {}
+        start_round = int(resume_payload.get("current_round", 1)) or 1
+        skip_to_acting = resume_phase in {RunPhase.WAITING_APPROVAL, RunPhase.ACTING, RunPhase.EVALUATING}
+        if resume_payload.get("event") == "interrupted" and resume_payload.get("resume_allowed"):
+            resume_phase = RunPhase.ACTING
+            skip_to_acting = True
+        if resume_phase == RunPhase.EVALUATING and resume_payload.get("event") == "interrupted":
+            resume_phase = RunPhase.ACTING
+            skip_to_acting = True
+
+        if skip_to_acting:
+            if resume_phase == RunPhase.WAITING_APPROVAL:
+                self._transition(record, RunPhase.ACTING, trace)
+            start_round = max(start_round, 1)
+        else:
+            self._enter_observing(record, trace)
+            self._transition(record, RunPhase.SELECTING, trace)
+            self._transition(record, RunPhase.PLANNING, trace)
 
         allowed_paths = ["src/**", "tests/**"]
         forbidden_paths = [".env*", "secrets/**"]
@@ -74,11 +117,12 @@ class InternLoop:
         if fixture_name == "unsafe_path_change":
             plan_target = ".env.local"
 
-        self._transition(record, RunPhase.POLICY_CHECK, trace)
-        decision = self.policy.check_write(plan_target, allowed_paths, forbidden_paths, request.dry_run)
-        if not decision.allowed:
-            record.terminal_reason = f"{decision.rule_id}: {decision.message}"
-            return self._finalize_blocked(record, trace, run_dir, record.terminal_reason, artifacts, rounds)
+        if not skip_to_acting:
+            self._transition(record, RunPhase.POLICY_CHECK, trace)
+            decision = self.policy.check_write(plan_target, allowed_paths, forbidden_paths, request.dry_run)
+            if not decision.allowed:
+                record.terminal_reason = f"{decision.rule_id}: {decision.message}"
+                return self._finalize_blocked(record, trace, run_dir, record.terminal_reason, artifacts, rounds)
 
         work_dir: Path | None = None
         temp_root: Path | None = None
@@ -87,12 +131,16 @@ class InternLoop:
             tests_passed = False
             max_rounds = record.budgets.max_rounds
 
-            for round_num in range(1, max_rounds + 1):
+            for round_num in range(start_round, max_rounds + 1):
                 self.budget_manager.consume_round(record)
                 round_started = rfc3339()
+                record.current_round = round_num
 
                 try:
-                    self._transition(record, RunPhase.ACTING, trace)
+                    if record.phase != RunPhase.ACTING:
+                        self._transition(record, RunPhase.ACTING, trace)
+                    elif self._phase_hook is not None:
+                        self._phase_hook(record)
                     adapter.execute({"role": "coding", "round": round_num})
                     self.budget_manager.consume_model_call(record)
 
@@ -177,7 +225,25 @@ class InternLoop:
         finally:
             cleanup_workspace(temp_root)
 
-    def _prepare_workspace(self, fixture_dir: Path, dry_run: bool) -> tuple[Path, Path | None]:
+    def _prepare_workspace(
+        self, fixture_dir: Path, dry_run: bool, intern_config: dict[str, Any] | None = None
+    ) -> tuple[Path, Path | None]:
+        intern_config = intern_config or {}
+        workspace = Path(str(intern_config.get("workspace", "")))
+        if (
+            not dry_run
+            and intern_config.get("use_worktree")
+            and workspace.exists()
+            and (workspace / ".git").exists()
+        ):
+            worktree_root = self.artifact_dir / "intern-worktrees" / fixture_dir.name
+            worktree = create_approved_worktree(
+                workspace.resolve(),
+                worktree_root,
+                branch=str(intern_config.get("default_branch", "HEAD")),
+                worktree_name=f"run-{fixture_dir.name}",
+            )
+            return worktree, worktree_root
         return prepare_git_worktree(fixture_dir / "input", dry_run)
 
     def _apply_fix(self, work_dir: Path) -> None:
@@ -259,6 +325,11 @@ class InternLoop:
         self.state_machine.validate_transition(record.phase, phase)
         record.phase = phase
         trace.append({"event": "state_transition", "phase": phase.value, "run_id": record.run_id})
+        if phase == RunPhase.ACTING:
+            record.current_round = max(record.current_round, 1)
+        hook = getattr(self, "_phase_hook", None)
+        if hook is not None:
+            hook(record)
 
     def _finalize(
         self,

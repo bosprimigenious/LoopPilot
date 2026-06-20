@@ -34,6 +34,10 @@ class LoopPilotConfig:
         return Path(self.runtime.get("artifact_dir", "var/artifacts"))
 
     @property
+    def allow_real_adapters(self) -> bool:
+        return bool(self.runtime.get("allow_real_adapters", False))
+
+    @property
     def dry_run(self) -> bool:
         return bool(self.runtime.get("dry_run", False))
 
@@ -97,12 +101,14 @@ def default_config_dict() -> dict[str, Any]:
     return {
         "runtime": {
             "timezone": "Asia/Shanghai",
+            "state_backend": "json",
             "state_dir": "var/state",
             "artifact_dir": "var/artifacts",
             "checkpoint_dir": "var/checkpoints",
             "execution_mode": "sequential",
             "dry_run": False,
             "max_concurrent_runs": 1,
+            "allow_real_adapters": False,
         },
         "reporting": {
             "format": "markdown",

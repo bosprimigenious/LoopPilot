@@ -15,6 +15,14 @@
 
 {{inbox_candidates}}
 
+## Intern Candidates
+
+{{intern_candidates}}
+
+## Paper Candidates
+
+{{paper_candidates}}
+
 ## Star Delta Computed
 
 {{star_delta_computed}}

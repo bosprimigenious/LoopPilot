@@ -1,1 +1,11 @@
-sources: []
+sources:
+  - id: github_snapshots
+    kind: local_json
+    path: tests/fixtures/daily_news/github_star_snapshots/input/snapshots/github_day2.json
+    tier: B
+    enabled: true
+  - id: paper_signals
+    kind: local_json
+    path: tests/fixtures/daily_news/github_star_snapshots/input/paper_signal.json
+    tier: B
+    enabled: true

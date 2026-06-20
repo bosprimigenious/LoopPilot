@@ -1,4 +1,4 @@
-"""Verify V1 commands are not registered in Mini CLI."""
+"""Verify V1 CLI exposes recovery and review commands."""
 
 from __future__ import annotations
 
@@ -6,22 +6,20 @@ from click.testing import CliRunner
 
 from loop_pilot.cli import app
 
-DEFERRED_COMMANDS = ("resume", "approve", "reject", "cancel")
+V1_COMMANDS = ("resume", "approve", "reject", "cancel", "report")
 
 
-def test_deferred_commands_not_registered() -> None:
+def test_v1_exposes_recovery_commands() -> None:
     runner = CliRunner()
-    for cmd in DEFERRED_COMMANDS:
-        result = runner.invoke(app, [cmd])
-        assert result.exit_code != 0
-        assert "No such command" in result.output or "Error" in result.output
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    for cmd in V1_COMMANDS:
+        assert cmd in result.output
 
 
-def test_help_lists_only_mini_surface() -> None:
+def test_help_lists_core_surface() -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     for cmd in ("doctor", "run", "status", "inspect"):
         assert cmd in result.output
-    for cmd in DEFERRED_COMMANDS:
-        assert cmd not in result.output

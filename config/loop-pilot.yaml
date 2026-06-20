@@ -1,11 +1,13 @@
 runtime:
   timezone: Asia/Shanghai
+  state_backend: json
   state_dir: var/state
   artifact_dir: var/artifacts
   checkpoint_dir: var/checkpoints
   execution_mode: sequential
   dry_run: false
   max_concurrent_runs: 1
+  allow_real_adapters: false
 
 reporting:
   format: markdown
