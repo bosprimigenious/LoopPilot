@@ -8,7 +8,7 @@
 
 ## 当前工程焦点
 
-**0.1.0-mini（Mini-MVP，Phase A）** 是当前唯一应推进的实现阶段。在完成 Phase A 验收清单前，不得把 0.3+ 能力接入每日主运行链，也不得把未验收代码标称为更高版本。
+**0.1.0-mini（Mini-MVP，Phase A）** 是当前唯一应推进的实现阶段。0.2–1.0 均为**文档规划**；在完成 Phase A 验收清单前，不得把 0.3+ 能力接入每日主运行链，也不得把未验收代码标称为更高版本。
 
 验收细节见 [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md)。
 
@@ -705,13 +705,16 @@ pytest tests/unit/test_plugin_policy.py -q
 
 ---
 
-### 0.6 vs 1.0 区分
+### 0.6 vs 0.7 vs 1.0 区分
 
-| | **0.6** | **1.0** |
-|---|---|---|
-| 扩展 API | 可用，含 experimental 变更 | **Stable Protocol** semver 承诺 |
-| 插件 | 本地 + bundled | 同左 + 弃用周期文档化 |
-| 长期运行 / 学习 | 依赖 0.4 | 跨日链、健康检查、优先级解释 |
+| | **0.6 plugin-ecosystem** | **0.7 evaluation-benchmark** | **1.0 stable** |
+|---|---|---|---|
+| 扩展 API | 可用，含 experimental 变更 | 同 0.6；评测不冻结 API | **Stable Protocol** semver 承诺 |
+| 插件 | 本地 + bundled | 同左；插件可自带 benchmark | 同左 + 弃用周期文档化 |
+| 评测 | 无系统化 benchmark | **Evaluation Harness** + 指标 + 模型对比 | 依赖 0.7 数据做长期健康检查 |
+| 长期运行 / 学习 | 依赖 0.4 | 不实现跨日学习 | 跨日链、健康检查、优先级解释 |
+
+0.6 = 能插上扩展；0.7 = 能**证明**扩展跑得好不好；1.0 = 契约冻结且可依赖（经 **0.9 RC**）。
 
 ---
 
@@ -721,53 +724,364 @@ pytest tests/unit/test_plugin_policy.py -q
 
 ### 一句话
 
-LoopPilot 从「**可扩展**」（0.6）进化为「**可评测**」：用 benchmark、指标、Golden Case 与模型对比，系统化证明 Loops / Agents / Skills / Adapters 是否真正有效。
+LoopPilot 从「**可扩展**」（0.6）进化为「**可评测**」：用 benchmark、指标、Golden Case 与模型对比，系统化证明 Loops / Agents / Skills / Adapters 是否真正有效——衡量成功率、成本、风险、可恢复性、人工接受率与真实任务收益。
 
 ### 定位：0.6 vs 0.7 vs 1.0
 
 | | **0.6 plugin-ecosystem** | **0.7 evaluation-benchmark** | **1.0 stable** |
 |---|---|---|---|
-| 核心问题 | 别人能否写自己的 Loop/Skill/Adapter？ | **跑得好不好？** | 接口与行为是否**长期可维护**？ |
-| 评测 | pytest + fixture（开发期） | **Evaluation Harness** + 指标报告 | 长期趋势与健康检查 |
-| Registry | 无 | `eval publish-local` / `history`（0.8 项目级共享依赖此契约） | 同左 + semver 承诺 |
+| 核心问题 | 别人能否写自己的 Loop/Skill/Adapter？ | **跑得好不好？**哪个模型/Agent/Skill 更可靠？ | 接口与行为是否**长期可维护**？ |
+| 分发 | 本地插件 manifest + `plugins` CLI | + `eval` CLI + `benchmarks/` 套件 | semver 承诺 + 弃用周期 |
+| 评测 | pytest + fixture（开发期） | **正式 Evaluation Harness** + 指标报告 | 长期趋势与健康检查 |
+| 模型 | Router 可用 | **可重复对比** model-role 配置 | 同左 |
+| 外部工具 | 无强制 | **agentic-rubric-runner** 作外部 evaluator（不合并仓库） | 同左 |
+| Registry | 无 | `eval publish-local` / `history`（**0.8** 项目级共享依赖此契约） | 同左 + semver 承诺 |
+| 受众 | 贡献者 / 高级用户 | 维护者 / 插件作者 / 自证有效性的用户 | 个人/团队长期生产 |
 
 0.6 = 可以扩展；0.7 = 可以**评价**扩展效果；1.0 = 靠数据与稳定契约说话的长期生产。
 
-### Evaluation Harness CLI
+### 0.7 要回答的问题
+
+- InternLoop 到底修复了多少 bug？失败主要发生在哪一阶段？
+- PaperLoop 的建议有多少被采纳？ResearchCritic 有没有误判？
+- DailyNews 里有多少信息真的进入 Intern/Paper 任务？
+- CursorCLIAdapter 比普通 API Adapter 强多少？DeepSeek 做筛选是否足够？
+- 人类到底采纳了多少结果？成本是否值得？
+
+---
+
+### Evaluation Harness
+
+0.7 核心模块：**Evaluation Harness**——加载 benchmark、运行指定 Loop、收集 trace/artifacts、计算指标、生成评测报告、比较不同模型/配置。
 
 | 命令 | 说明 |
 |---|---|
-| `loop-pilot eval list` | 列出 benchmark 套件与 case |
-| `loop-pilot eval run <suite>` | 运行评测（默认 MockAdapter + dry-run） |
-| `loop-pilot eval compare <a> <b>` | 对比两次 eval run |
-| `loop-pilot eval report <eval-id>` | 渲染 `eval-report.md` |
-| `loop-pilot eval publish-local <name>` | 发布到本地 registry（0.8 按 project 隔离） |
+| `loop-pilot eval list` | 列出可用 benchmark 套件与 case |
+| `loop-pilot eval run <suite>` | 运行评测（如 `intern-basic`、`paper-claims`、`daily-news-ranking`） |
+| `loop-pilot eval compare <eval-id-a> <eval-id-b>` | 对比两次 eval run（成功率、成本、延迟、错误分布） |
+| `loop-pilot eval report <eval-id>` | 渲染/刷新 `eval-report.md` |
+| `loop-pilot eval publish-local <name>` | 发布到本地 registry（**0.8** 按 project 隔离） |
 | `loop-pilot eval history` | 本地 benchmark 运行历史 |
 
-Harness 默认离线可 CI；真实 Adapter 对比需显式 `--allow-real-adapters` 与 env。
+示例：
 
-### Benchmark 与指标（概要）
+```bash
+loop-pilot eval list
+loop-pilot eval run intern-basic
+loop-pilot eval run paper-claims
+loop-pilot eval run daily-news-ranking
+loop-pilot eval run paper-claims --model-role research_critic=gpt
+loop-pilot eval run paper-claims --model-role research_critic=deepseek
+loop-pilot eval compare eval-001 eval-002
+loop-pilot eval report <eval-id>
+```
 
-- `benchmarks/`：Intern / Paper / DailyNews 各 ≥5 case；每 case 含 `input/`、`expected/`、`rubric.yaml`、`metadata.yaml`。
-- 指标：成功率、成本、延迟、安全拦截率、路由准确率、trace/artifact 完整度等。
-- 产物：`var/eval/<eval-id>/eval-report.md`、`eval-results.json`、`eval-summary.csv`。
-- 可选 [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner) 作 **external_cli** evaluator（不合并仓库）。
+Harness 默认在 **MockAdapter + dry-run** 下运行，保证可离线、可 CI；真实 Adapter 对比需显式 `--allow-real-adapters` 与 env。
 
-完整 Harness、Golden Case 与按 Loop 指标表见 [34-version-roadmap-0x.md §8](34-version-roadmap-0x.md#8-07-evaluation-benchmark-070-evaluation-benchmark) 与 `docs/evaluation/`（规划）。
+---
 
-### 验收标准（概要）
+### Benchmark Suite 结构
 
-1. `eval list|run|compare|report` 命令可用。
-2. 15+ benchmark case 在 MockAdapter 下 CI 稳定通过。
-3. 0.1–0.6 基线不退化。
+```text
+benchmarks/
+├── intern/
+│   ├── python_bugfix_basic/
+│   ├── failing_test_repair/
+│   ├── unsafe_path_block/
+│   ├── lint_fix/
+│   └── dependency_error/
+├── paper/
+│   ├── unsupported_claim/
+│   ├── fake_citation/
+│   ├── missing_related_work/
+│   ├── number_inconsistency/
+│   └── experiment_gap/
+└── daily_news/
+    ├── duplicate_filter/
+    ├── star_delta_ranking/
+    ├── stale_news_block/
+    ├── low_confidence_filter/
+    └── route_to_loop/
+```
+
+每个 benchmark case 必须包含：
+
+```text
+input/           固定输入（代码、论文片段、新闻快照等）
+expected/        结构化期望结果（outcome、关键字段）
+rubric.yaml      验收断言（非低级 1–5 分表）
+metadata.yaml    case_id、loop_type、tags、difficulty、requires_mock
+```
+
+`rubric.yaml` 定义 **pass/fail 断言**，可与 [21-test-fixtures-and-golden-cases.md](21-test-fixtures-and-golden-cases.md) 的 `assertions.yaml` 语义对齐；与 `tests/fixtures/` 可共享场景但 **benchmarks/** 为 0.7 权威评测目录。
+
+---
+
+### Metrics System（按 Loop）
+
+#### InternLoop
+
+| 指标 | 说明 |
+|---|---|
+| `task_success_rate` | 终态 SUCCEEDED 占比 |
+| `test_pass_rate` | 目标测试由 fail→pass 占比 |
+| `patch_acceptance_rate` | 人工或 rubric 接受的 patch 占比 |
+| `unsafe_action_block_rate` | 危险路径被 Policy 拦截占比 |
+| `unrelated_diff_rate` | diff 越界 / 无关文件修改占比 |
+| `mean_rounds_to_success` | 成功 case 平均轮次 |
+| `mean_runtime_seconds` | 平均耗时 |
+| `model_cost_per_success` | 每次成功的模型费用（若可用） |
+
+#### PaperLoop
+
+| 指标 | 说明 |
+|---|---|
+| `claim_detection_recall` | 应检出的 claim 检出率 |
+| `unsupported_claim_precision` | 标为 unsupported 的精确率 |
+| `citation_verification_accuracy` | 引用核验正确率 |
+| `source_required_correctness` | SOURCE REQUIRED 标注正确率 |
+| `fabrication_rate` | 编造引用/元数据占比（应为 0） |
+| `revision_acceptance_rate` | 修订建议被采纳占比 |
+| `experiment_gap_recall` | 缺失实验检出率 |
+| `reviewer_concern_match_rate` | 与预期 reviewer concern 匹配率 |
+
+#### DailyNewsLoop
+
+| 指标 | 说明 |
+|---|---|
+| `dedup_accuracy` | 同事件去重正确率 |
+| `star_delta_correctness` | Star 增量计算正确率 |
+| `source_freshness_accuracy` | 发布日 vs 事件日区分正确率 |
+| `routing_accuracy` | 路由到 Intern/Paper 正确率 |
+| `high_value_item_precision` | Top News 高价值条目精确率 |
+| `noise_rate` | 低置信度误入正式条目占比 |
+| `items_kept_count` | 保留条目数（辅助分布指标） |
+
+#### Runtime（跨 Loop）
+
+| 指标 | 说明 |
+|---|---|
+| `trace_completeness` | trace.jsonl 必填字段完整率 |
+| `artifact_integrity` | manifest 与磁盘 hash 一致率 |
+| `recovery_success_rate` | 可恢复场景 resume 成功率（依赖 0.4 fixture） |
+| `approval_latency` | WAITING_APPROVAL → 决定耗时 |
+| `blocked_reason_accuracy` | BLOCKED 原因与 golden 一致率 |
+| `budget_compliance` | 30 分钟硬停止与软截止遵守率 |
+
+所有指标由 `metrics.py` 从 `eval-results.json` 原始 case 结果**可重复计算**；不得依赖模型自由文本解析作为唯一依据。
+
+---
+
+### Golden Cases
+
+Golden Case：**输入固定、期望输出固定、允许少量表达变化、核心判断必须一致**。与 benchmark 共用目录结构；`expected/` + `rubric.yaml` 中的 `required` / `forbidden` 断言为权威。
+
+**PaperLoop 示例**
+
+```yaml
+case_id: paper_fake_citation_001
+input:
+  draft: input/paper.md
+  references: input/references.bib
+expected:
+  outcome: blocked
+  required_findings:
+    - fake_citation_detected
+    - source_required
+forbidden:
+  - outcome: succeeded
+  - fabricated_bibtex
+```
+
+**InternLoop 示例**
+
+```yaml
+case_id: intern_simple_bugfix_001
+expected:
+  outcome: succeeded
+  tests_pass: true
+  forbidden_paths_modified:
+    - .env
+    - secrets/*
+```
+
+不得对完整 Markdown 做脆弱字符串比较；验证 front matter、outcome、证据链接、关键事实与 forbidden 列表（见 [21-test-fixtures-and-golden-cases.md](21-test-fixtures-and-golden-cases.md)）。
+
+---
+
+### Model Comparison
+
+通过 **eval run** 对比配置，而非主观感受：
+
+```bash
+loop-pilot eval run paper-claims --model-role research_critic=gpt
+loop-pilot eval run paper-claims --model-role research_critic=deepseek
+loop-pilot eval compare eval-001 eval-002
+```
+
+对比维度：成功率、错误类型分布、成本、延迟、输出稳定性、Schema 通过率、人工接受率（若 sidecar 记录）。
+
+---
+
+### Evaluation Report 输出
+
+每次 `eval run` 写入独立 eval 目录（如 `var/eval/<eval-id>/`）：
+
+| 产物 | 说明 |
+|---|---|
+| `eval-report.md` | 人类可读：总成功率、各 Loop/case 结果、失败分布、成本、耗时、不安全拦截、推荐改进 |
+| `eval-results.json` | 机器可读：每 case pass/fail、指标快照、run_id 引用 |
+| `eval-summary.csv` | 表格汇总：便于 spreadsheet 与 CI 趋势 |
+
+报告必须基于结构化数据渲染，非模型臆造结论。
+
+---
+
+### agentic-rubric-runner 集成（外部 evaluator，不合并仓库）
+
+[agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner)（若本地安装）可作为 **PaperLoop 评价**的外部 companion，输出结构化 Claim–Evidence、实验充分性、Reviewer concern（见 [15-ideas-traceability.md](15-ideas-traceability.md) §5）。
+
+**不合并仓库**；通过配置接入：
+
+```yaml
+evaluators:
+  rubric_runner:
+    type: external_cli
+    command: agentic-rubric-runner evaluate
+```
+
+LoopPilot 负责运行 Loop 并收集 artifacts；外部 CLI 负责 rubric 评价；结果合并进 `eval-results.json`。简单 1–5 分接口不进入核心评价链。
+
+---
+
+### 模块路径（0.7 目标布局）
+
+```text
+src/loop_pilot/eval/
+├── __init__.py
+├── runner.py           # eval run 编排
+├── benchmark.py        # 加载 benchmarks/
+├── metrics.py          # 指标计算
+├── assertions.py       # golden / rubric 断言
+├── compare.py          # eval compare
+├── report.py           # eval-report.md 渲染
+└── result_store.py     # eval-results.json / eval-summary.csv
+
+src/loop_pilot/cli_eval.py    # eval list|run|compare|report
+
+benchmarks/                     # 见上文套件结构
+docs/evaluation/
+├── overview.md
+├── writing-benchmarks.md
+├── metrics.md
+├── model-comparison.md
+└── integrating-agentic-rubric-runner.md
+```
+
+0.7 **仅文档与目录约定**；实现前不得破坏 0.1 Mini 验收。
+
+---
 
 ### 不可做（0.7）
 
-公开排行榜、云端评测平台、默认昂贵 API 评测、合并外部 rubric 仓库。
+| 排除项 | 说明 |
+|---|---|
+| 公开排行榜 / 云端评测平台 | **仅本地** benchmark |
+| 模型商业排名 / 对外榜单 | 个人与 CI 内部使用 |
+| 大量自动 benchmark 下载 | 内置套件 + 用户自备 case |
+| 昂贵 API 的**默认**评测 | 默认 MockAdapter；真实模型需显式 opt-in |
+| 未经许可收集用户数据 | 评测数据不出本机（除非用户导出） |
+| 合并 agentic-rubric-runner 仓库 | 仅 external_cli evaluator |
+
+Local benchmark yes；Public leaderboard no。
+
+---
+
+### 验收标准
+
+#### 命令
+
+1. `loop-pilot eval list`
+2. `loop-pilot eval run intern-basic`
+3. `loop-pilot eval run paper-claims`
+4. `loop-pilot eval run daily-news-ranking`
+5. `loop-pilot eval report <eval-id>`
+6. `loop-pilot eval compare <eval-id-a> <eval-id-b>`
+
+#### 指标与产物
+
+7. 每次 eval run 生成 `eval-results.json` 与 `eval-report.md`
+8. 每次 case 有 pass/fail 与失败原因码
+9. 指标可重复计算；模型成本与耗时被记录
+10. trace / artifact integrity 被检查
+
+#### Benchmark 数量
+
+11. 至少 **5** 个 Intern benchmark
+12. 至少 **5** 个 Paper benchmark
+13. 至少 **5** 个 DailyNews benchmark
+14. 每个 benchmark 有 expected 断言
+15. 每个 benchmark 在 MockAdapter 下稳定通过（CI 可跑）
+
+#### 基线不退化
+
+16. 0.1–0.6 验收命令仍全部通过
+
+### 推荐验收命令
+
+```bash
+loop-pilot eval list
+loop-pilot eval run intern-basic
+loop-pilot eval run paper-claims
+loop-pilot eval run daily-news-ranking
+loop-pilot eval report <eval-id>
+loop-pilot eval compare <eval-id-a> <eval-id-b>
+pytest tests/unit/test_eval_metrics.py -q
+pytest tests/integration/test_eval_harness.py -q
+
+# 0.1 回归
+pytest -q
+loop-pilot run all --fixture-set mini --dry-run
+```
+
+---
 
 ### 工作量估算
 
-约为 **0.6 完成后工程量的 20–30%**（单人兼职约 **12–18 人日**）。
+约为 **0.6 完成后工程量的 20–30%**（单人兼职约 **12–18 人日**）：
+
+| 工作包 | 估算 |
+|---|---|
+| benchmark 套件（15+ case） | 4–5 |
+| runner + assertions + result_store | 3–4 |
+| metrics + report + compare | 3–4 |
+| cli_eval + 配置（evaluators） | 2–3 |
+| docs/evaluation + rubric-runner 集成文档 | 2–3 |
+
+---
+
+### 版本发布说明片段
+
+**EN**
+
+> **0.7.0-evaluation-benchmark** — LoopPilot becomes **evaluable**: run local benchmarks with `loop-pilot eval list|run|compare|report`, measure per-loop metrics (success, cost, safety, routing), compare model roles on fixed suites, and emit `eval-report.md` / `eval-results.json` / `eval-summary.csv`. Golden cases use structured assertions, not fragile markdown diffs. Optional `agentic-rubric-runner` integrates as an external CLI evaluator—no repo merge. No public leaderboard or cloud platform; default eval stays offline on MockAdapter.
+
+**CN**
+
+> **0.7.0-evaluation-benchmark** — LoopPilot 从可扩展升级为**可评测**：通过 `loop-pilot eval` 运行本地 benchmark，按 Loop 统计成功率、成本、安全与路由等指标，对比不同 model-role 配置，产出 `eval-report.md`、`eval-results.json`、`eval-summary.csv`。Golden Case 使用结构化断言。可选将 agentic-rubric-runner 作为外部 CLI evaluator 接入，**不合并仓库**。不做公开排行榜或云端平台；默认评测保持 MockAdapter 离线可复现。
+
+---
+
+### 0.7 vs 1.0 区分
+
+| | **0.7 evaluation-benchmark** | **1.0 stable** |
+|---|---|---|
+| 证明什么 | LoopPilot **可以被评测**、扩展可被量化 | **稳定、可维护、可升级** |
+| API | eval API 可能仍调整 | Stable Protocol + 弃用周期 |
+| 长期学习 | 不实现跨日优先级学习 | 跨日链、健康检查、趋势 |
+| 数据 | 单次/对比 eval run | 连续运行的长期指标趋势 |
+
+没有 0.7，1.0 容易变成主观稳定；有了 0.7，1.0 可以靠数据说话。
 
 ---
 
@@ -1109,28 +1423,286 @@ loop-pilot run all --fixture-set mini --dry-run
 
 ---
 
-## 1.0.0-stable — Stable
+## 1.0.0-stable — Stable（Production-Ready）
 
-### 目标
+**版本标签**：`1.0.0-stable`
 
-长期个人/团队生产环境稳定运行，决策可审计、语义跨日一致；**冻结 Stable 扩展 API**（0.6 引入的 Protocol 经 **0.9 RC** 后进入 semver 承诺）。
+> **1.0 不是「功能最多」的版本**，而是 **稳定性承诺的 capstone**：API、配置、状态迁移、安全、长跑可靠性、文档——六项承诺在 0.9 RC 冻结基线上**正式 semver 毕业**。
+>
+> **0.9 RC → 1.0 stable**：仅 bug 修复、发布冻结、打 stable tag；**无 major 新功能**。若 rc3 仍有 P0，发 rc4，不跳级进 1.0。
 
-### 范围（方向）
+### 定位：0.9 vs 1.0
 
-- 跨日问题链与历史诊断比较（旧 V3 子集）。
-- Intern 回归/静态分析增强；Paper reviewer simulation 与一致性追踪。
-- 长期健康检查：StateStore 增长、Artifact 保留、Adapter 成功率与费用趋势。
-- 每日总报告突出「最重要的一件事」。
-- **插件 Stable API** 文档化弃用策略；experimental 项晋升或移除。
+| 维度 | **0.9 release-candidate** | **1.0 stable** |
+|---|---|---|
+| 性质 | 最后验收；接口冻结 | **正式稳定承诺** |
+| 新功能 | 禁止 | 禁止（直至 1.x minor 增强） |
+| 破坏性变更 | 禁止 | 禁止（直至 **2.0**） |
+| 心理契约 | 「请帮我们试最后一轮」 | 「可长期依赖的个人/小团队生产工具」 |
 
-### 验收方向
+---
 
-- 连续运行无未解释外部写入、状态丢失、重复任务。
-- 用户显式规则始终高于学习排序。
+### 1. Core API Stability（核心 API 稳定性）
 
-### 不可做（1.0 仍禁止）
+1.0 对以下 **Stable public API** 作出 semver 承诺（1.x 内仅 additive；breaking → 2.0）：
+
+| API 域 | 稳定面 | 文档 |
+|---|---|---|
+| **Loop** | `LoopPlugin` Protocol、阶段契约、`loop_type` 注册 | `03`–`05` 分册 + `docs/stability/api-freeze.md` |
+| **Agent** | Agent registry、`model_role` 声明、阶段调用图 | `06-agents-skills-tools.md`、`28-agent-development-guide.md` |
+| **Skill** | `SkillPlugin` Protocol、输入/输出 Schema | `20-skill-specifications.md` |
+| **Tool** | `ToolBroker` 调用契约、Policy 拦截语义 | `06`、`08-security-and-recovery.md` |
+| **Connector** | `ConnectorPlugin` Protocol、降级与 rate limit | `13-source-and-crawler-plan.md`、`19-adapter-specifications.md` |
+| **ModelAdapter** | `BaseAdapter` 五方法、capabilities、healthcheck | `19`、`30-adapter-and-model-router-roadmap.md` |
+| **StateStore** | `runs` / `checkpoints` / `approvals` 读写接口 | `07-data-and-reports.md`、`18-state-transition-spec.md` |
+| **Plugin** | manifest schema、`plugins` CLI、Stable Protocol 层 | `docs/plugins/` |
+| **Evaluation** | `eval list|run|compare|report`、benchmark 目录结构 | `docs/evaluation/` |
+
+**Deprecation policy**（自 1.0 生效，详见 `docs/stability/deprecation-policy.md`）：
+
+- Stable API 弃用须 **≥2 个 minor 版本**警告期（如 1.0 deprecated → 最早 1.2 移除）。
+- Semi-stable / experimental 可在 1.x minor 调整，但须 CHANGELOG + `doctor` WARN。
+- CLI 命令重命名：旧命令保留 alias 至少 1 个 minor；`--help` 标注 deprecated。
+- JSON artifact / trace 事件：仅 additive 字段；移除字段 → major。
+
+---
+
+### 2. Configuration Stability（配置稳定性）
+
+**覆盖全部 YAML 配置文件**：
+
+| 文件 | 用途 |
+|---|---|
+| `loop-pilot.yaml` | 全局 runtime、schedule、recovery、approvals |
+| `intern.yaml` / `paper.yaml` / `daily-news.yaml` | 三 Loop 专用 |
+| `adapters.yaml` | Adapter 与 ModelRouter |
+| `plugins.local.yaml` | 本地插件 enable 列表 |
+| `projects.yaml` / `project.yaml` | 0.8 团队项目作用域（可选） |
+
+```bash
+loop-pilot config validate
+loop-pilot config migrate [--dry-run]
+loop-pilot doctor
+```
+
+- 每个配置文件含 **`schema_version`**；**1.0 起 config schema additive-only**，直至 config major 或 loop-pilot **2.0**。
+- `config/schema_versions/` 保存各版本快照；`conformance/` 覆盖样例配置 0.5–0.9。
+
+---
+
+### 3. State Migration Stability（状态迁移稳定性）
+
+| 命令 / 脚本 | 职责 |
+|---|---|
+| `loop-pilot db doctor` | schema 版本、表完整性、orphan run 检测 |
+| `loop-pilot db migrate [--dry-run]` | 版本化 migration；1.0 起 **additive-only** |
+| `scripts/backup_state.py` | SQLite + artifact 索引备份 |
+| `loop-pilot recovery-scan` | 中断 run、遗留锁、半写终态扫描 |
+| `scripts/migrate_state.py` | 跨 major 一次性迁移（可 dry-run） |
+
+**升级保证**：从 **0.4.0** 至 **1.0.0** 的 migration 链在 CI 全绿；migration 失败时不半写；run 进行中不支持 hot migration。
+
+---
+
+### 4. Safety Stability（安全稳定性）
+
+| 原则 | 1.0 承诺 |
+|---|---|
+| **Safe by default** | `allow_real_adapters=false`；shell/network/write 默认 deny；第三方插件默认 disabled |
+| **Explicit by exception** | 真实 Adapter、`--allow-write`、`plugins enable --acknowledge-risk` 须显式 opt-in |
+| **Auditable always** | Tool/Adapter/Connector/Plugin 调用写入 `trace.jsonl` + `adapter_calls`；SECRET 永不进模型 |
+
+PolicyEngine 为唯一 enforcement 点；Critical 漏洞以 **1.0.x patch** 发布（见 `SECURITY.md`）。
+
+---
+
+### 5. Long-Running Reliability（长跑可靠性）
+
+| 机制 | 1.0 标准 |
+|---|---|
+| **7 天稳定性** | 0.9 模拟长跑通过；1.0 soak 期无 P0 回归 |
+| **Recovery** | ACTING 中断 → 默认 BLOCKED；合法 checkpoint `resume` |
+| **Audit** | daily-summary、pending 队列、trace 跨日可关联 |
+| **Budget** | 30 分钟硬停止；`WAITING_APPROVAL` 不计入执行预算 |
+| **跨日链** | Intern 遗留、DailyNews 路由、Paper 缺口在 daily-summary 可解释（旧 V3 子集） |
+
+---
+
+### 6. Documentation Stability（文档稳定性）
+
+**1.0 必达文档**：`docs/getting-started.md`（含 zh）、`docs/concepts/`、`docs/configuration/`、`docs/safety/`、`docs/loops/*`、`docs/adapters/`、`docs/plugins/`、`docs/evaluation/`、`docs/stability/`、`docs/upgrade/`、`docs/development/`（本文 33 + 34）、`examples/`。
+
+- **10 分钟陌生人安装**：`pip install loop-pilot` → `init demo` → `doctor` → `run all --fixture-set mini --dry-run`。
+- **30 分钟插件开发**：`loop-pilot new loop hello` → enable → dry-run（见 `docs/plugins/quickstart.md`）。
+
+---
+
+### 7. Required Capabilities at 1.0（1.0 必备能力）
+
+1.0 **不新增**业务能力；它承诺 0.1–0.9 已 GA 的能力**稳定可用**：
+
+| 能力域 | 1.0 必备 |
+|---|---|
+| 三 Loop | Intern / Paper / DailyNews 完整 Observe→Report |
+| Adapter 集 | Mock（默认）、CodingCLI、OpenAICompatible；ModelRouter + ToolBroker |
+| 插件系统 | 本地 manifest、`plugins` CLI、`new loop|skill|connector|adapter` |
+| 评测系统 | `eval list|run|compare|report`；15+ benchmark |
+| Recovery CLI | `resume`、`approve`、`reject`、`cancel`、`report`、`pending`、`recovery-scan` |
+| 调度 CLI | `schedule print`、`schedule install --dry-run` |
+| 日常报告 | `summary today`、daily-summary.md |
+| 分发 | PyPI `1.0.0`；`pytest conformance/` 永久 CI 门禁 |
+
+---
+
+### 8. What 1.0 Does NOT Include（1.0 明确不包含）
+
+SaaS / 托管运行、企业 SSO / LDAP、插件市场 / 远程安装、完整 Web UI（0.8 Dashboard 为 preview）、multi-tenant billing、向量库 / RAG、自动 push/PR/deploy/投稿/交易、破坏性 API 变更（→ **2.0**）。
+
+---
+
+### 9. Acceptance Criteria（验收标准）
+
+#### 9.1 安装（陌生人 10 分钟）
+
+```bash
+pip install loop-pilot==1.0.0
+loop-pilot init demo
+cd loop-pilot-demo
+loop-pilot doctor
+loop-pilot run all --fixture-set mini --dry-run
+loop-pilot status
+```
+
+#### 9.2 开发（贡献者）
+
+```bash
+git clone https://github.com/bosprimigenious/loop-pilot.git
+cd loop-pilot && pip install -e ".[dev]"
+pytest -q && pytest conformance/ -q
+loop-pilot doctor
+```
+
+#### 9.3 真实运行（显式 opt-in）
+
+```bash
+loop-pilot config validate
+loop-pilot adapters doctor
+loop-pilot run intern --workspace /path/to/repo --dry-run
+loop-pilot run all
+loop-pilot summary today
+```
+
+#### 9.4 Recovery（sqlite 后端）
+
+```bash
+loop-pilot db doctor
+loop-pilot run all
+loop-pilot pending
+loop-pilot recovery-scan
+loop-pilot resume <run-id>
+loop-pilot approve <run-id>
+loop-pilot report <run-id>
+python scripts/backup_state.py --dry-run
+```
+
+#### 9.5 Plugin
+
+```bash
+loop-pilot plugins list && loop-pilot plugins doctor
+loop-pilot new loop my-demo
+loop-pilot plugins enable my-demo
+loop-pilot run my-demo --dry-run
+```
+
+#### 9.6 Eval
+
+```bash
+loop-pilot eval list
+loop-pilot eval run intern-basic
+loop-pilot eval run paper-claims
+loop-pilot eval report <eval-id>
+loop-pilot eval compare <a> <b>
+```
+
+#### 9.7 Release（maintainer）
+
+```bash
+loop-pilot config migrate --dry-run
+loop-pilot db migrate --dry-run
+pytest -q && pytest conformance/ -q
+python -m build && twine check dist/*
+```
+
+**完成定义**：七组命令全通过 + §10 Release Gate 全勾选 + 自末位 rc **零功能性 diff**（ideal）。
+
+---
+
+### 10. Release Gate Checklist（发布门禁）
+
+#### P0（阻塞 1.0）
+
+- [ ] 无 open P0 issue
+- [ ] `pytest -q` + `pytest conformance/ -q` 全绿
+- [ ] Mini 基线全绿
+- [ ] `docs/stability/api-freeze.md` 与代码一致
+- [ ] `config validate` / `migrate` 对 0.5–0.9 样例全通过
+- [ ] `db migrate --dry-run` 从 0.4 schema 至 1.0 全通过
+- [ ] SECURITY_REVIEW 无 open Critical/High
+- [ ] 7 天模拟长跑 + 1.0 soak 无 P0 回归
+- [ ] PyPI `1.0.0` quick start 通过
+
+#### P1（强烈建议）
+
+- [ ] 15+ benchmark CI 绿；插件示例 enable + dry-run 绿
+- [ ] 0.8 RBAC 场景测试绿（若 team GA）
+- [ ] CHANGELOG 完整；Upgrade 0.9→1.0；broken link 清零
+- [ ] `twine check` + 包内容审计
+
+---
+
+### 11. Release Notes（发布说明片段）
+
+**EN**
+
+> **1.0.0-stable** — LoopPilot reaches **production-ready stability**. This release adds no major features; it graduates the 0.9 RC freeze with formal semver promises for APIs, configuration, SQLite migrations, safety, and 7-day long-running reliability. Install with `pip install loop-pilot==1.0.0`; upgrade from 0.9.x with `loop-pilot config migrate && loop-pilot db migrate`. Breaking changes deferred to 2.0.
+
+**CN**
+
+> **1.0.0-stable** — LoopPilot 达到**生产就绪稳定版**。本版本不增加 major 新功能，在 0.9 RC 冻结基线上对 API、配置、SQLite 迁移、安全与 7 天长跑可靠性作出正式 semver 承诺。使用 `pip install loop-pilot==1.0.0` 安装；从 0.9.x 升级请执行 `loop-pilot config migrate && loop-pilot db migrate`。破坏性变更推迟至 2.0。
+
+---
+
+### 12. Post-1.0 Path（1.0 之后路线）
+
+**1.x**（additive only）：新 Connector/Adapter 插件、eval 套件扩展、跨日优先级解释、Artifact 保留、0.8 team GA 化、性能与文档。
+
+**2.0**（唯一 breaking major）：Stable API / config / DB 破坏性变更、可选企业 SSO / 托管协作 / 插件 registry（若产品确认）。
+
+**原则**：1.0 后用户应能「装一次、用三年」；2.0 才是契约重置。
+
+---
+
+### 13. Effort Estimates（工作量估算）
+
+**自当前状态（0.1 进行中）至 1.0**（单人兼职，2026-06-20 基线）：
+
+| 里程碑 | 估计剩余 | 工期 |
+|---|---|---|
+| 完成 0.1 | 25–35% | 1–3 天 |
+| 至 0.2–0.3 | 45–70% | +2–4 周 |
+| 至 0.4–0.5 | 75–90% | +4–6 周 |
+| 至 0.6–0.7 | 88–95% | +3–5 周 |
+| 至 0.8–0.9 RC | 95–100% | +4–8 周 |
+| **0.9 → 1.0** | **全路径 5–10%** | **3–7 天**（tag、soak、发布） |
+
+0.9→1.0 几乎无新开发；若 rc3 已全绿，**3–7 天**可发布 1.0。
+
+---
+
+### 1.0 仍禁止（全版本）
 
 - 自动部署、自动投稿、自动交易等高风险无人值守动作。
+- 密钥与 `SECRET` 数据进入模型上下文或公开报告。
 
 ---
 
@@ -1161,11 +1733,18 @@ loop-pilot run all --fixture-set mini --dry-run
 | 文档 | 关系 |
 |---|---|
 | [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md) | 0.1 验收清单 |
+| [34-version-roadmap-0x.md](34-version-roadmap-0x.md) | 0.x 详细规格；**§6 = 0.5 PyPI**、**§10 = 0.9 RC 完整清单**、**§11 = 1.0 概要** |
 | [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md) | 历史 V1/V2/V3 实施细节（只读参考，顶注指向本文） |
 | [30-adapter-and-model-router-roadmap.md](30-adapter-and-model-router-roadmap.md) | 0.3 Adapter 技术细节 |
-| [09-versions.md](09-versions.md) | 能力范围叙述（待与本文 semver 对齐） |
+| [09-versions.md](09-versions.md) | 能力范围叙述（Legacy；冲突以本文为准） |
 | [25-mini-run-path.md](25-mini-run-path.md) | 0.1 最小运行路径 |
+| [33-version-roadmap.md](33-version-roadmap.md) | **权威** semver 路线图（含 0.4、0.6、**0.7 evaluation-benchmark**、0.8、0.9） |
+| [21-test-fixtures-and-golden-cases.md](21-test-fixtures-and-golden-cases.md) | Golden 断言与 0.7 benchmark 对齐 |
+| `docs/evaluation/`（0.7 规划） | 评测 harness、指标、模型对比、rubric-runner 集成 |
 | `docs/plugins/`（0.6 规划） | 插件作者指南 |
+| `docs/team/`（0.8 规划） | 团队协作、RBAC、Dashboard |
+| `docs/evaluation/`（0.7 规划） | 评测与 benchmark 指南 |
+| `docs/stability/`（0.9–1.0 规划） | api-freeze、deprecation-policy、security-review |
 
 ## Prompt 文件
 
