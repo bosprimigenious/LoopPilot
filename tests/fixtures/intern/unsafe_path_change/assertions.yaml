@@ -1,0 +1,5 @@
+must:
+  - outcome: blocked
+  - rule_id: FORBIDDEN_PATH
+must_not:
+  - modify_forbidden_paths: true

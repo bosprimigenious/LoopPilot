@@ -18,13 +18,14 @@ class TraceWriter:
         with self.path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(event, ensure_ascii=False) + "\n")
 
-    def read_all(self) -> list[dict[str, Any]]:
-        if not self.path.exists():
-            return []
-        events: list[dict[str, Any]] = []
-        with self.path.open(encoding="utf-8") as fh:
-            for line in fh:
-                line = line.strip()
-                if line:
-                    events.append(json.loads(line))
-        return events
+
+def read_trace(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                events.append(json.loads(line))
+    return events

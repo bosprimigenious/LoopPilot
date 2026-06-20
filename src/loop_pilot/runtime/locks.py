@@ -1,53 +1,59 @@
-"""Local locks suitable for tests and Mini."""
+"""Cross-process file locks for Mini CLI safety."""
 
 from __future__ import annotations
 
-import threading
+import os
+import time
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator
 
 from loop_pilot.domain.errors import ErrorCode, LoopPilotError
 
 
-class LocalLockStore:
-    def __init__(self) -> None:
-        self._locks: dict[str, threading.Lock] = {}
-        self._holders: dict[str, str] = {}
-        self._meta = threading.Lock()
+class FileLockStore:
+    """Exclusive lock files — safe across processes on the same machine."""
 
-    def _get_lock(self, key: str) -> threading.Lock:
-        with self._meta:
-            if key not in self._locks:
-                self._locks[key] = threading.Lock()
-            return self._locks[key]
+    def __init__(self, lock_dir: Path, timeout_seconds: float = 30.0, poll_seconds: float = 0.05) -> None:
+        self.lock_dir = lock_dir
+        self.lock_dir.mkdir(parents=True, exist_ok=True)
+        self.timeout_seconds = timeout_seconds
+        self.poll_seconds = poll_seconds
+        self._held_paths: list[Path] = []
+
+    def _lock_path(self, key: str) -> Path:
+        safe = key.replace(":", "_").replace("/", "_").replace("\\", "_")
+        return self.lock_dir / f"{safe}.lock"
 
     @contextmanager
     def acquire(self, key: str, holder: str) -> Generator[None, None, None]:
-        lock = self._get_lock(key)
-        acquired = lock.acquire(blocking=False)
-        if not acquired:
+        path = self._lock_path(key)
+        deadline = time.monotonic() + self.timeout_seconds
+        fd: int | None = None
+        while time.monotonic() < deadline:
+            try:
+                fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.write(fd, holder.encode("utf-8"))
+                self._held_paths.append(path)
+                break
+            except FileExistsError:
+                time.sleep(self.poll_seconds)
+        else:
             raise LoopPilotError(
                 code=ErrorCode.TOOL_FAILED,
                 component="locks",
-                message=f"Lock already held: {key}",
+                message=f"Lock timeout for key: {key}",
                 retryable=False,
             )
-        with self._meta:
-            self._holders[key] = holder
         try:
             yield
         finally:
-            with self._meta:
-                self._holders.pop(key, None)
-            lock.release()
+            if fd is not None:
+                os.close(fd)
+            if path.exists():
+                path.unlink(missing_ok=True)
+            if path in self._held_paths:
+                self._held_paths.remove(path)
 
     def is_held(self, key: str) -> bool:
-        lock = self._get_lock(key)
-        return lock.locked()
-
-    def holder(self, key: str) -> str | None:
-        return self._holders.get(key)
-
-    def release_all(self) -> None:
-        with self._meta:
-            self._holders.clear()
+        return self._lock_path(key).exists()

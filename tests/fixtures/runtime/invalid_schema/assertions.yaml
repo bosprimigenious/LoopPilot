@@ -1,0 +1,3 @@
+must:
+  - error_code: MODEL_OUTPUT_INVALID
+  - not_success: true

@@ -56,19 +56,21 @@ class InternLoop:
         artifacts: list[ArtifactReference] = []
         adapter = MockAdapter(fixture_dir)
 
-        self._transition(record, RunPhase.LOCKING, trace)
-        self._transition(record, RunPhase.OBSERVING, trace)
+        self._enter_observing(record, trace)
         self._transition(record, RunPhase.SELECTING, trace)
         self._transition(record, RunPhase.PLANNING, trace)
 
         allowed_paths = ["src/**", "tests/**"]
         forbidden_paths = [".env*", "secrets/**"]
         plan_target = "src/calculator.py"
+        if fixture_name == "unsafe_path_change":
+            plan_target = ".env.local"
 
         self._transition(record, RunPhase.POLICY_CHECK, trace)
         decision = self.policy.check_write(plan_target, allowed_paths, forbidden_paths, request.dry_run)
         if not decision.allowed:
-            return self._finalize_blocked(record, trace, run_dir, decision.message, artifacts, rounds)
+            record.terminal_reason = f"{decision.rule_id}: {decision.message}"
+            return self._finalize_blocked(record, trace, run_dir, record.terminal_reason, artifacts, rounds)
 
         work_dir: Path | None = None
         try:
@@ -80,15 +82,21 @@ class InternLoop:
                 self.budget_manager.consume_round(record)
                 round_started = rfc3339()
 
-                self._transition(record, RunPhase.ACTING, trace)
-                adapter_result = adapter.execute({"role": "coding", "round": round_num})
-                self.budget_manager.consume_model_call(record)
+                try:
+                    self._transition(record, RunPhase.ACTING, trace)
+                    adapter.execute({"role": "coding", "round": round_num})
+                    self.budget_manager.consume_model_call(record)
 
-                if round_num >= 2 and not request.dry_run and work_dir:
-                    self._apply_fix(work_dir)
+                    if round_num >= 2 and not request.dry_run and work_dir:
+                        self._apply_fix(work_dir)
 
-                self._transition(record, RunPhase.EVALUATING, trace)
-                test_report = self._run_pytest(work_dir, request.dry_run, fixture_dir, round_num)
+                    self._transition(record, RunPhase.EVALUATING, trace)
+                    test_report = self._run_pytest(work_dir, request.dry_run, fixture_dir, round_num)
+                except (InterruptedError, TimeoutError, OSError) as exc:
+                    record.outcome = RunOutcome.FAILED
+                    record.terminal_reason = f"ACTING interrupted: {exc}"
+                    trace.append({"event": "interrupted", "round": round_num, "error": str(exc)})
+                    return self._finalize(record, trace, run_dir, artifacts, rounds)
                 test_artifact = self._save_text(run_dir, f"test-report-round-{round_num:02d}.md", test_report, "test_runner")
                 artifacts.append(test_artifact)
 
@@ -239,6 +247,12 @@ class InternLoop:
             size_bytes=len(content.encode()),
             created_by=created_by,
         )
+
+    def _enter_observing(self, record: RunRecord, trace: TraceWriter) -> None:
+        if record.phase == RunPhase.CREATED:
+            self._transition(record, RunPhase.LOCKING, trace)
+        if record.phase == RunPhase.LOCKING:
+            self._transition(record, RunPhase.OBSERVING, trace)
 
     def _transition(self, record: RunRecord, phase: RunPhase, trace: TraceWriter) -> None:
         self.state_machine.validate_transition(record.phase, phase)

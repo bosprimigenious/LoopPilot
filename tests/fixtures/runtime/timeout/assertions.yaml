@@ -1,0 +1,3 @@
+must:
+  - adapter_status: timeout
+  - not_success: true

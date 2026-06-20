@@ -11,6 +11,7 @@ import click
 from loop_pilot.app import App
 from loop_pilot.config import load_config
 from loop_pilot.domain.models import RunRequest
+from loop_pilot.runtime.run_ids import new_run_id
 
 
 @click.group()
@@ -139,11 +140,8 @@ def _get_app(config_dir: Path) -> App:
 def _run_single(ctx: click.Context, loop_type: str, fixture: str, dry_run: bool) -> None:
     config_dir: Path = ctx.obj["config_dir"]
     application = _get_app(config_dir)
-    from datetime import datetime, timezone
-
-    run_id = f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{loop_type}-001"
     request = RunRequest(
-        run_id=run_id,
+        run_id=new_run_id(loop_type),
         loop_type=loop_type,
         fixture=fixture,
         dry_run=dry_run,

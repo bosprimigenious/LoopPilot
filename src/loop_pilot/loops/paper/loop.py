@@ -52,9 +52,8 @@ class PaperLoop:
         artifacts: list[ArtifactReference] = []
         adapter = MockAdapter(fixture_dir)
 
+        self._enter_observing(record, trace)
         for phase in (
-            RunPhase.LOCKING,
-            RunPhase.OBSERVING,
             RunPhase.SELECTING,
             RunPhase.PLANNING,
             RunPhase.POLICY_CHECK,
@@ -227,6 +226,12 @@ class PaperLoop:
             size_bytes=len(content.encode()),
             created_by=created_by,
         )
+
+    def _enter_observing(self, record: RunRecord, trace: TraceWriter) -> None:
+        if record.phase == RunPhase.CREATED:
+            self._transition(record, RunPhase.LOCKING, trace)
+        if record.phase == RunPhase.LOCKING:
+            self._transition(record, RunPhase.OBSERVING, trace)
 
     def _transition(self, record: RunRecord, phase: RunPhase, trace: TraceWriter) -> None:
         self.state_machine.validate_transition(record.phase, phase)
