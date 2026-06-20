@@ -3,7 +3,7 @@
 本文是 LoopPilot **权威版本编号与阶段边界**。所有新文档、Prompt、Issue 和 PR 描述应优先使用本文的 semver 标签（`0.1.0-mini`、`0.2.0-practical-mvp` 等），而不是历史称呼「V1」「V2」。
 
 > **关键澄清：0.3 ≠ V1。**  
-> 旧文档中的「V1/MVP」混合了 Adapter 接入、真实工作区、SQLite 恢复和 OS 调度。新编号将其拆分为 **0.2（实用配置）→ 0.3（真实 Adapter）→ 0.4（恢复与自动化）→ 0.5（公开测试）→ 0.6（插件生态）→ 1.0（稳定 API）**。  
+> 旧文档中的「V1/MVP」混合了 Adapter 接入、真实工作区、SQLite 恢复和 OS 调度。新编号将其拆分为 **0.2（实用配置）→ 0.3（真实 Adapter）→ 0.4（恢复与自动化）→ 0.5（公开测试）→ 0.6（插件生态）→ 0.7（评测基准）→ 0.8（团队协作）→ 0.9（RC）→ 1.0（稳定 API）**。  
 > 详见 [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md) 顶部的历史映射说明。
 
 ## 当前工程焦点
@@ -24,11 +24,14 @@
 | **0.4.0-recovery-and-automation** | Recovery & Automation | SQLite、恢复、审批、调度、daily-summary | **旧文档所称「V1」的主体** |
 | **0.5.0-public-beta** | Public Beta | PyPI、文档、示例、CI 发布 | 无直接旧称 |
 | **0.6.0-plugin-ecosystem** | Plugin Ecosystem | 可扩展框架：Loop/Skill/Connector/Adapter 插件 | 无直接旧称 |
-| **1.0.0-stable** | Stable | 长期个人生产 + **稳定扩展 API** | V3 长期稳定子集 |
+| **0.7.0-evaluation-benchmark** | Evaluation Benchmark | 本地 benchmark、指标、模型对比、Golden Case | 无直接旧称（亦称 loop-eval） |
+| **0.8.0-team-cloud-preview** | Team Collaboration | 多项目 RBAC、共享审批、本地 Dashboard | 无直接旧称 |
+| **0.9.0-release-candidate** | Release Candidate | API/配置/文档冻结、compat 与 migration 门禁 | 无直接旧称 |
+| **1.0.0-stable** | Stable | **生产就绪稳定承诺**：API、配置、迁移、安全、长跑、文档 | V3 长期稳定子集 |
 
 ```text
-0.1 mini ──> 0.2 practical ──> 0.3 adapter ──> 0.4 recovery ──> 0.5 beta ──> 0.6 plugins ──> 1.0 stable
-   ↑ 当前焦点              证明真实 Adapter           每日长跑+恢复        可安装        可扩展框架
+0.1 mini ──> 0.2 practical ──> 0.3 adapter ──> 0.4 recovery ──> 0.5 beta ──> 0.6 plugins ──> 0.7 eval ──> 0.8 team ──> 0.9 RC ──> 1.0 stable
+   ↑ 当前焦点              证明真实 Adapter           每日长跑+恢复        可安装        可扩展        可评测        本地协作      接口冻结      稳定承诺
 ```
 
 ### 0.3 vs 0.4 一句话
@@ -712,11 +715,405 @@ pytest tests/unit/test_plugin_policy.py -q
 
 ---
 
+## 0.7.0-evaluation-benchmark — Evaluation Benchmark
+
+**版本标签**：`0.7.0-evaluation-benchmark`（亦称 loop-eval）
+
+### 一句话
+
+LoopPilot 从「**可扩展**」（0.6）进化为「**可评测**」：用 benchmark、指标、Golden Case 与模型对比，系统化证明 Loops / Agents / Skills / Adapters 是否真正有效。
+
+### 定位：0.6 vs 0.7 vs 1.0
+
+| | **0.6 plugin-ecosystem** | **0.7 evaluation-benchmark** | **1.0 stable** |
+|---|---|---|---|
+| 核心问题 | 别人能否写自己的 Loop/Skill/Adapter？ | **跑得好不好？** | 接口与行为是否**长期可维护**？ |
+| 评测 | pytest + fixture（开发期） | **Evaluation Harness** + 指标报告 | 长期趋势与健康检查 |
+| Registry | 无 | `eval publish-local` / `history`（0.8 项目级共享依赖此契约） | 同左 + semver 承诺 |
+
+0.6 = 可以扩展；0.7 = 可以**评价**扩展效果；1.0 = 靠数据与稳定契约说话的长期生产。
+
+### Evaluation Harness CLI
+
+| 命令 | 说明 |
+|---|---|
+| `loop-pilot eval list` | 列出 benchmark 套件与 case |
+| `loop-pilot eval run <suite>` | 运行评测（默认 MockAdapter + dry-run） |
+| `loop-pilot eval compare <a> <b>` | 对比两次 eval run |
+| `loop-pilot eval report <eval-id>` | 渲染 `eval-report.md` |
+| `loop-pilot eval publish-local <name>` | 发布到本地 registry（0.8 按 project 隔离） |
+| `loop-pilot eval history` | 本地 benchmark 运行历史 |
+
+Harness 默认离线可 CI；真实 Adapter 对比需显式 `--allow-real-adapters` 与 env。
+
+### Benchmark 与指标（概要）
+
+- `benchmarks/`：Intern / Paper / DailyNews 各 ≥5 case；每 case 含 `input/`、`expected/`、`rubric.yaml`、`metadata.yaml`。
+- 指标：成功率、成本、延迟、安全拦截率、路由准确率、trace/artifact 完整度等。
+- 产物：`var/eval/<eval-id>/eval-report.md`、`eval-results.json`、`eval-summary.csv`。
+- 可选 [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner) 作 **external_cli** evaluator（不合并仓库）。
+
+完整 Harness、Golden Case 与按 Loop 指标表见 [34-version-roadmap-0x.md §8](34-version-roadmap-0x.md#8-07-evaluation-benchmark-070-evaluation-benchmark) 与 `docs/evaluation/`（规划）。
+
+### 验收标准（概要）
+
+1. `eval list|run|compare|report` 命令可用。
+2. 15+ benchmark case 在 MockAdapter 下 CI 稳定通过。
+3. 0.1–0.6 基线不退化。
+
+### 不可做（0.7）
+
+公开排行榜、云端评测平台、默认昂贵 API 评测、合并外部 rubric 仓库。
+
+### 工作量估算
+
+约为 **0.6 完成后工程量的 20–30%**（单人兼职约 **12–18 人日**）。
+
+---
+
+## 0.8.0-team-cloud-preview — Team Collaboration Preview
+
+**版本标签**：`0.8.0-team-cloud-preview`（亦称 **collaboration-preview**）
+
+### 一句话
+
+从**个人本地工具**进化为**本地优先的团队协作**：多项目 workspace、RBAC、共享审批与审计、用量核算、本地 Web Dashboard、团队级插件策略。**不是** cloud SaaS。
+
+### 定位：0.7 vs 0.8 vs 0.9
+
+| | **0.7 eval** | **0.8 team collaboration** | **0.9 release-candidate** |
+|---|---|---|---|
+| 核心问题 | 能否度量质量？ | 能否**多人安全协作**？ | 接口是否可冻结？ |
+| 多用户 | 单用户本地 | **项目级** RBAC + 共享审批 | 同 0.8，加兼容性矩阵 |
+| UI | CLI only | **本地 Dashboard** 预览（:7860） | Dashboard 行为冻结 |
+| 分发 | 本地 registry | `~/.loop-pilot/projects/` | migration + compat tests |
+| 云 | 无 | **无**（local-first） | 无 |
+
+0.7 = 能评测；0.8 = 能协作；0.9 = 能承诺接口稳定。
+
+---
+
+### 项目 Workspace
+
+多项目隔离：每个项目在 `~/.loop-pilot/projects/<project-id>/` 下拥有独立配置、状态索引、审批队列与 benchmark registry 引用。
+
+| 命令 | 说明 |
+|---|---|
+| `loop-pilot project create <name>` | 创建项目 workspace（生成 id、默认 RBAC、目录树） |
+| `loop-pilot project list` | 列出本地已知项目 |
+| `loop-pilot project inspect <project-id>` | 成员、角色、插件策略、用量摘要 |
+
+目录约定（示意）：
+
+```text
+~/.loop-pilot/projects/<project-id>/
+├── project.yaml           # 元数据、RBAC、插件策略
+├── state/                 # 项目级 SQLite 或索引（指向 var/state）
+├── approvals/             # 共享审批队列索引
+├── eval/                  # 共享 benchmark registry（0.7 契约）
+└── usage/                 # 用量聚合快照
+```
+
+当前活跃项目可通过 `LOOP_PILOT_PROJECT` 或 `loop-pilot project use <id>` 切换（实现细节见 `docs/team/`）。
+
+---
+
+### RBAC
+
+项目内五种角色；权限为 **additive**，高角色包含低角色能力（除 owner 转让外）。
+
+| 角色 | 典型权限 |
+|---|---|
+| **owner** | 项目创建/删除、成员与角色管理、插件策略、全部 run/approve |
+| **maintainer** | 配置变更、插件 enable、run all、审批（除 owner-only 策略） |
+| **reviewer** | 查看 run/artifact、`approve` / `reject`、只读 Dashboard |
+| **runner** | 触发 `run` / `run all`、查看自己的 run；**不可**改配置或插件策略 |
+| **viewer** | 只读：`status`、`inspect`、`report`、Dashboard 浏览 |
+
+安全要求：
+
+- 所有角色变更写入 **team audit trail**（追加事件，不可静默覆盖）。
+- CLI 与 Dashboard 操作均记录 `actor` + `role` + `project_id`。
+- 无项目上下文时，行为退化为 0.4 个人模式（向后兼容）。
+
+---
+
+### 共享审批（Shared Approval）
+
+在 0.4 个人 `approvals` 之上，增加**项目级**可见性与多人批复语义。
+
+| 命令 | 说明 |
+|---|---|
+| `loop-pilot approvals list [--project]` | 项目内待审批队列 |
+| `loop-pilot approvals inspect <approval-id>` | 详情：run、reason、请求者、过期时间 |
+| `loop-pilot approvals approve <approval-id>` | reviewer+ 可执行 |
+| `loop-pilot approvals reject <approval-id> --reason "..."` | reviewer+ 可执行 |
+
+- **Team audit trail**：每次 list/inspect/approve/reject 产生审计事件，可在 Dashboard 与 `trace.jsonl` 关联查询。
+- 审批 TTL 与 0.4 `approvals.default_ttl_minutes` 对齐；过期 → BLOCKED，全项目可见。
+- 个人模式（无 project）下命令语义与 0.4 一致。
+
+---
+
+### 本地 Web Dashboard 预览
+
+**Local-first** 只读/有限写 UI；不部署到公网，不替代 CLI 为唯一控制面。
+
+| 项 | 说明 |
+|---|---|
+| 栈 | FastAPI 后端 + 简单前端（静态或轻量 SPA） |
+| 启动 | `loop-pilot dashboard start` |
+| 默认端口 | `:7860`（可配置） |
+| 绑定 | 默认 `127.0.0.1`；显式 `--host 0.0.0.0` 需文档警告 |
+
+Dashboard 预览范围：
+
+- 项目列表与当前 project 概览
+- Run 状态、pending approvals、最近 daily-summary 链接
+- 用量摘要（today / week / project）
+- Benchmark 历史与对比入口（只读，写操作仍走 CLI）
+
+---
+
+### 共享 Benchmark Registry（项目内）
+
+在 **0.7** eval 契约之上，registry **按 project 隔离**：
+
+| 命令 | 说明 |
+|---|---|
+| `loop-pilot eval publish-local <name> [--project]` | 将 eval run 发布到当前项目 registry |
+| `loop-pilot eval history [--project]` | 项目级 benchmark 运行历史 |
+| `loop-pilot eval compare <a> <b> [--project]` | 同项目内对比 |
+
+团队成员按 RBAC：`viewer` 只读；`runner+` 可 publish；`maintainer+` 可管理 baseline 标签（若启用）。
+
+---
+
+### 成本 / 用量核算（Usage Accounting）
+
+基于 0.4 `adapter_calls` 与 Router 日志聚合，**本地存储**，不上传云端。
+
+| 命令 | 说明 |
+|---|---|
+| `loop-pilot usage today [--project]` | 当日 token/调用/估算费用摘要 |
+| `loop-pilot usage week [--project]` | 近 7 日滚动窗口 |
+| `loop-pilot usage project [--project]` | 项目生命周期累计 |
+
+- 费用为**估算**（配置单价表），非 billing 系统。
+- Dashboard 展示与 CLI 同源数据。
+- `SECRET` 与原始 prompt 不出现在用量报表。
+
+---
+
+### 团队安全插件策略（Team Plugin Policy）
+
+在 0.6 本地 `plugins.local.yaml` 之上，项目级 `project.yaml` 增补：
+
+```yaml
+plugins:
+  require_approval: true          # 启用新插件需 maintainer+ 批准
+  allowed_plugins:                # 空 = 仅 bundled；非空 = 白名单
+    - hello-loop
+  blocked_permissions:            # 团队禁止的能力（即使 manifest 声明）
+    - shell
+    - network_write
+```
+
+- `PolicyEngine` 合并：**blocked_permissions** 优先于插件 manifest。
+- 未在白名单且 `allowed_plugins` 非空 → 拒绝 enable。
+- `require_approval: true` 时，`plugins enable` 创建审批项而非立即生效。
+
+---
+
+### 模块路径（0.8 目标布局）
+
+```text
+src/loop_pilot/projects/          # project create/list/inspect、目录布局
+src/loop_pilot/auth/              # RBAC、角色解析、actor 上下文
+src/loop_pilot/approvals/         # 共享审批队列 + team audit trail
+src/loop_pilot/usage/             # 用量聚合 today/week/project
+src/loop_pilot/dashboard/         # FastAPI app、静态前端、:7860
+src/loop_pilot/cli_project.py     # project *
+src/loop_pilot/cli_approvals.py   # approvals list/inspect/approve/reject（团队语义）
+src/loop_pilot/cli_dashboard.py   # dashboard start
+src/loop_pilot/cli_usage.py       # usage today/week/project
+
+docs/team/                        # 团队协作部署、RBAC、Dashboard 安全说明
+```
+
+0.8 **仅文档与目录约定**；实现前不得破坏 0.1 Mini 验收。
+
+---
+
+### 不可做（0.8）
+
+| 排除项 | 说明 |
+|---|---|
+| Cloud SaaS / 托管多租户 | **本地优先**；无 central server 依赖 |
+| Multi-tenant billing / 订阅计费 | 仅本地用量估算 |
+| Enterprise SSO（SAML/OIDC 企业 IdP） | 本地用户/角色文件或 OS 用户映射即可 |
+| 在线插件市场 / registry 服务 | 延续 0.6 本地 only |
+| 自动 push / PR / deploy | 全版本禁止 |
+| 公网默认暴露 Dashboard | 必须默认 bind 127.0.0.1 |
+
+---
+
+### 验收标准
+
+1. **Project workspace**：`project create/list/inspect` 创建可切换的项目目录树。
+2. **RBAC**：runner 无法改插件策略；viewer 无法 approve；越权 CLI 返回明确错误。
+3. **共享审批**：`approvals list/inspect/approve/reject` 全链路可审计；audit trail 可查询。
+4. **Dashboard**：`dashboard start` 在 `:7860` 展示 run/pending/usage；默认仅 localhost。
+5. **Eval registry**：项目内 `eval publish-local/history/compare` 与 0.7 契约一致且隔离。
+6. **Usage**：`usage today/week/project` 与 adapter_calls 聚合一致（允许估算误差文档化）。
+7. **插件策略**：`blocked_permissions` 与 `allowed_plugins` enforced；`require_approval` 走审批流。
+8. **安全测试**：RBAC 越权、Dashboard 未授权访问、跨 project 数据泄漏 — pytest 覆盖。
+9. **0.1–0.7 基线不退化**：无 project 上下文时 Mini dry-run 与个人模式仍通过。
+10. **Team audit trail**：approve/reject/角色变更均有不可变事件记录。
+
+### 推荐验收命令
+
+```bash
+loop-pilot project create demo-team
+loop-pilot project list
+loop-pilot project inspect demo-team
+
+loop-pilot run intern --fixture simple_python_bug --dry-run
+loop-pilot approvals list
+loop-pilot approvals inspect <approval-id>
+loop-pilot approvals approve <approval-id>
+
+loop-pilot eval publish-local baseline-v1
+loop-pilot eval history
+loop-pilot eval compare baseline-v1 baseline-v2
+
+loop-pilot usage today
+loop-pilot usage week
+loop-pilot usage project
+
+loop-pilot dashboard start    # 浏览器打开 http://127.0.0.1:7860
+
+pytest tests/unit/test_rbac.py -q
+pytest tests/unit/test_team_approvals.py -q
+pytest tests/integration/test_dashboard_local.py -q
+```
+
+---
+
+### 工作量估算
+
+约为 **0.7 完成后工程量的 25–35%**（单人兼职约 **18–28 人日**）：
+
+| 工作包 | 估算 |
+|---|---|
+| projects workspace + CLI | 4–5 |
+| auth / RBAC + audit trail | 4–6 |
+| 共享 approvals + CLI | 3–4 |
+| usage 聚合 + CLI | 2–3 |
+| dashboard（FastAPI + 前端） | 5–7 |
+| 团队插件策略 + Policy 集成 | 2–3 |
+| docs/team + 安全/集成测试 | 3–4 |
+| **合计** | **18–28** |
+
+假设 0.7 eval registry 与 0.4 SQLite/approvals 已验收。
+
+---
+
+### 版本发布说明片段
+
+**EN**
+
+> **0.8.0-team-cloud-preview** — LoopPilot evolves from a personal local tool to **local-first team collaboration**: multi-project workspaces under `~/.loop-pilot/projects/`, RBAC (owner/maintainer/reviewer/runner/viewer), shared approvals with team audit trail, usage accounting (`usage today|week|project`), a local Web Dashboard preview on `:7860` (`loop-pilot dashboard start`), project-scoped benchmark registry, and team plugin policy (`require_approval`, `allowed_plugins`, `blocked_permissions`). Not cloud SaaS—no multi-tenant billing, enterprise SSO, or plugin marketplace.
+
+**CN**
+
+> **0.8.0-team-cloud-preview** — LoopPilot 从个人本地工具升级为**本地优先团队协作**：`~/.loop-pilot/projects/` 多项目 workspace、五级 RBAC、带团队审计 trail 的共享审批、用量核算、`:7860` 本地 Dashboard 预览、项目内 benchmark registry 与团队插件策略。**非**云端 SaaS——不含多租户计费、企业 SSO 或插件市场。
+
+---
+
+## 0.9.0-release-candidate — Release Candidate
+
+**版本标签**：`0.9.0-release-candidate`（PyPI：`0.9.0rc1` / `rc2` / `rc3`）
+
+> **0.9 不是加功能**，是 **冻结、测试、修复、兼容、清理、文档定稿**。完整清单见 [34-version-roadmap-0x.md §10](34-version-roadmap-0x.md#10-09-release-candidate--stability-freeze-090-release-candidate)。
+
+### 一句话
+
+0.8 ≈ 功能完备 preview；**0.9 = 最后一次全面验收**；**1.0 = 对稳定性的正式承诺**。
+
+### 0.9 核心原则（允许的工作类型）
+
+1. **Freeze** — API、配置 schema、DB migration 进入冻结窗口
+2. **Test** — conformance、安全、7 天模拟长跑
+3. **Fix** — P0/P1 bug、兼容性问题、文档错误
+4. **Compat** — 0.5→0.9 升级路径、deprecation 宽限期
+5. **Cleanup** — 死代码、实验 flag、未文档化 CLI 标 deprecated
+6. **Docs** — 用户文档、API 参考、迁移指南定稿
+
+**禁止**：新 Loop、新 Adapter 类型、破坏性 API/config/DB 变更（一律推迟到 **2.0**）。
+
+### 冻结项（概要）
+
+| 冻结项 | 交付物 |
+|---|---|
+| **Stable API** | `docs/stability/api-freeze.md` + `conformance/` 套件 |
+| **配置 Schema** | `config/schema_versions/` + `config validate` / `migrate` / `doctor` |
+| **DB migration** | `db/migrations/` additive-only + `db migrate --dry-run` / `db doctor` |
+| **插件 manifest** | `loop-pilot-plugin.yaml` 必填字段与 permissions 块 |
+| **文档** | 用户-facing 文档与 CLI `--help` 一致；broken link 清零 |
+| **Security** | `docs/stability/security-review-0.9.md`；Critical/High 清零方可 rc1 |
+| **Deprecation** | `docs/stability/deprecation-policy.md` |
+
+### RC 流程
+
+```text
+0.8 验收 → stability/0.9 分支 → 0.9.0rc1 → rc2（P0 清零 + 7 天长跑）→ rc3（仅 bugfix）→ 1.0.0-stable
+```
+
+rc(N+1) 仅当 rc(N) 无 open P0 且 conformance CI 连续 7 天绿；1.0 自末位 rc **理想情况下零功能性 diff**。
+
+### 0.8 vs 0.9 vs 1.0 区分
+
+| | **0.8 team collaboration** | **0.9 release-candidate** | **1.0 stable** |
+|---|---|---|---|
+| 目标 | 交付协作能力 preview | **证明可发布** | **正式稳定承诺** |
+| 接口 | 可演进 | **冻结** | semver 承诺 + 弃用周期 |
+| 变更 | 可小改 | bugfix only | patch / security only |
+| 云/SaaS | 不做 | 不做 | 不做 |
+
+### 验收命令（示例）
+
+```bash
+loop-pilot doctor
+loop-pilot config validate
+loop-pilot config migrate --dry-run
+loop-pilot db doctor
+loop-pilot db migrate --dry-run
+pytest -q && pytest conformance/ -q
+loop-pilot run all --fixture-set mini --dry-run
+```
+
+### 工作量估算
+
+约为 **到 0.8 已完成工程量的 15–25%**（稳定化工程；单人兼职约 **2–4 周**）。
+
+### 版本发布说明片段
+
+**EN**
+
+> **0.9.0-release-candidate** — API, configuration, documentation, and plugin interfaces are frozen. Migration checks, conformance tests, security review, and a 7-day reliability simulation gate the 1.0 stable release. Bugfixes only during RC; no new features.
+
+**CN**
+
+> **0.9.0-release-candidate** — 冻结 API、配置、文档与插件接口；通过 migration 检查、conformance 测试、安全审计与 7 天模拟长跑后进入 **1.0.0-stable**。RC 期间仅修 bug，不增新功能。
+
+---
+
 ## 1.0.0-stable — Stable
 
 ### 目标
 
-长期个人生产环境稳定运行，决策可审计、语义跨日一致；**冻结 Stable 扩展 API**（0.6 引入的 Protocol 进入 semver 承诺）。
+长期个人/团队生产环境稳定运行，决策可审计、语义跨日一致；**冻结 Stable 扩展 API**（0.6 引入的 Protocol 经 **0.9 RC** 后进入 semver 承诺）。
 
 ### 范围（方向）
 
@@ -746,7 +1143,7 @@ pytest tests/unit/test_plugin_policy.py -q
 | V1 中的 Adapter/Router | **0.3.0-adapter-mvp** | 旧误称「V1」常指此层 — **应称 0.3** |
 | V1 中的 SQLite/恢复/调度 | **0.4.0-recovery-and-automation** | 旧「V1」的每日自动化主体 |
 | V2 Connector/核验扩展 | **0.3 部分 + 0.4 部分 + 1.0** | 按能力拆入各版 |
-| V3 长期稳定 | **1.0.0-stable** | 个人生产 + 稳定插件 API |
+| V3 长期稳定 | **1.0.0-stable** | 个人/团队生产 + 稳定插件 API（经 0.9 RC） |
 
 ---
 

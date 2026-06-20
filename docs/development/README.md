@@ -9,14 +9,14 @@
 - PyPI distribution 与 CLI：`loop-pilot`。
 - Python import 与源码目录：`loop_pilot` / `src/loop_pilot/`。
 - **阶段版本**：采用 **0.x 体系**（0.1 → … → **0.5 public-beta** → **0.6 plugin-ecosystem** → **0.7 evaluation-benchmark** → **0.8 team-cloud-preview** → **0.9 release-candidate** → **1.0 stable**），semver 权威见 [33-version-roadmap.md](33-version-roadmap.md)；**0.5 完整实现清单**见 [34-version-roadmap-0x.md §6](34-version-roadmap-0x.md#6-05-public-beta--pypi050-public-beta)；**0.9 RC 规格**见 [34-version-roadmap-0x.md §10](34-version-roadmap-0x.md#10-09-release-candidate--stability-freeze090-release-candidate)。
-- **当前工程焦点**：**0.2 Practical MVP**（0.1 Phase A 已于 2026-06-21 验收通过）；0.3–0.9 仍为文档规划，**不得提前实现**。
+- **当前工程焦点**：**仅 0.1 Mini-MVP**（Phase A checklist）；0.2–0.9 均为文档规划，**不得提前实现**。
 - 0.1 状态：本地 JSON 快照 + JSONL 事件，通过 `StateStore` 接口访问。
 - 0.4 状态：SQLite、事务检查点、恢复、审批、调度、daily-summary（**旧称「V1」每日自动化 = 0.4，不是 0.3**）。
 - 0.5 状态：PyPI、开源 README、`init demo`、examples、release CI、CONTRIBUTING/SECURITY（**旧 V1 PyPI/开源 = 0.5，不是 0.4**）。
 - 0.6 状态：本地插件生态（Loop/Skill/Connector 扩展）；**文档规划**。
-- 0.7 状态：benchmark、模型对比、Eval report；**文档规划**。
-- 0.8 状态：团队/项目 preview、角色权限、Dashboard；**文档规划**。
-- 0.9 状态：**API/配置/DB 冻结、conformance、安全审计、7 天长跑、文档定稿**；**不是加功能**；**文档规划**。
+- 0.7 状态：本地 eval / benchmark registry（**stub**，见 33 §0.7）；**文档规划**。
+- 0.8 状态：本地优先团队协作（多项目、RBAC、共享审批、Dashboard :7860、用量核算；**非** cloud SaaS，见 33 §0.8）；**文档规划**。
+- 0.9 状态：RC 接口冻结、migration 与兼容性测试（见 33 §0.9）；**文档规划**。
 - 1.0 状态：0.9 RC 通过后的 **正式 stable 承诺**。
 - 0.1 CLI：`doctor`、`run`、`run all`、`status`、`inspect`。
 - `resume`、`approve`、`reject`、`cancel` 从 **0.4** 开始；0.1 不暴露占位或假成功命令。
@@ -54,7 +54,7 @@
 29. [30-adapter-and-model-router-roadmap.md](30-adapter-and-model-router-roadmap.md)：Adapter 契约、ModelRouter 能力与 V1 接入顺序。
 30. [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md)：Mini 后 V1/MVP、V2、V3 的实施路线和阶段边界（Legacy 任务分解）。
 31. [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md)：0.1 Mini-MVP 验收范围与验证命令。
-32. [33-version-roadmap.md](33-version-roadmap.md)：**权威** semver 路线图（含 0.4、0.6 plugin-ecosystem、**0.7 evaluation-benchmark**）。
+32. [33-version-roadmap.md](33-version-roadmap.md)：**权威** semver 路线图（含 0.4、0.6 plugin-ecosystem、**0.7 eval**、**0.8 team collaboration**、**0.9 RC**）。
 33. [33-next-steps-0.2.md](33-next-steps-0.2.md)：当前行动项（0.1 后 0.2）；§7 含 **0.5 远期 checklist**；§10 含 **0.6–0.9 预览**。
 34. [34-version-roadmap-0x.md](34-version-roadmap-0x.md)：**0.1→1.0 完整路线图**；§6 = 0.5 Public Beta；§7–§9 = 0.6–0.8 概要；**§10 = 0.9 RC 完整规格**。
 35. [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md)：0.5 规划决策日志。
