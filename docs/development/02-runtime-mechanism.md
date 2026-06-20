@@ -100,20 +100,33 @@ finalization_reserve_minutes: 5
 
 - 同一工作区不能被两个写 Run 同时占用。
 - 相同目标、输入哈希和活动 Run 不得重复启动。
-- 恢复沿用原 `run_id`，新增 `attempt_id`。
-- 每个阶段完成后提交状态事务，再标记检查点有效。
-- 恢复前重新计算工作区哈希；外部已修改时进入人工确认。
+- Mini 使用本地 JSON 状态与 JSONL 事件，支持 `status/inspect` 和安全中断，但不支持恢复执行。
+- V1 恢复沿用原 `run_id`，新增 `attempt_id`。
+- V1 每个阶段完成后提交 SQLite 状态事务，再标记检查点有效。
+- V1 恢复前重新计算工作区哈希；外部已修改时进入人工确认。
 - 报告生成失败不撤销已验证结果，可单独重建报告。
 
-## 7. 人工控制
+## 7. CLI 控制面
+
+Mini 只暴露真实可用命令：
 
 ```bash
-looppilot status
-looppilot inspect <run-id>
-looppilot approve <run-id>
-looppilot reject <run-id> --reason "..."
-looppilot resume <run-id>
-looppilot cancel <run-id>
+loop-pilot doctor
+loop-pilot run intern
+loop-pilot run paper
+loop-pilot run daily-news
+loop-pilot run all
+loop-pilot status
+loop-pilot inspect <run-id>
 ```
 
-审批只批准报告中列明的动作，不构成对后续未知动作的长期授权。
+V1 在实现持久化恢复与审批状态回写后增加：
+
+```bash
+loop-pilot approve <run-id>
+loop-pilot reject <run-id> --reason "..."
+loop-pilot resume <run-id>
+loop-pilot cancel <run-id>
+```
+
+Mini 不注册这些 V1 命令，不提供占位输出。V1 审批只批准报告中列明的动作，不构成对后续未知动作的长期授权。

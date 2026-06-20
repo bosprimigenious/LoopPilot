@@ -21,7 +21,7 @@ content_hash: sha256 canonical payload
 ```yaml
 run_id: "2026-06-20T073000+0800-intern-001"
 loop_type: intern | paper | daily_news
-trigger: manual | schedule | resume
+trigger: manual | schedule | resume  # resume 从 V1 开始
 objective: string | null
 workspace_id: string
 config_snapshot_hash: sha256
@@ -193,6 +193,8 @@ raw_artifact: ArtifactReference | null
 DailyNewsItem 增加 `category`、`confirmed_facts`、`inferences`、`relevance_score`、`reliability_score`、`actionability_score`、`confidence`、`cross_sources` 和 `route_decision`。
 
 ## 11. ReviewRecord
+
+ReviewRecord 从 V1 开始由 CLI 持久化。Mini 只在 Markdown 报告中给出人工 Review 建议，不提供状态回写命令。
 
 ```yaml
 review_id: string

@@ -17,7 +17,7 @@
 | 信息源与关键词 | 05、13 | 信息源进入 Connector 计划；具体论文关键词进入项目配置 |
 | 模型建议 | 06 | 具体品牌改为逻辑模型角色，供应商放配置 |
 | 三轮/30 分钟 | 02、03、04、05、11 | 保留，并增加 25+5 分钟收尾机制 |
-| Markdown 报告与 trace | 07 | 保留；机器状态使用 SQLite/JSONL |
+| Markdown 报告与 trace | 07 | 保留；Mini 使用 JSON/JSONL，V1 使用 SQLite + JSONL |
 | 简单 rubric 的问题 | 04 | 保留，正式改成证据驱动评价管线 |
 | 五层 Paper Evaluator | 04、14 | 扩展为 E1–E6，Revision Planner 独立为 E7 |
 | agentic-rubric-runner 结合 | 本文第 5 节 | 保留为可选集成，不作为核心依赖 |

@@ -1,5 +1,7 @@
 # 23 人工 Review 协议
 
+本协议的完整 CLI 状态回写从 V1 开始。Mini 仅生成 Review 建议，用户可以查看和手工处理，但不存在 `approve/reject/run-next-round` 命令。
+
 ## 1. Review 决策
 
 ```text

@@ -13,8 +13,9 @@
 | CLI | Typer 或等价成熟 CLI 库 |
 | 数据契约 | Pydantic + JSON Schema |
 | 配置 | YAML + Schema 校验 |
-| 状态 | SQLite |
-| Trace | SQLite/JSONL |
+| Mini 状态 | 本地 JSON `StateStore` |
+| Mini Trace | JSONL |
+| V1 状态与恢复 | SQLite `StateStore` |
 | HTTP | httpx 或等价可超时客户端 |
 | RSS/HTML | feedparser、BeautifulSoup 或来源专用解析器 |
 | 报告 | Markdown 模板 |
@@ -110,7 +111,7 @@ Agent 间协作只能通过 Orchestrator 和已持久化 Artifact 完成。
 | L2 Loop Definition | 否 | 定义阶段、角色、停止条件和输出 |
 | L3 Runtime | 否 | 状态机、Retry、Policy、Artifact 必须确定性 |
 | L4 Capability | 是 | 所有 Agent、Skill、Tool、Connector、Adapter |
-| L5 State & Evidence | 否 | SQLite、Trace、报告、缓存和工作区 |
+| L5 State & Evidence | 否 | Mini JSON/JSONL；V1 SQLite；报告、缓存和工作区 |
 
 所谓“OrchestratorAgent”在本项目中不成立。需要复杂任务选择时，由 L4 的 PlannerAgent 提交建议，L1 Orchestrator 依据 Schema、Policy 和预算决定是否采用。
 
@@ -252,7 +253,7 @@ Worker → Evaluator → Diagnoser/Reflector → Orchestrator → 下一 Round
 ## 12. Agent 文件结构
 
 ```text
-src/looppilot/agents/<agent_name>/
+src/loop_pilot/agents/<agent_name>/
 ├── agent.py
 ├── input.py
 ├── output.py

@@ -4,13 +4,15 @@
 
 | 数据 | 格式 | 原因 |
 |---|---|---|
-| Run、Round、状态、锁 | SQLite | 事务、查询和恢复 |
-| 追加事件 | JSONL/SQLite | 审计与重放 |
+| Mini Run、Round、状态 | JSON 快照 | 离线、透明、可检查 |
+| Mini 追加事件 | JSONL | 审计与重放 |
+| V1 Run、Round、状态、锁 | SQLite | 事务、查询和恢复 |
+| V1 追加事件 | JSONL/SQLite | 审计与重放 |
 | 配置 | YAML | 易读、可版本化 |
 | 用户报告 | Markdown | 统一阅读与长期保存 |
 | Patch/测试原始输出 | 原格式 + Markdown 摘要 | 保留证据 |
 
-用户可见结论必须有 Markdown；内部机器状态不能只靠 Markdown 解析。
+用户可见结论必须有 Markdown；内部机器状态不能只靠 Markdown 解析。所有 Loop 只依赖 `StateStore` 接口，不能直接依赖 JSON 文件或 SQLite。
 
 ## 2. 关键对象
 

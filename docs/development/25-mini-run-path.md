@@ -1,6 +1,6 @@
 # 25 Mini 最小可运行路径
 
-Mini 的目的不是展示功能数量，而是用 Mock 和小型 fixture 证明三条 Loop 共用 Runtime 后可以循环、停止、恢复、验收和报告。
+Mini 的目的不是展示功能数量，而是用 Mock 和小型 fixture 证明三条 Loop 共用 Runtime 后可以循环、停止、安全中断、验收和报告。Mini 不实现恢复执行。
 
 ## 1. 前置完成
 
@@ -16,7 +16,7 @@ Mini 的目的不是展示功能数量，而是用 Mock 和小型 fixture 证明
 ```bash
 python scripts/bootstrap_local.py --dry-run
 python scripts/bootstrap_local.py
-looppilot doctor
+loop-pilot doctor
 ```
 
 验收：目录和示例配置生成；重复运行不覆盖用户修改；doctor 无阻塞错误。
@@ -30,7 +30,7 @@ looppilot doctor
 ## 4. Step 3：Intern Mini
 
 ```bash
-looppilot run intern --fixture simple_python_bug
+loop-pilot run intern --fixture simple_python_bug
 ```
 
 验收：创建隔离 worktree；修复预置 Bug；真实 pytest 通过；diff 不越界；生成 development-report。
@@ -38,7 +38,7 @@ looppilot run intern --fixture simple_python_bug
 ## 5. Step 4：Paper Mini
 
 ```bash
-looppilot run paper --fixture unsupported_claim
+loop-pilot run paper --fixture unsupported_claim
 ```
 
 验收：提取 claim；发现证据不足；使用固定可信来源修订或降低措辞；不编造引用；重新评价；生成 paper-development-report。
@@ -46,24 +46,24 @@ looppilot run paper --fixture unsupported_claim
 ## 6. Step 5：DailyNews Mini
 
 ```bash
-looppilot run daily-news --fixture github_star_snapshots
+loop-pilot run daily-news --fixture github_star_snapshots
 ```
 
 验收：离线读取两日快照；正确计算增量；去重；生成不超过上限的日报和候选任务。
 
-## 7. Step 6：失败与恢复
+## 7. Step 6：失败与安全中断
 
 - 在 ACTING 中注入中断；
-- 运行 `looppilot inspect`；
-- 校验工作区和检查点；
-- 运行 `looppilot resume`。
+- 运行 `loop-pilot inspect`；
+- 校验工作区、JSON 状态和 JSONL 事件；
+- 确认 CLI 没有注册 `resume/approve/reject/cancel`。
 
-验收：不重复不确定写操作；恢复生成新 attempt；最终报告包含中断历史。
+验收：不重复不确定写操作；Run 进入可解释的失败/中断结果；报告包含中断历史。恢复执行与新 attempt 从 V1 开始。
 
 ## 8. Step 7：顺序运行
 
 ```bash
-looppilot run all --fixture-set mini
+loop-pilot run all --fixture-set mini
 ```
 
 验收：DailyNews → Intern → Paper 顺序正确；单 Loop 失败不污染另两个；生成每日总报告。

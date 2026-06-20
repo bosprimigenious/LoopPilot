@@ -4,7 +4,7 @@
 
 ```text
 config/
-├── looppilot.yaml
+├── loop-pilot.yaml
 ├── intern.yaml
 ├── paper.yaml
 ├── daily_news.yaml
