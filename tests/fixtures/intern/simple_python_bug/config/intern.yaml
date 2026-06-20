@@ -1,0 +1,6 @@
+allowed_paths:
+  - "src/**"
+  - "tests/**"
+forbidden_paths:
+  - ".env*"
+  - "secrets/**"

@@ -1,0 +1,37 @@
+{
+  "repositories": [
+    {
+      "repo_id": "repo-alpha",
+      "name": "alpha-toolkit",
+      "url": "https://github.com/example/alpha-toolkit",
+      "stars": 130,
+      "tier": "B",
+      "confidence": "high",
+      "category": "github",
+      "published_at": "2026-06-20T08:00:00+00:00",
+      "event_at": "2026-06-20T08:00:00+00:00"
+    },
+    {
+      "repo_id": "repo-beta",
+      "name": "beta-agent",
+      "url": "https://github.com/example/beta-agent",
+      "stars": 255,
+      "tier": "B",
+      "confidence": "medium",
+      "category": "github",
+      "published_at": "2026-06-20T09:00:00+00:00",
+      "event_at": "2026-06-20T09:00:00+00:00"
+    },
+    {
+      "repo_id": "repo-gamma",
+      "name": "gamma-new",
+      "url": "https://github.com/example/gamma-new",
+      "stars": 50,
+      "tier": "B",
+      "confidence": "high",
+      "category": "github",
+      "published_at": "2026-06-20T10:00:00+00:00",
+      "event_at": "2026-06-20T10:00:00+00:00"
+    }
+  ]
+}

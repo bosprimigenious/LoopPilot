@@ -12,15 +12,31 @@ license = {text = "Apache-2.0"}
 authors = [
   {name = "bosprimigenious"},
 ]
-dependencies = []
+dependencies = [
+  "click>=8.1",
+  "PyYAML>=6.0",
+  "jsonschema>=4.20",
+]
 
 [project.scripts]
 loop-pilot = "loop_pilot.cli:app"
 
 [project.optional-dependencies]
-dev = []
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.4",
+]
 news = []
-all = []
+all = ["loop-pilot[dev]"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--ignore=tests/fixtures"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
 
 [tool.setuptools.packages.find]
 where = ["src"]

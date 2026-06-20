@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://loop-pilot.local/schemas/run-record.json",
+  "title": "RunRecord",
+  "type": "object",
+  "required": ["run_id", "phase", "loop_type", "started_at"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "run_id": {"type": "string"},
+    "attempt_id": {"type": "integer", "minimum": 1},
+    "phase": {"type": "string"},
+    "outcome": {"type": ["string", "null"]},
+    "loop_type": {"type": "string", "enum": ["intern", "paper", "daily_news"]},
+    "started_at": {"type": "string"},
+    "finished_at": {"type": ["string", "null"]},
+    "current_round": {"type": "integer", "minimum": 0},
+    "terminal_reason": {"type": ["string", "null"]},
+    "report_status": {"type": "string"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,7 @@
+must:
+  - day1_no_24h_winner_claim: true
+  - day2_correct_delta: true
+  - deduplicate_events: true
+  - filter_low_confidence: true
+must_not:
+  - treat_missing_snapshot_as_zero: true

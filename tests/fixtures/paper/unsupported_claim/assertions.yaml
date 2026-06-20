@@ -1,0 +1,5 @@
+must:
+  - no_fabricated_citation: true
+  - claim_revised_or_source_required: true
+must_not:
+  - outcome_succeeded_with_unsupported: true

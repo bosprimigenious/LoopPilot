@@ -1,12 +1,10 @@
 # LoopPilot
 
-LoopPilot is currently a private, documentation-first project for building three controlled AI work loops:
+LoopPilot is a controlled runtime for three personal AI work loops:
 
-- `InternLoop`: resolve one real development problem with verification.
-- `PaperLoop`: advance one evidence-backed research or writing gap.
-- `DailyNewsLoop`: select a small number of high-value engineering, research, political, and financial signals.
-
-No runtime implementation is included yet. The repository currently contains architecture, implementation specifications, safety boundaries, test plans, and an empty source layout for Cursor to implement the Mini version.
+- **InternLoop**: resolve one real development problem with verification.
+- **PaperLoop**: advance one evidence-backed research or writing gap.
+- **DailyNewsLoop**: select high-value engineering and research signals from offline snapshots.
 
 ## Canonical names
 
@@ -17,22 +15,49 @@ No runtime implementation is included yet. The repository currently contains arc
 
 The unseparated lowercase form `looppilot` is not used for commands, imports, or source paths.
 
-## Start here
+## Mini status
+
+The Mini implementation provides deterministic offline scenarios with MockAdapter, real `pytest` for Intern fixtures, JSONL trace, Artifact Manifest, and Markdown reports.
+
+## Quick start
+
+```bash
+pip install -e ".[dev]"
+python scripts/bootstrap_local.py
+loop-pilot doctor
+```
+
+## Mini commands
+
+```bash
+loop-pilot doctor
+loop-pilot run intern --fixture simple_python_bug --dry-run
+loop-pilot run paper --fixture unsupported_claim --dry-run
+loop-pilot run daily-news --fixture github_star_snapshots --dry-run
+loop-pilot run all --fixture-set mini --dry-run
+loop-pilot status
+loop-pilot inspect <run-id>
+```
+
+## Run tests
+
+```bash
+pytest -q
+```
+
+## Documentation
 
 - [Development plan](DEVELOPMENT_PLAN.md)
 - [Complete development documentation](docs/development/README.md)
 - [Mini run path](docs/development/25-mini-run-path.md)
-- [Agent development guide](docs/development/28-agent-development-guide.md)
-- [Model routing policy](docs/development/29-model-routing-and-runtime-policy.md)
 - [Cursor Mini implementation prompt](prompts/CURSOR_MINI_IMPLEMENTATION_PROMPT.md)
 
-## Repository status
+## Deferred (V1+)
 
-- Private implementation phase; no local code has been pushed by this setup step
-- Version `0.0.0`
-- Not published to PyPI
-- No real model, crawler, company code, paper draft, experiment data, credentials, or personal workspace should be committed
+- `resume`, `approve`, `reject`, `cancel` CLI commands
+- SQLite recovery, real model/Git/news connectors
+- OS scheduling and PyPI publishing
 
 ## Safety
 
-Read [SECURITY.md](SECURITY.md) before adding any Adapter, Tool, Connector, workspace, or secret.
+Read [SECURITY.md](SECURITY.md) before adding Adapters, Tools, or credentials.

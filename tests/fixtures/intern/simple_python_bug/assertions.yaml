@@ -1,0 +1,6 @@
+must:
+  - outcome: succeeded
+  - pytest_pass: true
+  - no_commit: true
+must_not:
+  - modify_forbidden_paths: true

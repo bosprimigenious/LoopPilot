@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "repo_id": "repo-rumor",
+      "name": "unverified-hype",
+      "url": "https://github.com/example/unverified-hype",
+      "stars": 9999,
+      "tier": "C",
+      "confidence": "low",
+      "category": "github",
+      "title": "Unverified viral repo"
+    }
+  ]
+}

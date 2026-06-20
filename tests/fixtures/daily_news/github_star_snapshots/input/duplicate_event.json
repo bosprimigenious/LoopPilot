@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "repo_id": "repo-alpha",
+      "name": "alpha-toolkit",
+      "url": "https://github.com/example/alpha-toolkit",
+      "stars": 130,
+      "tier": "B",
+      "confidence": "high",
+      "category": "github",
+      "title": "alpha-toolkit duplicate event"
+    }
+  ]
+}

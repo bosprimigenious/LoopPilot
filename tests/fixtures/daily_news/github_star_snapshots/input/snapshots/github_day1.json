@@ -1,0 +1,26 @@
+{
+  "repositories": [
+    {
+      "repo_id": "repo-alpha",
+      "name": "alpha-toolkit",
+      "url": "https://github.com/example/alpha-toolkit",
+      "stars": 100,
+      "tier": "B",
+      "confidence": "high",
+      "category": "github",
+      "published_at": "2026-06-19T08:00:00+00:00",
+      "event_at": "2026-06-19T08:00:00+00:00"
+    },
+    {
+      "repo_id": "repo-beta",
+      "name": "beta-agent",
+      "url": "https://github.com/example/beta-agent",
+      "stars": 250,
+      "tier": "B",
+      "confidence": "medium",
+      "category": "github",
+      "published_at": "2026-06-19T09:00:00+00:00",
+      "event_at": "2026-06-19T09:00:00+00:00"
+    }
+  ]
+}

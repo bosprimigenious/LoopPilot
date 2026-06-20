@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "structured_output": {
+    "claims_found": 1,
+    "evidence_level": "metadata"
+  }
+}

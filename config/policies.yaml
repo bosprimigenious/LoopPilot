@@ -1,0 +1,10 @@
+write_policy:
+  require_policy_gate: true
+  forbidden_commands:
+    - git push
+    - git commit
+    - deploy
+path_policy:
+  forbidden_patterns:
+    - ".env*"
+    - "secrets/**"

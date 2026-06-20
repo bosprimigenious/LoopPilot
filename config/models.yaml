@@ -1,0 +1,12 @@
+roles:
+  planning: {adapter: mock}
+  coding: {adapter: mock}
+  research: {adapter: mock}
+  writing: {adapter: mock}
+  screening: {adapter: mock}
+  evaluation: {adapter: mock}
+
+adapters:
+  mock:
+    kind: mock
+    timeout_seconds: 60

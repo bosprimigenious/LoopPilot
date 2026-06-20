@@ -1,0 +1,17 @@
+enabled: true
+workspace: workspaces/paper-fixture
+main_document: paper.md
+bibliography: references.bib
+read_only_paths: ["experiments/raw/**"]
+modifiable_sections: ["related-work", "method", "experiments"]
+verification_level_for_citation: metadata
+research_topics: []
+required_evaluators:
+  - structure
+  - claim_evidence
+  - consistency
+budget:
+  max_duration_minutes: 30
+  max_rounds: 3
+  max_model_calls: 12
+  max_new_sources: 10
