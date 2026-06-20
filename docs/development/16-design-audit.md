@@ -125,3 +125,13 @@ Agent 开发和模型路由已分别写入 `28-agent-development-guide.md` 与 `
 - 报告事实由模板渲染，Report Narrator 仅为可选摘要角色；
 - ModelRouter 依据能力、预算、数据等级和 Golden 表现选择 Adapter；
 - 没有合格模型时阻塞，不降低安全和真实性标准。
+
+## 11. Mini 一致性纠错记录
+
+后续实现前审计发现三项真实冲突，现已统一：
+
+1. 项目名为 `LoopPilot`，distribution/CLI 为 `loop-pilot`，Python import/source 为 `loop_pilot` / `src/loop_pilot/`。
+2. Mini 只实现 JSON 状态快照、JSONL 事件和 `StateStore` 接口；SQLite、事务检查点和恢复属于 V1。
+3. Mini CLI 只提供 doctor、run、run all、status、inspect；resume、approve、reject、cancel 从 V1 开始，Mini 不注册假命令。
+
+此纠错已同步到架构、Runtime、数据、开发顺序、实现清单、Mini 路径、Agent 指南和 Cursor 提示词。后续实现不得用“以某一份文档为准”绕过同层规格冲突。

@@ -68,17 +68,26 @@
 
 ## 7. CLI
 
+Mini：
+
 ```bash
-looppilot run daily-news
-looppilot run intern
-looppilot run paper
-looppilot run all
-looppilot status
-looppilot inspect <run-id>
-looppilot resume <run-id>
-looppilot approve <run-id>
-looppilot reject <run-id> --reason "..."
-looppilot cancel <run-id>
-looppilot report <run-id>
-looppilot doctor
+loop-pilot run daily-news
+loop-pilot run intern
+loop-pilot run paper
+loop-pilot run all
+loop-pilot doctor
+loop-pilot status
+loop-pilot inspect <run-id>
 ```
+
+V1 实现 SQLite 恢复与审批协议后增加：
+
+```bash
+loop-pilot resume <run-id>
+loop-pilot approve <run-id>
+loop-pilot reject <run-id> --reason "..."
+loop-pilot cancel <run-id>
+loop-pilot report <run-id>
+```
+
+Mini 不暴露上述 V1 命令的占位实现。

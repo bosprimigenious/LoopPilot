@@ -13,14 +13,14 @@
 
 - 实现 Run、Round、Task、Policy、Artifact、Source 等对象。
 - 实现状态转换表和终态语义。
-- 实现 SQLite repository 与事件记录。
-- 完成门：模拟 Loop 能走通成功、阻塞、失败、取消和耗尽。
+- 实现 `StateStore` 接口、Mini JSON 快照存储与 JSONL 事件记录。
+- 完成门：模拟 Loop 能走通成功、阻塞、失败和耗尽；状态可由 `inspect` 读取。
 
 ## 3. 控制机制
 
-- 实现 Orchestrator、预算、锁、检查点、恢复和幂等。
+- Mini 实现 Orchestrator、预算、本地锁、安全中断和幂等。
 - 实现 25 分钟软截止与 30 分钟硬截止。
-- 完成门：强制中断后可恢复，重复触发不重复写。
+- 完成门：强制中断后留存可检查状态且不误报成功；重复触发不重复写。
 
 ## 4. Tool 与模型基础
 
@@ -70,19 +70,25 @@
 
 ## 10. CLI 与调度
 
-- 实现 run、status、inspect、resume、approve、reject、cancel、doctor。
+- Mini 实现 doctor、run、run all、status、inspect。
 - 实现 `run all` 固定顺序。
-- 编写 OS Scheduler 安装说明。
-- 完成门：单独与顺序运行均稳定，锁冲突行为正确。
+- 完成门：单独与顺序运行均稳定；未实现命令不注册。
 
-## 11. 可靠性与长期运行
+## 11. V1 持久化、审批与调度扩展
+
+- 实现 SQLite StateStore、事务检查点与 migration。
+- 实现 resume、approve、reject、cancel 和 report。
+- 编写 OS Scheduler 安装说明。
+- 完成门：强制中断后可恢复，审批能可靠回写，锁冲突行为正确。
+
+## 12. 可靠性与长期运行
 
 - 故障注入、回归场景和安全扫描。
 - 缓存、检查点、日志和 Artifact 保留策略。
 - 连续运行测试与健康检查。
 - 完成门：达到 `10-testing-and-acceptance.md` 总验收标准。
 
-## 12. 每项任务的完成定义
+## 13. 每项任务的完成定义
 
 每个开发任务必须同时具备：
 

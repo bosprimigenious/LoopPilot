@@ -8,6 +8,15 @@ LoopPilot is currently a private, documentation-first project for building three
 
 No runtime implementation is included yet. The repository currently contains architecture, implementation specifications, safety boundaries, test plans, and an empty source layout for Cursor to implement the Mini version.
 
+## Canonical names
+
+- Product/project: `LoopPilot`
+- Distribution name: `loop-pilot`
+- CLI command: `loop-pilot`
+- Python import and source package: `loop_pilot`
+
+The unseparated lowercase form `looppilot` is not used for commands, imports, or source paths.
+
 ## Start here
 
 - [Development plan](DEVELOPMENT_PLAN.md)

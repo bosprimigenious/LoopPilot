@@ -92,7 +92,7 @@ Implement only enough production-quality structure to run deterministic offline 
 - explicit error taxonomy;
 - CLI commands required by Mini.
 
-Mini may use a simple local state store behind an interface. Do not implement the full V1 SQLite recovery system unless the approved plan explicitly requires it. The interface must allow SQLite to replace it later without changing Loop logic.
+Mini must use a local JSON snapshot + JSONL event store behind a `StateStore` interface. Do not implement SQLite, transactional checkpoints, or resume in Mini. The interface must allow a V1 SQLite store to replace the Mini store without changing Loop logic.
 
 ### InternLoop Mini
 
@@ -158,7 +158,7 @@ loop-pilot status
 loop-pilot inspect <run-id>
 ```
 
-If `resume`, `approve`, `reject`, or `cancel` cannot be implemented correctly in Mini, expose no fake behavior. Document them as later work rather than returning misleading success.
+Do not register `resume`, `approve`, `reject`, or `cancel` in Mini. They are explicitly deferred to V1; no placeholder, hidden alias, or fake-success behavior is allowed.
 
 ## 7. Required repository work
 

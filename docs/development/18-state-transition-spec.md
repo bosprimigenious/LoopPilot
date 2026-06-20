@@ -4,6 +4,8 @@
 
 只有 Orchestrator 可以提交状态转换。Agent、Tool、Connector 和 Evaluator 返回结果，状态机依据转换表决定下一状态。
 
+版本规则：Mini 遇到需要人工批准的动作时不持久等待，直接 `FINALIZING(outcome=blocked)` 并生成报告；`WAITING_APPROVAL`、审批状态回写和批准后恢复从 V1 开始。
+
 ## 2. 转换表
 
 | 当前状态 | 进入条件 | 允许动作 | 成功转移 | 异常转移 | 可恢复 | 人工介入 |

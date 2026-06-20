@@ -2,6 +2,16 @@
 
 本目录是 LoopPilot 的正式开发说明。`ideas.md` 仅保存原始思路，根目录 `DEVELOPMENT_PLAN.md` 只作为入口。
 
+## 命名与 Mini 决策基线
+
+- 项目名：`LoopPilot`。
+- PyPI distribution 与 CLI：`loop-pilot`。
+- Python import 与源码目录：`loop_pilot` / `src/loop_pilot/`。
+- Mini 状态：本地 JSON 快照 + JSONL 事件，通过 `StateStore` 接口访问。
+- V1 状态：SQLite、事务检查点和完整恢复。
+- Mini CLI：`doctor`、`run`、`run all`、`status`、`inspect`。
+- `resume`、`approve`、`reject`、`cancel` 从 V1 开始；Mini 不暴露占位或假成功命令。
+
 ## 阅读顺序
 
 1. [00-system-definition.md](00-system-definition.md)：目标、边界和成功定义。
@@ -40,6 +50,7 @@
 - 单个 Loop 行为以对应 Loop 分册为准。
 - 版本范围以 `09-versions.md` 为准。
 - 是否完成以 `10-testing-and-acceptance.md` 为准。
+- Mini 边界以 `09-versions.md` 与 `25-mini-run-path.md` 为准。
 - 新设计必须先修改文档，再修改代码。
 
 ## 核心结论
