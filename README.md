@@ -16,7 +16,7 @@ English spec: see [docs/en-core.md](docs/en-core.md)
 
 ## 当前版本（0.x · 个人优先）
 
-> LoopPilot = **个人开发助手 + 论文推进器 + 信息筛选器 + 每日任务 OS** — 0.x 让**一个人每天真的能用**；Team/Cloud 在 **1.1+**。
+> LoopPilot = **个人开发助手 + 论文推进器 + 信息筛选器 + 每日任务 OS** — 0.x 让**一个人每天真的能用**；1.x：**1.0 稳定 → 1.1 智能 → 1.2 协作 → 1.3 团队 preview**。
 
 | 版本 | 状态 |
 |------|------|
@@ -24,7 +24,8 @@ English spec: see [docs/en-core.md](docs/en-core.md)
 | **0.2** Practical MVP | ✅ 已验收 `v0.2.0a1` — demo workspace |
 | **0.3** Adapter MVP | 🔄 进行中 `v0.3.0a1` — Mock→Real Adapter |
 | **0.4** Personal Daily Loop | 📋 下一 — inbox/queue/today、review、summary |
-| 0.5–1.0 | 个人 Beta → 稳定；0.8 可选公开 |
+| 0.5–0.9 | 个人 Beta → RC |
+| **1.x** | 1.0 个人稳定 → 1.1 智能 → 1.2 受控协作 → 1.3 团队 preview |
 
 详情：[docs/zh/03-版本路线图.md](docs/zh/03-版本路线图.md) · [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md)
 

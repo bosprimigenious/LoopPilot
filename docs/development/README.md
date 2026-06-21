@@ -18,17 +18,14 @@
 
 - 项目名：`LoopPilot`；GitHub：[bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot)
 - PyPI / CLI：`loop-pilot`；Python 包：`loop_pilot` / `src/loop_pilot/`
-- **阶段版本**：0.x 个人优先体系（0.1 → … → 1.0；**Team 在 1.1+**），路线图权威见 [34-version-roadmap-0x.md](34-version-roadmap-0x.md)；semver 索引见 [33-version-roadmap.md](33-version-roadmap.md)
+- **阶段版本**：0.x 个人优先（0.1 → … → 0.9）→ **1.x**（1.0 稳定 → 1.1 智能 → 1.2 协作 → 1.3 团队 preview），路线图权威见 [34-version-roadmap-0x.md](34-version-roadmap-0x.md) + [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)；semver 索引见 [33-version-roadmap.md](33-version-roadmap.md)
 - **当前工程焦点**：
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
-  - **0.3** 进行中 `v0.3.0a1`（分支 `adapter-mvp-0.3`）— Mock→Real Adapter + ToolBroker
+  - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
   - **0.4** 下一焦点 — Personal Recovery & Daily Loop（inbox/queue/today/review/summary）
-  - **0.5+** 文档规划；Team/Cloud **不进 0.x**
-- 0.1–0.3 状态：JSON 快照 + JSONL 事件，经 `StateStore` 访问
-- 0.4：SQLite、inbox/queue/today、review、summary、schedule dry-run（见 [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md)）
-- 0.5：**Personal Beta**（`init personal`；PyPI 可选，非急 public beta）
-- 1.1+：Team / Cloud Preview（原 0.8 team-cloud 后移）
+  - **0.5+** 文档规划；Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
+- 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
 - `resume`/`approve`/`reject`/`cancel` 从 **0.4** 开始
 
@@ -84,11 +81,32 @@
 40. [39-next-steps-0.3.md](39-next-steps-0.3.md) — 0.3 后续步骤
 41. [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md) — **0.4 个人日用链规格**
 42. [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) — **0.3→0.4 行动顺序**
+43. [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) — **1.x 个人→协作权威规格**
+
+## 中文认知层对应关系
+
+日常理解用中文（`docs/zh/`）；勾选验收与接口细节以本目录英文 spec 为准。维护规则：[docs/zh/10-中英文文档管理.md](../zh/10-中英文文档管理.md)。
+
+| 中文 (`docs/zh/`) | 英文 (`docs/development/`) | 用途 |
+|-------------------|----------------------------|------|
+| [README.md](../zh/README.md) | [README.md](README.md) + [en-core.md](../en-core.md) | 文档入口 |
+| [03-版本路线图.md](../zh/03-版本路线图.md) | [34-version-roadmap-0x.md](34-version-roadmap-0x.md) | 0.x 阶段边界 |
+| [03-版本路线图.md](../zh/03-版本路线图.md) | [33-version-roadmap.md](33-version-roadmap.md) | semver 索引与历史详细规格 |
+| [07-0.3-Adapter验收说明.md](../zh/07-0.3-Adapter验收说明.md) | [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md) | 0.3 验收 |
+| [07-0.3-Adapter验收说明.md](../zh/07-0.3-Adapter验收说明.md) | [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md) | 0.3 验收跑记录 |
+| [08-0.4-个人日用闭环.md](../zh/08-0.4-个人日用闭环.md) | [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md) | 0.4 规格 |
+| [08-0.4-个人日用闭环.md](../zh/08-0.4-个人日用闭环.md) | [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) | 0.3→0.4 行动 |
+| [09-1.x-个人到协作.md](../zh/09-1.x-个人到协作.md) | [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) | 1.x 路线 |
+| [04-如何跑验收.md](../zh/04-如何跑验收.md) | [32](32-mini-mvp-acceptance.md) / [35](35-practical-mvp-0.2-acceptance.md) / [36](36-adapter-mvp-0.3-acceptance.md) | 验收命令 |
+| [10-中英文文档管理.md](../zh/10-中英文文档管理.md) | [logs/2026-06-21-zh-en-doc-management.md](logs/2026-06-21-zh-en-doc-management.md) | 文档策略 |
+| [05-文档体系说明.md](../zh/05-文档体系说明.md) | [logs/2026-06-21-doc-system-bilingual-upgrade.md](logs/2026-06-21-doc-system-bilingual-upgrade.md) | 三层架构决策 |
 
 ### 决策日志（中文）
 
-- [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md) — **个人优先路线图 pivot**
+- [logs/2026-06-21-zh-en-doc-management.md](logs/2026-06-21-zh-en-doc-management.md) — 中英文文档管理策略
 - [logs/2026-06-21-doc-system-bilingual-upgrade.md](logs/2026-06-21-doc-system-bilingual-upgrade.md) — 文档三层体系升级
+- [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md) — 0.x 个人优先 pivot
+- [logs/2026-06-21-1x-roadmap-personal-stable.md](logs/2026-06-21-1x-roadmap-personal-stable.md) — 1.x 四段式决策
 - [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md) — 0.3 验收跑记录
 - [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md) — 0.1 交付
 - [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划
@@ -99,7 +117,7 @@
 - 架构冲突 → `01-architecture.md`
 - 运行流程冲突 → `02-runtime-mechanism.md`
 - 单 Loop 行为 → 对应 Loop 分册
-- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`
+- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`
 - semver 索引（含历史 0.6–0.8 详细规格）→ `33-version-roadmap.md`
 - 是否完成 → `10-testing-and-acceptance.md` + 对应版本验收 doc（32/35/36）
 - 当前行动项 → `41-next-steps-after-0.3.md`

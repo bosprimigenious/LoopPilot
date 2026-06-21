@@ -1,7 +1,7 @@
 # 40 Personal Daily Loop — 0.4 详细规格
 
 > **版本标签**：`0.4.0-personal-daily-loop`  
-> **上级路线图**：[34-version-roadmap-0x.md](34-version-roadmap-0x.md) §6  
+> **上级路线图**：[34-version-roadmap-0x.md](34-version-roadmap-0x.md) §6；**1.0 验收** → [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) §3（0.4 命令 + 30 天日用 + semver 承诺）  
 > **前置条件**：0.3 Adapter MVP 验收通过（`0.3.0a1` 自动化层 + 手动层文档化）  
 > **受众**：维护者本人（单用户）；**不含**团队、Dashboard、云同步
 
@@ -222,9 +222,10 @@ pytest -q
 
 | 排除项 | 归属 | 说明 |
 |--------|------|------|
-| 团队 / 多用户 / RBAC | **1.1+** | 无 `project create` |
-| Web Dashboard | **1.1+** | CLI only |
-| 云同步 / 远程 state | **1.1+** | 本地 SQLite |
+| 团队 / 多用户 / RBAC | **1.3 preview** | 无 `project create` |
+| Web Dashboard | **1.3 preview** | CLI only |
+| 云同步 / 远程 state | **1.3 preview** | 本地 SQLite |
+| 文件包协作 / handoff | **1.2** | 见 [42-1x-roadmap](42-1x-roadmap-personal-to-collaboration.md) §5 |
 | 插件市场 / 远程安装 | **0.7** | 0.4 不做 plugins CLI |
 | PyPI / `init demo` | **0.5 / 0.8** | 0.4 用 editable install |
 | 公开 onboarding 文档 | **0.8** | |
@@ -241,7 +242,7 @@ pytest -q
 | 审阅 | approve/reject/cancel | + **review list**、**defer** |
 | 总结 | summary today | + **summary week** |
 | db CLI | migrate/backup 脚本 | 统一 **`db status/migrate/backup/verify`** |
-| 团队 | 无（但 0.8 紧跟） | 团队明确 **1.1+** |
+| 团队 | 无（旧 0.8 紧跟） | 团队 **1.3 preview**；协作 **1.2** |
 
 ---
 
@@ -252,3 +253,4 @@ pytest -q
 - [18-state-transition-spec.md](18-state-transition-spec.md) — 状态机
 - [23-human-review-protocol.md](23-human-review-protocol.md) — 审阅协议
 - [07-data-and-reports.md](07-data-and-reports.md) — 产物契约
+- [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) — 1.0 验收（基于本文 0.4 能力）

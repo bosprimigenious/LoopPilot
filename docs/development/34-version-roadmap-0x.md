@@ -2,7 +2,7 @@
 
 > **战略口径（2026-06-21）**：LoopPilot = **个人开发助手 + 论文推进器 + 信息筛选器 + 每日任务 OS**。0.x 主线是「**一个人每天真的能用**」；1.x 主线是「**先个人稳定，再受控协作，最后团队 preview**」。
 >
-> **与 [33-version-roadmap.md](33-version-roadmap.md) 的关系**：33 为 semver 标签索引（含历史 0.6–0.8 插件/团队规格，**部分已后移**）；**本文是 0.x 个人优先路线的权威执行规格**；**1.x 完整规格** → [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)。冲突时：0.x 阶段边界与 0.4 四子阶段以本文为准；1.x 以 42 为准；semver 命名以 33 标签为准并见 [§13 Legacy 映射](#13-legacy-映射)。
+> **与 [33-version-roadmap.md](33-version-roadmap.md) 的关系**：33 为 semver 标签索引（含历史 0.6–0.8 插件/团队规格，**部分已后移**）；**本文是 0.x 个人优先路线的权威执行规格**；**1.x 完整规格** → [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)。冲突时：0.x 阶段边界与 0.4 四子阶段以本文为准；1.x 以 42 为准；semver 命名以 33 标签为准并见 [§16 Legacy 映射](#16-legacy-映射)。
 >
 > **0.4 详细规格** → [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md)  
 > **0.3 完成后行动项** → [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md)  
@@ -256,7 +256,7 @@ pytest -q
 ### 不做
 
 - 在线插件市场 / `plugins install <url>`
-- 团队插件策略（**1.1+**）
+- 团队插件策略（**1.3**）
 
 旧 0.6 plugin-ecosystem 规格缩小为个人本地扩展；完整框架可参考 [33-version-roadmap.md §0.6](33-version-roadmap.md)（历史）。
 
@@ -291,25 +291,44 @@ pytest -q
 
 - **Personal Stable**：单人长期 semver 承诺
 - 必备：0.4 日用链 + 0.3 Adapter + 0.6 记忆 + 0.7 本地扩展（GA）
-- **不含**团队能力（团队见 1.1+）
+- **不含**团队能力（团队见 **1.3 preview**；受控协作见 **1.2**）
 
-详见 [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md)（团队相关条目见 1.1+ 注记）。
+详见 [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md)（团队相关条目见 **1.2/1.3** 注记）。
 
 ---
 
-## 12. 1.1+ Team / Cloud Preview（后置）
+## 12. 1.x 总览（Personal Stable → Controlled Collaboration）
 
-> **2026-06-21 决策**：团队 / 云 / Dashboard / RBAC / 共享审批 **移出 0.x**，在 **1.0 Personal Stable** 之后按需启动。
+> **2026-06-21 决策**：1.x 不再使用笼统「1.1+ Team / Cloud」；细化为四段式。**完整规格** → [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)。
 
-| 能力 | 原规划 | 新归属 |
-|------|--------|--------|
-| 多项目 workspace | 0.8 team-cloud | **1.1+** |
-| RBAC / 共享审批 | 0.8 | **1.1+** |
-| 本地 Dashboard :7860 | 0.8 | **1.1+** |
-| 团队插件策略 | 0.8 | **1.1+** |
+| 版本 | 名称 | 核心 | 与旧规划 |
+|------|------|------|----------|
+| **1.0** | Personal Stable | 接口冻结；30 天日用；个人 semver | 原 33 §1.0；**不含**团队 |
+| **1.1** | Personal Intelligence | 记忆、规划、优先级、主动建议 | 承接 0.6；**非团队** |
+| **1.2** | Controlled Collaboration | 文件包 export/import、handoff | 旧 0.8 协作子集；**无**云端账号 |
+| **1.3** | Team / Cloud Preview | RBAC、sync、Dashboard preview | 旧 **0.8 team-cloud** → **deprecated**，迁此 |
+
+**推进顺序**：1.0 个人稳定 → 1.1 个人智能 → 1.2 受控协作 → 1.3 团队/云 preview。  
+**禁止**：1.0 后立刻做大团队版 / 完整 SaaS。
+
+```text
+0.9 RC ──► 1.0 ──► 1.1 ──► 1.2 ──► 1.3
+           稳定    智能    文件包    team preview
+```
+
+### 12.1 Legacy：旧 0.8 team-cloud → 1.2 / 1.3
+
+| 能力 | 原规划（33 §0.8，**deprecated @ 0.8**） | 新归属 |
+|------|----------------------------------------|--------|
+| 多项目 workspace | 0.8 team-cloud | **1.3** |
+| RBAC / 共享审批 | 0.8 | **1.3** |
+| 本地 Dashboard :7860 | 0.8 | **1.3 preview** |
+| 团队插件策略 | 0.8 | **1.3** |
+| 文件包报告 export | — | **1.2** |
+| handoff / 协作者 profile | — | **1.2** |
 | Cloud SaaS | 永不（local-first 原则不变） | — |
 
-历史规格仍可读：[33-version-roadmap.md §0.8](33-version-roadmap.md)（标注 legacy / 1.1+ 候选）。
+历史规格仍可读：[33-version-roadmap.md §0.8](33-version-roadmap.md)（标注 **legacy / 1.2–1.3 候选**）。
 
 ---
 
@@ -337,7 +356,7 @@ pytest -q
 
 ## 14. 阶段推进规则
 
-1. **顺序推进**：0.1 → 0.2 → 0.3 → 0.4（a→b→c→d）→ 0.5 → … → 1.0；**1.1+ 不进 0.x**
+1. **顺序推进**：0.1 → … → 0.9 → **1.0 → 1.1 → 1.2 → 1.3**；Team/Cloud **仅在 1.3 preview**
 2. **测试门禁**：每阶段强制场景全绿才进下一阶段
 3. **文档先行**：先改本文 + 40/41，再改代码
 4. **Mini 基线不退化**：每阶段后 0.1 fixture 仍 PASS
@@ -354,9 +373,9 @@ pytest -q
 | [33-version-roadmap.md](33-version-roadmap.md) | semver 索引（含历史 0.6–0.8 详细规格） |
 | [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md) | Legacy V1/V2/V3 任务分解 |
 | [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md) | 0.3 验收 |
-| [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md) | 本次 pivot 决策 |
-
----
+| [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) | **1.x 权威规格**（1.0–1.3） |
+| [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md) | 0.x pivot 决策 |
+| [logs/2026-06-21-1x-roadmap-personal-stable.md](logs/2026-06-21-1x-roadmap-personal-stable.md) | 1.x 决策 |
 
 ## 16. Legacy 映射
 
@@ -370,7 +389,8 @@ pytest -q
 | V1 PyPI / 开源 README | **0.5 可选** + **0.8 公开** | 不再急 public beta |
 | V2 Connector/核验 | **0.3** + **0.6** + **1.0** | 拆分 |
 | V3 长期稳定 | **1.0 Personal Stable** | |
-| 0.8 team-cloud（旧） | **1.1+** | **移出 0.x** |
+| 0.8 team-cloud（旧） | **1.2 + 1.3** | **移出 0.x**；team 细节 → 1.3 |
+| 1.1+ Team / Cloud（旧 34 §12） | **1.1–1.3 四段式** | 见 [42-1x-roadmap](42-1x-roadmap-personal-to-collaboration.md) |
 | 0.6 plugin-ecosystem（旧） | **0.7 Personal Extensions** | 缩小为本地 |
 | 0.7 evaluation（旧） | **0.6 Memory & Evaluation** | 个人 scope |
 
@@ -383,5 +403,6 @@ pytest -q
 | 0.6 | Plugin ecosystem | **Personal Memory & Evaluation** |
 | 0.7 | Evaluation benchmark | **Personal Extensions** |
 | 0.8 | Team-cloud preview | **Optional Public Beta** |
-| Team/Dashboard | 0.8 必达 | **1.1+** 后置 |
+| Team/Dashboard | 0.8 必达 | **1.3 preview** 后置 |
+| 1.x 结构 | 1.1+ 笼统 | **1.0→1.1→1.2→1.3** 四段式 |
 | 0.x 目标 | 工具型开源/团队 | **一个人每天真的能用** |
