@@ -6,15 +6,13 @@ from pathlib import Path
 
 import pytest
 
+from loop_pilot.runtime.locks import clear_stale_locks
 from tests.support import sqlite_config_dir as _sqlite_config_dir
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _clean_shared_runtime_locks() -> None:
-    lock_dir = Path("var/state/locks")
-    if lock_dir.is_dir():
-        for lock_path in lock_dir.glob("*.lock"):
-            lock_path.unlink(missing_ok=True)
+    clear_stale_locks(Path("var/state/locks"))
     yield
 
 

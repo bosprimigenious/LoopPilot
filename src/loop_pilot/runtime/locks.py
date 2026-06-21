@@ -57,3 +57,35 @@ class FileLockStore:
 
     def is_held(self, key: str) -> bool:
         return self._lock_path(key).exists()
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def clear_stale_locks(lock_dir: Path) -> None:
+    """Remove lock files left by dead processes; skip locks held by live PIDs."""
+    if not lock_dir.is_dir():
+        return
+    for lock_path in lock_dir.glob("*.lock"):
+        try:
+            payload = lock_path.read_text(encoding="utf-8").strip()
+            if ":" in payload:
+                pid_str, _holder = payload.split(":", 1)
+                try:
+                    pid = int(pid_str)
+                except ValueError:
+                    pid = None
+                if pid is not None and _pid_alive(pid):
+                    continue
+            lock_path.unlink(missing_ok=True)
+        except PermissionError:
+            pass
+        except OSError:
+            pass
