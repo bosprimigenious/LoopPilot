@@ -11,7 +11,7 @@
 - **Recovery**: ACTING interrupted → `manual_review_required` (no auto-resume)
 - **Tests**: `test_db_ops`, `test_recovery_scan`; full suite 141 passed
 - **Config**: default remains `state_backend=json`; acceptance fixture at `tests/fixtures/acceptance_0_4a/config`
-- **Docs**: [43-personal-daily-loop-0.4a-acceptance.md](docs/development/43-personal-daily-loop-0.4a-acceptance.md)
+- **Docs**: [43-personal-daily-loop-0.4a-acceptance.md](docs/development/43-personal-daily-loop-0.4a-acceptance.md), [11-0.4a-SQLite与恢复扫描.md](docs/zh/11-0.4a-SQLite与恢复扫描.md), [2026-06-21-0.4a-delivery.md](docs/development/logs/2026-06-21-0.4a-delivery.md)
 
 ### Unchanged / deferred to 0.4-b+
 

@@ -18,8 +18,8 @@ Documentation root for LoopPilot. Pick an entry by audience and language.
 docs/
 ├── README.md              # this file
 ├── en-core.md             # English minimal interface spec
-├── zh/                    # Chinese cognitive layer (00–10)
-└── development/           # English numbered specs (00–42) + logs/
+├── zh/                    # Chinese cognitive layer (00–11)
+└── development/           # English numbered specs (00–43) + logs/
 ```
 
 ## Bilingual index (high level)
@@ -29,6 +29,7 @@ docs/
 | Version roadmap | [zh/03-版本路线图.md](zh/03-版本路线图.md) | [development/34-version-roadmap-0x.md](development/34-version-roadmap-0x.md) |
 | 0.3 acceptance | [zh/07-0.3-Adapter验收说明.md](zh/07-0.3-Adapter验收说明.md) | [development/36-adapter-mvp-0.3-acceptance.md](development/36-adapter-mvp-0.3-acceptance.md) |
 | 0.4 personal daily loop | [zh/08-0.4-个人日用闭环.md](zh/08-0.4-个人日用闭环.md) | [development/40-personal-daily-loop-0.4-spec.md](development/40-personal-daily-loop-0.4-spec.md) |
+| 0.4-a SQLite acceptance | [zh/11-0.4a-SQLite与恢复扫描.md](zh/11-0.4a-SQLite与恢复扫描.md) | [development/43-personal-daily-loop-0.4a-acceptance.md](development/43-personal-daily-loop-0.4a-acceptance.md) |
 | 1.x personal → collaboration | [zh/09-1.x-个人到协作.md](zh/09-1.x-个人到协作.md) | [development/42-1x-roadmap-personal-to-collaboration.md](development/42-1x-roadmap-personal-to-collaboration.md) |
 | Doc management policy | [zh/10-中英文文档管理.md](zh/10-中英文文档管理.md) | [development/README.md](development/README.md) (mapping table) |
 
