@@ -5,7 +5,7 @@
 ## 命名与版本基线
 
 - 项目名：`LoopPilot`。
-- GitHub 仓库：[bosprimigenious/loop-pilot](https://github.com/bosprimigenious/loop-pilot)。
+- GitHub 仓库：[bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot)。
 - PyPI distribution 与 CLI：`loop-pilot`。
 - Python import 与源码目录：`loop_pilot` / `src/loop_pilot/`。
 - **阶段版本**：采用 **0.x 体系**（0.1 → … → **0.5 public-beta** → **0.6 plugin-ecosystem** → **0.7 evaluation-benchmark** → **0.8 team-cloud-preview** → **0.9 release-candidate** → **1.0 stable**），semver 权威见 [33-version-roadmap.md](33-version-roadmap.md)；**0.5 完整实现清单**见 [34-version-roadmap-0x.md §6](34-version-roadmap-0x.md#6-05-public-beta--pypi050-public-beta)；**0.9 RC 规格**见 [34-version-roadmap-0x.md §10](34-version-roadmap-0x.md#10-09-release-candidate--stability-freeze090-release-candidate)。

@@ -9,7 +9,7 @@ LoopPilot is a controlled runtime for three personal AI work loops:
 ## Canonical names
 
 - Product/project: `LoopPilot`
-- GitHub repository: [bosprimigenious/loop-pilot](https://github.com/bosprimigenious/loop-pilot)
+- GitHub repository: [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot)
 - Distribution name: `loop-pilot`
 - CLI command: `loop-pilot`
 - Python import and source package: `loop_pilot`

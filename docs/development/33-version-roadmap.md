@@ -1576,7 +1576,7 @@ loop-pilot status
 #### 9.2 开发（贡献者）
 
 ```bash
-git clone https://github.com/bosprimigenious/loop-pilot.git
+git clone https://github.com/bosprimigenious/LoopPilot.git
 cd loop-pilot && pip install -e ".[dev]"
 pytest -q && pytest conformance/ -q
 loop-pilot doctor

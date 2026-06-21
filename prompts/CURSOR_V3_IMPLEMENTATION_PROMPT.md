@@ -1,6 +1,6 @@
 # Cursor V3 Implementation Prompt
 
-你是 Cursor Agent，在仓库 [bosprimigenious/loop-pilot](https://github.com/bosprimigenious/loop-pilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
+你是 Cursor Agent，在仓库 [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
 
 ## Scope
 

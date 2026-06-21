@@ -427,7 +427,7 @@ cd loop-pilot-demo && loop-pilot doctor && loop-pilot run all --fixture-set mini
 **贡献者路径（源码）**：
 
 ```bash
-git clone https://github.com/bosprimigenious/loop-pilot.git
+git clone https://github.com/bosprimigenious/LoopPilot.git
 cd loop-pilot && pip install -e ".[dev]" && pytest -q
 ```
 
