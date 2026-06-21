@@ -1,67 +1,72 @@
-"""Schedule preview CLI (0.4-d)."""
+"""Schedule CLI (0.4-d preview, 0.5-a gated install)."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import click
 
 from loop_pilot.config import load_config
-from loop_pilot.scheduler.installer import install_schedule, preview_install
+from loop_pilot.safety.gate import SafetyGate
+from loop_pilot.scheduler.installer import install_schedule, preview_install, schedule_status, uninstall_schedule
 from loop_pilot.scheduler.printer import default_target
 
 
 @click.group()
 def schedule() -> None:
-    """Schedule preview (does not install until 0.5)."""
+    """Schedule preview and gated install (0.5-a)."""
 
 
 @schedule.command("print")
-@click.option(
-    "--target",
-    default=None,
-    help="cron | systemd | windows-task-scheduler (default: platform)",
-)
+@click.option("--target", default=None, help="cron | systemd | windows-task-scheduler")
 @click.pass_context
 def schedule_print(ctx: click.Context, target: str | None) -> None:
-    """Print scheduler configuration without installing."""
-    config_dir: Path = ctx.obj["config_dir"]
-    load_config(config_dir)
-    chosen = target or default_target()
-    preview = preview_install(chosen, cwd=Path.cwd())
+    load_config(ctx.obj["config_dir"])
+    preview = preview_install(target or default_target(), cwd=Path.cwd())
     click.echo(preview.config_text)
 
 
-@schedule.command("install")
-@click.option("--dry-run", is_flag=True, default=False, help="Preview install (default behavior)")
-@click.option(
-    "--target",
-    default=None,
-    help="cron | systemd | windows-task-scheduler",
-)
-@click.option("--yes", is_flag=True, default=False, help="Actually install (0.5 only)")
+@schedule.command("status")
 @click.pass_context
-def schedule_install(ctx: click.Context, dry_run: bool, target: str | None, yes: bool) -> None:
-    """Preview or refuse real scheduler installation."""
-    if yes and not dry_run:
-        try:
-            install_schedule(yes=True)
-        except NotImplementedError as exc:
-            raise click.ClickException(str(exc)) from exc
-        return
+def schedule_status_cmd(ctx: click.Context) -> None:
+    load_config(ctx.obj["config_dir"])
+    click.echo(json.dumps(schedule_status(cwd=Path.cwd()), indent=2))
 
+
+@schedule.command("install")
+@click.option("--dry-run", is_flag=True, default=False)
+@click.option("--target", default=None)
+@click.option("--yes", is_flag=True, default=False)
+@click.option("--confirm-schedule", is_flag=True, default=False)
+@click.pass_context
+def schedule_install(ctx: click.Context, dry_run: bool, target: str | None, yes: bool, confirm_schedule: bool) -> None:
     config_dir: Path = ctx.obj["config_dir"]
-    load_config(config_dir)
+    cfg = load_config(config_dir)
     chosen = target or default_target()
+    if yes and not dry_run:
+        result = SafetyGate.from_config(cfg).check("schedule.install", confirm=confirm_schedule, target=chosen)
+        if result.denied:
+            raise click.ClickException(f"SafetyGate denied: {result.message} ({result.reason_code})")
+        try:
+            installed = install_schedule(yes=True, target=chosen, cwd=Path.cwd(), config_dir=config_dir)
+        except RuntimeError as exc:
+            raise click.ClickException(str(exc)) from exc
+        click.echo(f"Schedule installed: {installed.task_name}\n  command: {installed.command}\n  marker: {installed.marker_path}")
+        return
     preview = preview_install(chosen, cwd=Path.cwd())
     output_dir = Path("var/artifacts/schedule")
     output_dir.mkdir(parents=True, exist_ok=True)
     preview_path = output_dir / "schedule-preview.md"
     preview_path.write_text(preview.preview_markdown, encoding="utf-8")
+    click.echo(f"# Schedule install preview (dry-run)\n\n{preview.config_text}\n\nPreview written: {preview_path}\nNo system scheduler entries were created.")
 
-    click.echo("# Schedule install preview (dry-run)")
-    click.echo("")
-    click.echo(preview.config_text)
-    click.echo("")
-    click.echo(f"Preview written: {preview_path}")
-    click.echo("No system scheduler entries were created.")
+
+@schedule.command("uninstall")
+@click.option("--yes", is_flag=True, default=False)
+@click.pass_context
+def schedule_uninstall(ctx: click.Context, yes: bool) -> None:
+    if not yes:
+        raise click.ClickException("Refusing uninstall without --yes")
+    load_config(ctx.obj["config_dir"])
+    click.echo("Schedule uninstalled." if uninstall_schedule(cwd=Path.cwd()) else "No schedule install marker found.")

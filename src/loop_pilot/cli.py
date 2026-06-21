@@ -14,6 +14,7 @@ from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
 from loop_pilot.cli_db import db
 from loop_pilot.cli_review import approve, cancel, defer, reject, report, resume, review
+from loop_pilot.cli_safety import safety
 from loop_pilot.cli_schedule import schedule
 from loop_pilot.cli_summary import summary
 from loop_pilot.cli_tasks import inbox, queue, today
@@ -378,6 +379,7 @@ app.add_command(queue)
 app.add_command(today)
 app.add_command(summary)
 app.add_command(schedule)
+app.add_command(safety)
 
 
 @app.command("recovery-scan")
