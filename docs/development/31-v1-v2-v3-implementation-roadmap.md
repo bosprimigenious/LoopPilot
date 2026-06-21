@@ -1,19 +1,25 @@
 # 31 V1/MVP、V2、V3 实施路线图
 
-> **版本编号已更新 — 请先读 [33-version-roadmap.md](33-version-roadmap.md)**  
-> 本文保留历史「V1/V2/V3」实施细节，供对照与追溯。**新工作必须使用 semver 编号。**
+> **Legacy 文档 — 仅供对照。**  
+> **个人优先路线图（2026-06-21）权威规格** → [34-version-roadmap-0x.md](34-version-roadmap-0x.md) + [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md)  
+> **Pivot 决策日志** → [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md)
 >
-> | 旧称呼 | 新编号 | 要点 |
+> 本文保留历史「V1/V2/V3」任务分解。**新工作必须使用 0.x 编号，并按 34 文档的个人优先映射阅读下文。**
+>
+> | 旧称呼 | 新编号（个人优先 2026-06-21） | 要点 |
 > |---|---|---|
-> | Mini | **0.1.0-mini** | 当前工程焦点（Phase A） |
-> | V1 中的 Adapter / ModelRouter / 真实 Connector | **0.3.0-adapter-mvp** | **0.3 ≠ 旧称 V1** |
-> | V1 中的 SQLite / 恢复 / 审批 CLI / OS 调度 | **0.4.0-daily-runner** | 旧「V1/MVP」每日自动化主体 |
-> | V1 中的真实工作区与 Markdown 审阅 | **0.2.0-practical-mvp** | safety-first，dry-run 为主 |
-> | V1 中的 PyPI / 开源 README / CONTRIBUTING / examples | **0.5.0-public-beta** | **不是 0.4**；Public Beta 发布质量 |
-> | V2 | 拆入 0.3 / 0.4 / 1.0 | Connector 与核验扩展 |
-> | V3 | **1.0.0-stable** | 长期个人生产 |
+> | Mini | **0.1.0-mini** | ✅ 已完成 |
+> | V1 真实工作区 | **0.2.0-practical-mvp** | ✅ 已验收 |
+> | V1 Adapter / ModelRouter / Connector | **0.3.0-adapter-mvp** | 🔄 进行中 |
+> | V1 SQLite / 恢复 / 审批 / 调度 / **inbox** | **0.4.0-personal-daily-loop** | 下一焦点；见 40 规格 |
+> | V1 PyPI / 开源 README / CONTRIBUTING | **0.5 可选 PyPI** + **0.8 Optional Public** | 不再急 public beta |
+> | V2 Connector / 核验 / 多模型统计 | **0.3** + **0.6 Memory & Evaluation** + **1.0** | 拆分 |
+> | V3 长期稳定 / 跨日链 | **1.0.0-personal-stable** | |
+> | 旧 0.8 team-cloud / RBAC / Dashboard | **1.1+ Team / Cloud Preview** | **移出 0.x** |
+> | 旧 0.6 plugin-ecosystem | **0.7 Personal Extensions** | 本地 only |
+> | 旧 0.7 evaluation-benchmark | **0.6 Personal Memory & Evaluation** | 个人 scope |
 >
-> 下文「V1/MVP」若无特别说明，指 **0.2 + 0.3 + 0.4 的合并历史范围**；实施时请按 33 拆阶段，**不要一次性实现整段 V1**。
+> 下文「V1/MVP」若无特别说明，指 **0.2 + 0.3 + 0.4 的合并历史范围**；实施时按 **0.4-a→b→c→d** 子阶段推进，**不要一次性实现整段 V1**，**不要在 0.x 做团队功能**。
 
 本文用于 Mini（**0.1**）完成后的阶段推进。它不是重新定义架构，而是把 `09-versions.md`、`10-testing-and-acceptance.md`、`11-daily-operation.md`、`12-development-work-breakdown.md`、`14-implementation-manifest.md`、`19-adapter-specifications.md`、`24-configuration-spec.md`、`28-agent-development-guide.md`、`29-model-routing-and-runtime-policy.md` 和当前代码状态整理成可执行顺序。
 

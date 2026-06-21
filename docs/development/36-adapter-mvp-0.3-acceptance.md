@@ -35,8 +35,9 @@ Version: **0.3.0a1** (adapter-mvp safety alpha)
 | `approve` / `reject` / `cancel` CLI | **0.4** |
 | OS scheduler / daily automation | **0.4** |
 | Web UI | Not on roadmap |
-| PyPI / `init demo` | **0.5** |
-| Plugin marketplace | **0.6+** |
+| PyPI / `init demo` | **0.5 可选** / **0.8 Optional Public** — 见 [34-version-roadmap-0x.md](34-version-roadmap-0x.md) |
+| Plugin marketplace | **0.7** Personal Extensions（本地 only） |
+| Team / Dashboard | **1.1+** |
 | Vector DB / RAG | Not 0.3 |
 | auto push / PR / deploy | Never |
 
