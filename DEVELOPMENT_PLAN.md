@@ -23,7 +23,9 @@ LoopPilot 的详细开发计划已拆分为多个 Markdown 分册。
 - **0.1** Mini-MVP 已完成
 - **0.2** Practical MVP 已验收（`v0.2.0a1`）
 - **0.3** Adapter MVP — safety alpha `v0.3.0a1`；中文验收说明 [docs/zh/07-0.3-Adapter验收说明.md](docs/zh/07-0.3-Adapter验收说明.md)；英文 [36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md)
-- **0.4** 下一焦点 — [docs/zh/08-0.4-个人日用闭环.md](docs/zh/08-0.4-个人日用闭环.md)
+- **0.4.0b1** 稳定化进行中：0.4-d summary/schedule 实现存在，但 Full 0.4 因全量回归失败、0.4-c 未完成、migration v3 冲突和失败审计缺口而 **NOT READY**。
+- 当前修复规格：[0.4 Stabilization and Truthful Acceptance](docs/development/50-0.4-stabilization-and-truthful-acceptance.md)
+- Cursor 执行提示词：[CURSOR_0.4_STABILIZATION_PROMPT.md](prompts/CURSOR_0.4_STABILIZATION_PROMPT.md)
 
 ## 关键文档（英文规格）
 

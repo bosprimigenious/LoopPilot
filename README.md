@@ -2,6 +2,8 @@
 
 > Loop Engineering Ecosystem 的运行时层：受控 AI 工作闭环、可审计产物、默认安全。
 
+> **当前状态（2026-06-21）：0.4.0b1 stabilization in progress。** 0.4-d summary/schedule 实现存在，但 Full 0.4 因全量回归失败、0.4-c 未完成、migration v3 冲突及失败路径审计缺口而 **NOT READY**。权威补救计划见 [0.4 Stabilization and Truthful Acceptance](docs/development/50-0.4-stabilization-and-truthful-acceptance.md)。
+
 **LoopPilot** is a controlled runtime for loop-engineered personal AI workflows. It runs development, research, and information loops with explicit safety gates, auditable artifacts, and reproducible dry-run workflows.
 
 English interface spec: [docs/en-core.md](docs/en-core.md)

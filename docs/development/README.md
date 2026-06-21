@@ -23,11 +23,12 @@
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
   - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4-a** 已交付（2026-06-21，分支 `personal-daily-loop-0.4-a`）— SQLite + db/recovery CLI；tag `v0.4.0a1`
-  - **0.4-b** 已验收（2026-06-21）— inbox/queue/today；verify 27/27
-  - **0.4-c** **未实现** — Review Layer；全链 BLOCKED
-  - **0.4-d** 已验收（2026-06-21）— summary/schedule/daily dry-run；verify 29/29
-  - **0.4 全链** BLOCKED — [50-personal-daily-loop-0.4-full-acceptance.md](50-personal-daily-loop-0.4-full-acceptance.md)；[logs/2026-06-21-0.4-full-acceptance-run.md](logs/2026-06-21-0.4-full-acceptance-run.md)
+  - **0.4-a** 已交付（2026-06-21）— SQLite + db/recovery CLI
+  - **0.4-b** 已验收（2026-06-21）— inbox/queue/today
+  - **0.4-c** Review Layer — 实现中（feat/0.5-safe-autonomy 前置）
+  - **0.4-d** 已验收（2026-06-21）— summary/schedule/daily dry-run
+  - **0.5 Safe Autonomy** — 当前分支；SafetyGate → schedule install → unattended daily
+  - 稳定化行动项：[50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
   - **0.5+** 文档规划；Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
@@ -96,6 +97,7 @@
 48. [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) — **0.4-d 验收（planned）**
 49. [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) — **0.4-d Summary Engine 架构**
 50. [47-output-interface-spec.md](47-output-interface-spec.md) — **输出接口：人 MD / 机器 JSON**
+51. [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md) — **0.4 稳定化、诚实验收与 Ideas 验收**
 
 ## 中文认知层对应关系
 
