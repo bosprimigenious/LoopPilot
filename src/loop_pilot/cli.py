@@ -13,8 +13,12 @@ from loop_pilot.adapters.factory import list_adapters
 from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
 from loop_pilot.cli_db import db
+from loop_pilot.cli_schedule import schedule
+from loop_pilot.cli_summary import summary
+from loop_pilot.cli_tasks import inbox, queue, today
 from loop_pilot.config import load_config
 from loop_pilot.domain.models import RunRequest
+from loop_pilot.runtime.daily_run import DailyRunService
 from loop_pilot.runtime.recovery_scan import scan_recovery
 from loop_pilot.runtime.run_ids import new_run_id
 from loop_pilot.storage.db_ops import sqlite_doctor_checks
@@ -260,6 +264,38 @@ def run_all(ctx: click.Context, fixture_set: str, profile: str | None, dry_run: 
         click.echo(f"{record.loop_type}: {outcome} ({record.run_id})")
 
 
+@run.command("daily")
+@click.option("--dry-run", is_flag=True, default=True, help="Preview daily workflow (default)")
+@click.pass_context
+def run_daily(ctx: click.Context, dry_run: bool) -> None:
+    """Run daily workflow: verify, recovery-scan, today preview, summary."""
+    config_dir: Path = ctx.obj["config_dir"]
+    application = _get_app(config_dir)
+    backend = str(application.config.runtime.get("state_backend", "json")).lower()
+    if backend != "sqlite":
+        raise click.ClickException("run daily requires runtime.state_backend=sqlite")
+
+    from loop_pilot.cli_tasks import _task_services
+
+    cfg = application.config
+    task_store, _, _, _ = _task_services(cfg)
+    service = DailyRunService(cfg, application.state_store, task_store)
+    try:
+        result = service.run_daily(dry_run=dry_run)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(f"Daily run ({'dry-run' if dry_run else 'live'}): {result.today_date}")
+    for step in result.steps:
+        click.echo(f"  - {step}")
+    click.echo(f"  - planned actions: {len(result.planned)}")
+    for item in result.planned:
+        click.echo(f"    * [{item.loop_type}] {item.title} -> {item.action}")
+    click.echo(f"  - pending review: {result.pending_review_count}")
+    if result.summary:
+        click.echo(f"  - summary: {result.summary.path}")
+
+
 @app.command()
 @click.pass_context
 def status(ctx: click.Context) -> None:
@@ -329,6 +365,11 @@ def _run_single(
 
 
 app.add_command(db)
+app.add_command(inbox)
+app.add_command(queue)
+app.add_command(today)
+app.add_command(summary)
+app.add_command(schedule)
 
 
 @app.command("recovery-scan")

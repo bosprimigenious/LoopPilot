@@ -221,14 +221,14 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
             proc.stdout.strip().splitlines()[-1] if proc.stdout else f"rc={proc.returncode}",
         )
 
-    cmd = [sys.executable, "-m", "loop_pilot.cli", "summary", "today", "--help"]
+    cmd = [sys.executable, "-m", "loop_pilot.cli", "summary", "today"]
     proc = _run(cmd, cwd=repo)
     json_ok = proc.returncode != 0 or "No such command" in (proc.stdout + proc.stderr) or "sqlite" in (proc.stdout + proc.stderr).lower()
     record(
         "json backend no fake summary",
         _display(cmd),
         json_ok,
-        "not registered or sqlite guard" if json_ok else "unexpected success on default json backend",
+        "not registered or clear error" if json_ok else "unexpected success on default json backend",
     )
 
     return results

@@ -50,7 +50,7 @@ agentic-rubric-runner
 |------|--------|----------|
 | **InternLoop** | 解决一个开发问题，运行测试，生成工程报告 | 支持 fixture / demo dry-run；ToolBroker 已接入 |
 | **PaperLoop** | 推进一个论文缺口，检查证据，生成修订报告 | 支持 fixture / demo dry-run；工作区读写经 ToolBroker |
-| **DailyNewsLoop** | 从离线快照筛选高价值信号，生成 candidate-actions | 支持 demo source profile；**0.4-b 后**写入 Inbox |
+| **DailyNewsLoop** | 从离线快照筛选高价值信号，生成 candidate-actions | 支持 demo source profile；**显式** `inbox import-daily-news` 导入 Inbox（0.4-b） |
 
 > **说明：** Inbox / Queue / Today 属于 **0.4 Personal Daily Loop**。0.3 阶段 DailyNewsLoop 主要生成 `candidate-actions.json` 和报告产物。
 
@@ -66,7 +66,7 @@ agentic-rubric-runner
 | **0.2** Practical MVP | ✅ Completed | demo workspace / demo profile 可运行 |
 | **0.3.0a1** Adapter Safety Alpha | ✅ Completed | Adapter gate、blocked trace、CI verify |
 | **0.3.0b1** ToolBroker Beta | ✅ Completed automated acceptance | ToolBroker 全 Loop 强制、自动化验收通过；**live run 仍为 MANUAL** |
-| **0.4** Personal Daily Loop | 📋 Next | SQLite、recovery、Inbox、Queue、Today、review、summary |
+| **0.4** Personal Daily Loop | 🔄 In progress | 0.4-a/b 已交付；0.4-c/d 待做 |
 | **0.5** Unattended Safe Mode | 📋 Planned | 安全无人值守、本地定时运行、evaluation gate |
 | **0.6+** Real Adapter Long Run | 📋 Planned | Cursor CLI / Codex / DeepSeek 长期运行与预算控制 |
 | **1.x** | 📋 Planned | 1.0 个人稳定 → 1.1 智能 → 1.2 协作 → 1.3 团队 preview |
@@ -270,7 +270,7 @@ REVIEW_REQUIRED / DONE / BLOCKED
 | 阶段 | 目标 | 不做什么 |
 |------|------|----------|
 | **0.4-a** | 状态可靠：SQLite、migration、backup、verify、recovery-scan | 不做 Inbox / Scheduler |
-| **0.4-b** | 任务入口：Inbox、Queue、Today | 不做自动 approve |
+| **0.4-b** | 任务入口：Inbox、Queue、Today | ✅ 已交付（2026-06-21） |
 | **0.4-c** | 个人审阅：review、approve、reject、defer、cancel、resume | 不做无人值守 |
 | **0.4-d** | 每日总结与调度预览：summary、schedule dry-run | 不默认安装定时任务 |
 
@@ -287,15 +287,22 @@ loop-pilot recovery-scan
 
 > 需要 `runtime.state_backend=sqlite`。默认 `json` 后端保持 0.1 回归不变。
 
-### 0.4-b 目标命令
+### 0.4-b 已交付命令
 
 ```bash
-loop-pilot inbox add "fix login test" --source manual
+loop-pilot inbox add "fix login test" --source manual --loop intern --priority 2
 loop-pilot inbox list
-loop-pilot queue promote <inbox-id>
+loop-pilot inbox archive <inbox-id>
+loop-pilot queue promote <inbox-id> --loop intern
 loop-pilot queue list
+loop-pilot queue demote <queue-id>
 loop-pilot today
+loop-pilot today add <inbox-id>
+loop-pilot today add-queue <queue-id>
+loop-pilot inbox import-daily-news --from var/artifacts/daily-news/<run-id>/candidate-actions.json [--dry-run]
 ```
+
+> DailyNews **不会**自动导入 Inbox；必须显式 `import-daily-news`。
 
 ### 0.4-c 目标命令
 
@@ -496,7 +503,7 @@ loop-pilot run all --profile demo --dry-run
 
 | 检查项 | 结果 |
 |--------|------|
-| `pytest -q` | ✅ 141 passed |
+| `pytest -q` | ✅ 157 passed |
 | `python scripts/verify_0_3_acceptance.py` | ✅ 20/20 PASS |
 | `ruff check .` | ✅ PASS |
 | `loop-pilot adapters list` | ✅ PASS |

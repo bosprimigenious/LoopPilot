@@ -115,19 +115,29 @@ loop-pilot doctor
 - Default CI uses `state_backend: json`; 0.4-b unit tests should use temp sqlite paths (like 0.4-a).
 - Full CLI acceptance remains opt-in via sqlite config dir.
 
-## Readiness gate (2026-06-21 verification)
+## Verification status (2026-06-21)
 
 | Expected | Status |
 |----------|--------|
-| `src/loop_pilot/tasks/` (store, inbox/queue/today services) | **WIP present** |
-| `src/loop_pilot/cli_tasks.py` | **WIP present** |
-| Migration v2 (`inbox_items`, `queue_items`, `task_events`) | **WIP present** (`CURRENT_SCHEMA_VERSION = 2`) |
-| `loop-pilot inbox` / `queue` / `today` CLI | **Missing** — `cli_tasks` not wired in `cli.py` |
-| `tests/unit/test_inbox_queue.py` | **Missing** |
-| `test_db_ops.py` schema v2 alignment | **Failing** (tests still assert v1) |
-| DailyNews → SQLite inbox dual-write in loop | **Missing** (artifact-only; use `inbox import-daily-news` CLI when wired) |
+| `src/loop_pilot/tasks/` + `cli_tasks.py` | **Done** |
+| Migration v2+ (`inbox_items`, `queue_items`) | **Done** (schema v3) |
+| `loop-pilot inbox` / `queue` / `today` | **Done** |
+| Tests (unit + integration) | **Done** (16 tests, `-k inbox or queue or today`) |
+| DailyNews → SQLite inbox | **Done** via `inbox import-daily-news` |
 
-Run `python scripts/verify_0_4b_acceptance.py` to re-check before full acceptance.
+Run `python scripts/verify_0_4b_acceptance.py` for automated re-check.
+
+### Expected outputs (2026-06-21 run)
+
+| Command | Expected |
+|---------|----------|
+| `inbox add` | `Inbox item created: inb_*` |
+| `inbox list` | Table with id, source, loop, priority, status, title |
+| `queue promote` | `Queue item created: que_* (from inb_*)` |
+| `queue list` | Queued item with loop_type |
+| `today` | Date header + priority/loop/status/title |
+| `pytest -k inbox or queue or today` | 16 passed |
+| `verify_0_4b_acceptance.py` | READY, all PASS |
 
 ## Related docs
 

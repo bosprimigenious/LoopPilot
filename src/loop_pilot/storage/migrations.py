@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Callable
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 3
 
 MigrationFn = Callable[[sqlite3.Connection], None]
 
@@ -98,6 +98,85 @@ def _migrate_v1(conn: sqlite3.Connection) -> None:
     )
 
 
+@_migration(2)
+def _migrate_v2(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS inbox_items (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            body TEXT,
+            source TEXT NOT NULL,
+            source_ref TEXT,
+            loop_hint TEXT,
+            priority INTEGER NOT NULL DEFAULT 3,
+            status TEXT NOT NULL DEFAULT 'open',
+            dedupe_key TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_inbox_items_dedupe_key
+        ON inbox_items(dedupe_key)
+        WHERE dedupe_key IS NOT NULL
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS queue_items (
+            id TEXT PRIMARY KEY,
+            inbox_id TEXT,
+            title TEXT NOT NULL,
+            body TEXT,
+            loop_type TEXT NOT NULL,
+            priority INTEGER NOT NULL DEFAULT 3,
+            status TEXT NOT NULL DEFAULT 'queued',
+            scheduled_for TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY(inbox_id) REFERENCES inbox_items(id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS task_events (
+            id TEXT PRIMARY KEY,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            payload_json TEXT,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+
+
+@_migration(3)
+def _migrate_v3(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS summaries (
+            id TEXT PRIMARY KEY,
+            summary_type TEXT NOT NULL,
+            summary_date TEXT NOT NULL,
+            path TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'generated',
+            run_count INTEGER NOT NULL DEFAULT 0,
+            review_count INTEGER NOT NULL DEFAULT 0,
+            blocked_count INTEGER NOT NULL DEFAULT 0,
+            inbox_count INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(summary_type, summary_date)
+        )
+        """
+    )
+
+
 def get_applied_versions(conn: sqlite3.Connection) -> set[int]:
     conn.execute(
         """
@@ -148,4 +227,8 @@ def required_tables() -> tuple[str, ...]:
         "artifact_manifests",
         "events",
         "run_locks",
+        "inbox_items",
+        "queue_items",
+        "task_events",
+        "summaries",
     )

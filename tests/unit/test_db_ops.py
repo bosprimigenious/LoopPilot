@@ -48,13 +48,15 @@ def test_migrate_is_idempotent(tmp_path: Path) -> None:
     second = migrate_database(db_path, dry_run=False)
     dry_run_pending = migrate_database(db_path, dry_run=True)
 
-    assert first == [1]
+    assert first == list(range(1, CURRENT_SCHEMA_VERSION + 1))
     assert second == []
     assert dry_run_pending == []
 
     with __import__("sqlite3").connect(db_path) as conn:
         assert plan_migrations(conn) == []
-        assert CURRENT_SCHEMA_VERSION == 1
+        from loop_pilot.storage.migrations import get_current_schema_version
+
+        assert get_current_schema_version(conn) == CURRENT_SCHEMA_VERSION
 
 
 def test_verify_detects_orphan_checkpoint(tmp_path: Path) -> None:
