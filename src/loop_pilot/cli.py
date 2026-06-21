@@ -8,6 +8,9 @@ from pathlib import Path
 
 import click
 
+from loop_pilot.adapters.doctor import diagnose_adapters
+from loop_pilot.adapters.factory import list_adapters
+from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
 from loop_pilot.config import load_config
 from loop_pilot.domain.models import RunRequest
@@ -72,6 +75,56 @@ def doctor(ctx: click.Context) -> None:
 
 
 @app.group()
+@click.pass_context
+def adapters(ctx: click.Context) -> None:
+    """Inspect configured adapters."""
+    ctx.ensure_object(dict)
+
+
+@adapters.command("list")
+@click.pass_context
+def adapters_list(ctx: click.Context) -> None:
+    """List mock and configured real adapters."""
+    config_dir: Path = ctx.obj["config_dir"]
+    cfg = load_config(config_dir)
+    allow_real = cfg.allow_real_adapters
+    for entry in list_adapters(cfg.models):
+        adapter_id = str(entry["id"])
+        kind = str(entry["kind"])
+        is_real = is_real_adapter_kind(kind)
+        if is_real and not allow_real:
+            state = "disabled (allow_real_adapters=false)"
+        elif is_real:
+            state = "enabled (real)"
+        else:
+            state = "enabled (mock)"
+        click.echo(f"{adapter_id:24} {kind:18} {state}")
+
+
+@adapters.command("doctor")
+@click.pass_context
+def adapters_doctor(ctx: click.Context) -> None:
+    """Check adapter readiness (mock OK; real adapters WARN/BLOCKED)."""
+    config_dir: Path = ctx.obj["config_dir"]
+    cfg = load_config(config_dir)
+    diagnoses = diagnose_adapters(cfg.models, allow_real_adapters=cfg.allow_real_adapters)
+    has_blocked = False
+    expected_gate = not cfg.allow_real_adapters
+    for item in diagnoses:
+        click.echo(f"{item.adapter_id:24} {item.status:8} {item.message}")
+        if item.status == "blocked" and not (
+            expected_gate and "allow_real_adapters=false" in item.message
+        ):
+            has_blocked = True
+    if has_blocked:
+        sys.exit(1)
+    if expected_gate:
+        click.echo("Adapters doctor: OK (real adapters blocked by default)")
+    else:
+        click.echo("Adapters doctor: OK")
+
+
+@app.group()
 def run() -> None:
     """Run a Loop."""
 
@@ -79,6 +132,8 @@ def run() -> None:
 @run.command("intern")
 @click.option("--fixture", default=None, help="0.1 fixture name (default: simple_python_bug)")
 @click.option("--workspace", default=None, help="Demo workspace id or path")
+@click.option("--adapter", "adapter_override", default=None, help="Adapter id override (e.g. cursor_cli)")
+@click.option("--allow-real-adapters", is_flag=True, default=False, help="Opt-in real adapters for this run")
 @click.option("--dry-run", is_flag=True, default=False)
 @click.option("--review-only", is_flag=True, default=False, help="Read-only analysis; no writes")
 @click.pass_context
@@ -86,6 +141,8 @@ def run_intern(
     ctx: click.Context,
     fixture: str | None,
     workspace: str | None,
+    adapter_override: str | None,
+    allow_real_adapters: bool,
     dry_run: bool,
     review_only: bool,
 ) -> None:
@@ -96,6 +153,8 @@ def run_intern(
         "intern",
         fixture=fixture or (None if workspace else "simple_python_bug"),
         workspace=workspace,
+        adapter_override=adapter_override,
+        allow_real_adapters=allow_real_adapters or None,
         dry_run=dry_run,
         review_only=review_only,
     )
@@ -104,6 +163,8 @@ def run_intern(
 @run.command("paper")
 @click.option("--fixture", default=None, help="0.1 fixture name (default: unsupported_claim)")
 @click.option("--workspace", default=None, help="Demo workspace id or path")
+@click.option("--adapter", "adapter_override", default=None, help="Adapter id override (e.g. deepseek)")
+@click.option("--allow-real-adapters", is_flag=True, default=False, help="Opt-in real adapters for this run")
 @click.option("--dry-run", is_flag=True, default=False)
 @click.option("--review-only", is_flag=True, default=False, help="Read-only analysis; no writes")
 @click.pass_context
@@ -111,6 +172,8 @@ def run_paper(
     ctx: click.Context,
     fixture: str | None,
     workspace: str | None,
+    adapter_override: str | None,
+    allow_real_adapters: bool,
     dry_run: bool,
     review_only: bool,
 ) -> None:
@@ -121,6 +184,8 @@ def run_paper(
         "paper",
         fixture=fixture or (None if workspace else "unsupported_claim"),
         workspace=workspace,
+        adapter_override=adapter_override,
+        allow_real_adapters=allow_real_adapters or None,
         dry_run=dry_run,
         review_only=review_only,
     )
@@ -129,6 +194,8 @@ def run_paper(
 @run.command("daily-news")
 @click.option("--fixture", default=None, help="0.1 fixture name (default: github_star_snapshots)")
 @click.option("--source-profile", default=None, help="Configured local source profile (e.g. demo)")
+@click.option("--adapter", "adapter_override", default=None, help="Adapter id override")
+@click.option("--allow-real-adapters", is_flag=True, default=False, help="Opt-in real adapters for this run")
 @click.option("--dry-run", is_flag=True, default=False)
 @click.option("--review-only", is_flag=True, default=False, help="Read-only analysis")
 @click.pass_context
@@ -136,6 +203,8 @@ def run_daily_news(
     ctx: click.Context,
     fixture: str | None,
     source_profile: str | None,
+    adapter_override: str | None,
+    allow_real_adapters: bool,
     dry_run: bool,
     review_only: bool,
 ) -> None:
@@ -146,6 +215,8 @@ def run_daily_news(
         "daily_news",
         fixture=fixture or (None if source_profile else "github_star_snapshots"),
         source_profile=source_profile,
+        adapter_override=adapter_override,
+        allow_real_adapters=allow_real_adapters or None,
         dry_run=dry_run,
         review_only=review_only,
     )
@@ -211,6 +282,8 @@ def _run_single(
     fixture: str | None,
     workspace: str | None = None,
     source_profile: str | None = None,
+    adapter_override: str | None = None,
+    allow_real_adapters: bool | None = None,
     dry_run: bool,
     review_only: bool = False,
 ) -> None:
@@ -222,6 +295,8 @@ def _run_single(
         fixture=fixture,
         workspace=workspace,
         source_profile=source_profile,
+        adapter_override=adapter_override,
+        allow_real_adapters=allow_real_adapters,
         review_only=review_only,
         dry_run=dry_run,
         config_snapshot_hash=application.config.snapshot_hash(),

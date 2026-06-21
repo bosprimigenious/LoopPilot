@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
+from loop_pilot.adapters.errors import AdapterBlockedError
+from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -63,6 +64,7 @@ class PaperLoop:
         phase_hook: Callable[[RunRecord], None] | None = None,
         resume_from: dict[str, Any] | None = None,
         workspace_spec: WorkspaceSpec | None = None,
+        adapter_override: str | None = None,
     ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
         self._phase_hook = phase_hook
         _ = resume_from
@@ -89,6 +91,7 @@ class PaperLoop:
         run_dir = self.artifact_dir / "paper" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
         try:
@@ -97,6 +100,7 @@ class PaperLoop:
                 "analysis_medium",
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
+                adapter_override=adapter_override or request.adapter_override,
             )
         except AdapterBlockedError as exc:
             self._enter_observing(record, trace)
@@ -161,8 +165,11 @@ class PaperLoop:
 
         revised_text, revisions = self._revise_claims(paper_text, evidence_map, request.dry_run)
         revised_path = run_dir / "paper-revised.md"
+        proposed_path = run_dir / "proposed-revision.md"
         if not request.dry_run and not request.review_only:
             revised_path.write_text(revised_text, encoding="utf-8")
+        proposed_path.write_text(revised_text, encoding="utf-8")
+        adapter_trace.append({"event": "adapter_call", "role": "research", "revisions": len(revisions)})
 
         self._transition(record, RunPhase.EVALUATING, trace)
         evaluation = self._run_checks(paper_text, revised_text, evidence_map)
@@ -183,6 +190,9 @@ class PaperLoop:
 
         evidence_artifact = self._save_json(run_dir, "evidence-map.json", evidence_map, "claim_evidence_checker")
         artifacts.append(evidence_artifact)
+        artifacts.append(
+            self._save_text(run_dir, "proposed-revision.md", revised_text, "writing_agent")
+        )
 
         manifest_rel = f"paper/{record.run_id}/artifact-manifest.json"
         report_body = {
@@ -369,6 +379,19 @@ class PaperLoop:
             kind="evaluation",
             path=str(path),
             media_type="application/json",
+            sha256=content_hash({"content": content}),
+            size_bytes=len(content.encode()),
+            created_by=created_by,
+        )
+
+    def _save_text(self, run_dir: Path, name: str, content: str, created_by: str) -> ArtifactReference:
+        path = run_dir / name
+        path.write_text(content, encoding="utf-8")
+        return ArtifactReference(
+            artifact_id=f"{run_dir.name}-{name}",
+            kind="report",
+            path=str(path),
+            media_type="text/markdown",
             sha256=content_hash({"content": content}),
             size_bytes=len(content.encode()),
             created_by=created_by,

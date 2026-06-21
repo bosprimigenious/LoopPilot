@@ -47,6 +47,19 @@ See [docs/development/34-version-roadmap-0x.md](docs/development/34-version-road
 - **0.2 Practical MVP**: implemented as **`0.2.0a1`** — local acceptance passed 2026-06-21 (tag `v0.2.0a1`)
 - **0.3 Adapter MVP**: specification only — [36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md)
 
+## Adapter MVP (0.3)
+
+0.3 adds **controlled real adapter wiring** with default safety off (`allow_real_adapters=false`). MockAdapter remains the CI default; Cursor CLI and OpenAI-compatible adapters are configured but blocked until explicitly enabled.
+
+```bash
+loop-pilot adapters list
+loop-pilot adapters doctor
+loop-pilot run intern --workspace examples/intern_demo --adapter cursor_cli --dry-run
+# expect: blocked
+```
+
+Acceptance: [docs/development/36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md)
+
 ## Practical MVP (0.2)
 
 0.2 moves from pure fixtures to **controlled demo workspaces** under `examples/`, still defaulting to **MockAdapter + dry-run**. Human review is Markdown-only (`review-required.md`, `next-actions.md`) — no approve/reject CLI yet.
