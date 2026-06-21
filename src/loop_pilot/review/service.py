@@ -33,10 +33,11 @@ def mark_patch_run_waiting_review(
     state_store: StateStore | None = None,
 ) -> RunRecord:
     """Patch-producing runs are not final success until a human approves."""
-    record.phase = RunPhase.WAITING_APPROVAL
+    record.phase = RunPhase.TERMINATED
     record.outcome = RunOutcome.PARTIAL
     record.review_status = "needs_review"
     record.report_status = "needs_review"
+    record.terminal_reason = record.terminal_reason or "Patch produced; waiting for human review"
     run_dir = run_artifact_dir(artifact_dir, record.loop_type, record.run_id)
     finalize_terminal_artifacts(
         run_dir,
@@ -67,15 +68,8 @@ class ReviewService:
         if not self._needs_review(record):
             return None
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, record.run_id)
-        if (
-            record.outcome == RunOutcome.SUCCEEDED
-            and (run_dir / "patch.diff").exists()
-            and record.review_status not in {
-            "approved",
-            "rejected",
-            "cancelled",
-        }
-        ):
+        has_patch = (run_dir / "patch.diff").exists()
+        if has_patch and record.review_status not in {"approved", "rejected", "cancelled"}:
             record = mark_patch_run_waiting_review(
                 artifact_dir=self.artifact_dir,
                 record=record,
@@ -164,6 +158,8 @@ class ReviewService:
             raise ApprovalError("reject requires --reason")
         self._require_item(run_id)
         record = reject_run(self.state_store, run_id, reason)
+        run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
+        finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
         self.store.record_decision(run_id, decision="reject", status="rejected", reason=reason)
         self.store.append_event(run_id=run_id, event_type="review_rejected", payload={"reason": reason})
         return record
@@ -187,6 +183,8 @@ class ReviewService:
     def cancel(self, run_id: str, reason: str) -> RunRecord:
         self._require_item(run_id)
         record = cancel_run(self.state_store, run_id, reason)
+        run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
+        finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
         self.store.record_decision(run_id, decision="cancel", status="cancelled", reason=reason)
         self.store.append_event(run_id=run_id, event_type="review_cancelled", payload={"reason": reason})
         return record
@@ -198,11 +196,15 @@ class ReviewService:
         if item is not None and item.status in {"rejected", "cancelled"}:
             raise ResumeError(f"cannot resume a {item.status} run")
         record = self.state_store.get_run(run_id)
-        if record is not None and record.review_status in {"rejected", "cancelled"}:
+        if record is None:
+            raise ResumeError(f"Run not found: {run_id}")
+        run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
+        if (run_dir / "patch.diff").exists() and record.review_status == "needs_review":
+            raise ResumeError("requires approve/reject/cancel, not resume")
+        if record.review_status in {"rejected", "cancelled"}:
             raise ResumeError(f"cannot resume run with review_status={record.review_status}")
         if (
-            record is not None
-            and record.review_status == "approved"
+            record.review_status == "approved"
             and record.phase == RunPhase.TERMINATED
             and record.outcome == RunOutcome.SUCCEEDED
         ):

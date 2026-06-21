@@ -65,6 +65,9 @@ class ReviewStore:
         if existing is not None and existing.status not in {"pending", "deferred"}:
             return existing
         now = rfc3339()
+        if existing is not None and existing.status == "deferred":
+            if existing.deferred_until and existing.deferred_until > now[:10]:
+                return existing
         if existing is not None:
             with self._connect() as conn:
                 conn.execute(

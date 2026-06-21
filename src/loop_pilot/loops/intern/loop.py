@@ -31,6 +31,7 @@ from loop_pilot.loops.intern.workspace import (
 )
 from loop_pilot.models.router import ModelRouter
 from loop_pilot.policy.engine import PolicyEngine
+from loop_pilot.review.service import mark_patch_run_waiting_review
 from loop_pilot.reporting.human_review import (
     recommended_for_outcome,
     write_next_actions,
@@ -40,7 +41,6 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
-from loop_pilot.review.service import mark_patch_run_waiting_review
 from loop_pilot.runtime.trace import TraceWriter
 from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.tools.policy import ToolPolicy
@@ -526,22 +526,21 @@ class InternLoop:
         record.finished_at = rfc3339()
         trace.append({"event": "terminated", "outcome": record.outcome.value if record.outcome else None})
 
-        if (run_dir / "patch.diff").exists() and record.outcome == RunOutcome.SUCCEEDED:
+        has_patch = (run_dir / "patch.diff").exists()
+        patch_decided = record.review_status in {"approved", "rejected", "cancelled"}
+        if has_patch and not patch_decided:
             record = mark_patch_run_waiting_review(artifact_dir=self.artifact_dir, record=record)
         else:
             record.phase = RunPhase.TERMINATED
-            record.report_status = "generated"
+            if record.report_status in {None, "needs_review"}:
+                record.report_status = "generated"
             finalize_terminal_artifacts(run_dir, record)
 
+        manifest_payload = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
         manifest = ArtifactManifest(
             run_id=record.run_id,
             artifacts=artifacts,
-            terminal_outcome=record.outcome.value if record.outcome else None,
-        )
-        manifest_path = run_dir / "artifact-manifest.json"
-        manifest_path.write_text(
-            __import__("json").dumps(manifest.to_dict(), indent=2),
-            encoding="utf-8",
+            terminal_outcome=manifest_payload.get("terminal_outcome"),
         )
         return record, manifest, rounds
 

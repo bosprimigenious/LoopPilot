@@ -43,12 +43,18 @@ REQUIRED_TESTS = [
     "tests/unit/test_review_service_patch_gate.py",
 ]
 BEHAVIOR_TESTS = [
-    "tests/unit/test_review_service_patch_gate.py::test_patch_run_enters_review_gate_before_success",
-    "tests/unit/test_review_service_patch_gate.py::test_approve_patch_run_finalizes_without_resume_deadlock",
+    "tests/unit/test_review_service_patch_gate.py::test_patch_run_writes_needs_review_gate_before_approval",
+    "tests/unit/test_review_service_patch_gate.py::test_patch_run_is_needs_review_not_completed_in_summary",
+    "tests/unit/test_review_service_patch_gate.py::test_approve_patch_run_finalizes_directly",
+    "tests/unit/test_review_service_patch_gate.py::test_approved_patch_run_does_not_enter_resume_requested",
     "tests/unit/test_review_service_patch_gate.py::test_rejected_patch_run_cannot_resume",
     "tests/unit/test_review_service_patch_gate.py::test_cancelled_patch_run_cannot_resume",
-    "tests/unit/test_terminal_artifacts.py::test_manifest_does_not_include_stale_self_checksum",
-    "tests/unit/test_summary_collector.py::test_report_path_prefers_actual_report_over_markdown_logs",
+    "tests/unit/test_terminal_artifacts.py::test_manifest_does_not_include_self_checksum",
+    "tests/unit/test_terminal_artifacts.py::test_artifact_manifest_excludes_itself",
+    "tests/unit/test_terminal_artifacts.py::test_terminal_artifacts_manifest_checksums_match_final_files",
+    "tests/unit/test_terminal_artifacts.py::test_intern_patch_run_does_not_overwrite_canonical_manifest",
+    "tests/unit/test_summary_collector.py::test_report_path_prefers_actual_report_over_diff_summary",
+    "tests/unit/test_review_store.py::test_deferred_review_item_survives_sync_until_due_date",
 ]
 
 

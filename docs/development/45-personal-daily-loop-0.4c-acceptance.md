@@ -53,6 +53,14 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 | gate | `needs_review` | `pass` |
 | resume | allowed from safe checkpoint | **blocked** — already finalized |
 
+### Deferred sync invariant (P2)
+
+When `ReviewService.sync_from_runs()` re-enqueues runs that still need review:
+
+- Items with `status=deferred` and `deferred_until` in the future stay `deferred` (only `artifact_path` may update).
+- Items with `status` in `approved`, `rejected`, `cancelled` are never touched.
+- Expired deferred items (`deferred_until <= today`) may return to `pending`.
+
 ## Acceptance checklist
 
 | # | Item | Pass criteria | Verified |
@@ -62,7 +70,7 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 | 3 | `gate_result.json` | Present with valid `gate` for each listed run | PASS |
 | 4 | `approve` | Direct-finalize patch runs (`TERMINATED`/`SUCCEEDED`/`pass`); no `resume_requested` | PASS |
 | 5 | `reject --reason` | Requires reason; terminal BLOCKED semantics | PASS |
-| 6 | `defer` | Sets deferred_until; hidden from default `today` | PASS |
+| 6 | `defer` | Sets `deferred_until`; hidden from default `today`; **sync must not revert to pending before due date** | PASS |
 | 7 | `cancel` | Releases lock; auditable | PASS |
 | 8 | `resume` | Blocked after approve/reject/cancel; safe checkpoint only | PASS |
 | 9 | 0.4-b regression | inbox/queue/today still green | PASS |

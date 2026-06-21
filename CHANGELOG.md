@@ -4,11 +4,12 @@
 
 ### Fixed (Codex PR #8 — truthful patch review acceptance)
 
-- **P0-1 patch review gate**: `patch.diff` + `SUCCEEDED` runs enter `WAITING_APPROVAL` / `PARTIAL` / `needs_review` via `mark_patch_run_waiting_review()`; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
+- **P0-1 patch review gate**: `patch.diff` runs finalize as `TERMINATED` / `PARTIAL` / `needs_review` (not completed) until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
 - **P0-2 direct-finalize approve**: `approve` on `patch.diff` runs sets `approved` + `TERMINATED` + `SUCCEEDED` + `gate=pass` without `resume_requested`; `resume()` rejects approved finalized runs.
-- **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself (avoids stale self-checksum).
+- **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself; `terminal_artifacts` scans run dir and recomputes sha256 from disk (atomic write).
 - **P1-2 report_path priority**: prefers `report.md`, `development-report.md`, `paper-development-report.md`, `daily-news-report.md`; manifest fallback only for `kind=="report"`.
-- **InternLoop**: patch-producing successful runs finalize to review gate in-loop; manifest `terminal_outcome` updated to `partial`.
+- **P1-3 InternLoop manifest**: InternLoop no longer writes `artifact-manifest.json`; canonical finalizer is the sole writer.
+- **P2 deferred sync**: `upsert_pending` keeps `deferred` items until `deferred_until`; approved/rejected/cancelled never revert to pending.
 - **0.3 acceptance**: intern fixture/workspace expected outcome updated to `partial` (truthful review semantics).
 
 ### Added
