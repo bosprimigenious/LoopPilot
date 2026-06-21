@@ -4,9 +4,17 @@
 
 ### Documentation
 
+- **0.4-c spec (planned)**: Review Layer — AI suggests only; human decides; no auto-approve
+  - [45-personal-daily-loop-0.4c-acceptance.md](docs/development/45-personal-daily-loop-0.4c-acceptance.md) — acceptance (8 must-haves, schema v3, CLI)
+  - [46-review-layer-design.md](docs/development/46-review-layer-design.md) — architecture
+  - [12-0.4c-审阅与决策层.md](docs/zh/12-0.4c-审阅与决策层.md) — Chinese guide
+  - [CURSOR_0.4C_REVIEW_LAYER_PROMPT.md](prompts/CURSOR_0.4C_REVIEW_LAYER_PROMPT.md) — implementation prompt
+  - [verify_0_4c_acceptance.py](scripts/verify_0_4c_acceptance.py) — readiness gate skeleton
+  - [2026-06-21-0.4c-spec-and-prompt.md](docs/development/logs/2026-06-21-0.4c-spec-and-prompt.md) — decision log
+  - **Not shipped**: review CLI, ReviewAgent, migration v3
 - **Output interface spec**: [47-output-interface-spec.md](docs/development/47-output-interface-spec.md) — human Markdown vs machine JSON/JSONL; canonical per-run artifact layout; `gate_result.json`; `artifact-manifest.json` `human_readable` flag; 0.4-b vs 0.4-c matrix
 - **Chinese guide**: [13-输出接口-人看MD机器看JSON.md](docs/zh/13-输出接口-人看MD机器看JSON.md)
-- **Review layer**: [45-personal-daily-loop-0.4c-acceptance.md](docs/development/45-personal-daily-loop-0.4c-acceptance.md), [46-review-layer-design.md](docs/development/46-review-layer-design.md)
+- **Review layer** (see 0.4-c spec above for full set)
 - **Schema**: [schemas/gate_result.schema.json](schemas/gate_result.schema.json)
 - **Decision log**: [logs/2026-06-21-output-interface-md-json.md](docs/development/logs/2026-06-21-output-interface-md-json.md)
 - **Pointers** in [17-data-contracts.md](docs/development/17-data-contracts.md), [07-data-and-reports.md](docs/development/07-data-and-reports.md)

@@ -96,13 +96,19 @@ DailyNews 路由：现有 `candidate-actions.json` 在 0.4-b 写入 SQLite `inbo
 **0.4-b 验收命令**：
 
 ```bash
-loop-pilot inbox add "fix login test" --source manual
+loop-pilot inbox add "fix login test" --source manual --loop intern --priority 2
 loop-pilot inbox list
-loop-pilot queue promote <inbox-id>
+loop-pilot queue promote <inbox-id> --loop intern
 loop-pilot queue list
+loop-pilot today add-queue <queue-id>
 loop-pilot today
-pytest tests/unit/test_inbox_queue.py -q
+loop-pilot inbox import-daily-news --from var/artifacts/daily-news/<run-id>/candidate-actions.json --dry-run
+loop-pilot inbox import-daily-news --from var/artifacts/daily-news/<run-id>/candidate-actions.json
+pytest tests/unit/test_inbox_store.py tests/unit/test_queue_store.py tests/unit/test_today_service.py tests/unit/test_daily_news_importer.py -q
+pytest tests/integration/test_inbox_cli.py tests/integration/test_queue_cli.py tests/integration/test_today_cli.py tests/integration/test_daily_news_to_inbox.py -q
 ```
+
+> DailyNews 路由：**不**自动写入 Inbox；使用 `inbox import-daily-news`（见 [logs/2026-06-21-0.4b-acceptance-run.md](logs/2026-06-21-0.4b-acceptance-run.md)）。
 
 ---
 
@@ -115,9 +121,12 @@ pytest tests/unit/test_inbox_queue.py -q
 | `loop-pilot reject <run-id> --reason "..."` | ✅ | 终止为 BLOCKED；reason 必填（可配置） |
 | `loop-pilot defer <run-id> [--until YYYY-MM-DD]` | ✅ | 推迟；回到 queue/inbox |
 | `loop-pilot cancel <run-id> [--reason]` | ✅ | 用户取消；释放锁 |
-| `loop-pilot resume <run-id>` | ✅ | 从合法 checkpoint 恢复（依赖 0.4-a） |
+| `loop-pilot review show <review-id>` | ✅ | 审阅详情 + suggestion 路径 + resume  eligibility |
+| `loop-pilot request-revision <run-id> --reason "..."` | ✅ | 打回修改；状态 `needs_revision` |
+| `loop-pilot resume <run-id>` | ✅ | 从合法 checkpoint 恢复；**仅** explicit approve 之后 |
+| `loop-pilot review batch --file PATH [--dry-run]` | 推荐 | 批量决策；无 auto-approve 失败项 |
 | `loop-pilot report <run-id>` | ✅ | 摘要 + 是否可 resume |
-| `loop-pilot pending` | 可选 | `review list` 别名或子集 |
+| `loop-pilot pending` | 可选 | `review list --status pending_review` 别名 |
 
 **defer 语义**：Run 或 Inbox 条目标记 `deferred_until`；`today` 默认隐藏，到期自动 resurfaced。
 
@@ -126,13 +135,21 @@ pytest tests/unit/test_inbox_queue.py -q
 ```bash
 loop-pilot run intern --workspace examples/intern_demo --dry-run
 loop-pilot review list
-loop-pilot approve <run-id>
+loop-pilot review show --run-id <run-id>
+loop-pilot approve <run-id> [--note "..."]
 loop-pilot reject <run-id> --reason "needs more tests"
 loop-pilot defer <run-id> --until 2026-06-25
 loop-pilot cancel <run-id>
-loop-pilot resume <run-id>    # 合法 checkpoint 场景
-pytest tests/integration/test_v1_recovery.py -q
+loop-pilot request-revision <run-id> --reason "expand tests"
+loop-pilot resume <run-id>    # 仅 explicit approve 之后
+loop-pilot review batch --file decisions.json --dry-run
+python scripts/verify_0_4c_acceptance.py
+pytest tests/integration/test_review_cli.py tests/integration/test_v1_recovery.py -q
 ```
+
+**0.4-c acceptance (planned):** See [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) for checklist, schema, ReviewAgent contract, and 8 must-haves. Architecture: [46-review-layer-design.md](46-review-layer-design.md). Chinese guide: [../zh/12-0.4c-审阅与决策层.md](../zh/12-0.4c-审阅与决策层.md). Spec log: [logs/2026-06-21-0.4c-spec-and-prompt.md](logs/2026-06-21-0.4c-spec-and-prompt.md).
+
+**Core principle:** AI suggests only (`review_suggestion.json`); human makes final decision. No auto-approve, no bypass review queue.
 
 ---
 
@@ -251,6 +268,9 @@ pytest -q
 
 ## 9. 相关文档
 
+- [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) — **0.4-c 验收清单（planned）**
+- [46-review-layer-design.md](46-review-layer-design.md) — **0.4-c Review Layer 架构**
+- [44-personal-daily-loop-0.4b-acceptance.md](44-personal-daily-loop-0.4b-acceptance.md) — **0.4-b 验收清单**
 - [43-personal-daily-loop-0.4a-acceptance.md](43-personal-daily-loop-0.4a-acceptance.md) — **0.4-a 验收清单**
 - [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md) — 0.4-a 交付记录
 - [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) — 实施顺序
