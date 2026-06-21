@@ -5,7 +5,6 @@
 ### Added
 
 - **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, verify 22/22
-- **0.5-a SafetyGate v1**: `src/loop_pilot/safety/`; gated `schedule install --yes`; `schedule status`; `safety doctor`
 
 ### Stabilization
 
