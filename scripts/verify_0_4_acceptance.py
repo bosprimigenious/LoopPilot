@@ -14,6 +14,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from loop_pilot.runtime.locks import clear_repo_runtime_locks
+
 
 @dataclass
 class StepResult:
@@ -79,20 +81,9 @@ def _record(
     results.append(StepResult(name, _display(cmd), passed, summary))
 
 
-def _clear_runtime_locks(repo: Path) -> None:
-    lock_dir = repo / "var" / "locks"
-    if not lock_dir.is_dir():
-        return
-    for path in lock_dir.iterdir():
-        try:
-            path.unlink()
-        except OSError:
-            pass
-
-
 def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
     results: list[StepResult] = []
-    _clear_runtime_locks(repo)
+    clear_repo_runtime_locks(repo)
     env = _venv_env(repo)
 
     for name, cmd in [
@@ -102,6 +93,7 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
         proc = _run(cmd, cwd=repo, env=env)
         _record(results, name, cmd, proc)
 
+    clear_repo_runtime_locks(repo)
     for script, expect_ready in COMPONENT_SCRIPTS:
         cmd = [sys.executable, str(repo / "scripts" / script)]
         proc = _run(cmd, cwd=repo, env=env)

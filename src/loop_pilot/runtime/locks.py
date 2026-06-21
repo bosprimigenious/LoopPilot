@@ -37,6 +37,15 @@ def clear_stale_locks(lock_dir: Path) -> None:
         store._clear_stale_lock(lock_path)
 
 
+_REPO_LOCK_DIRS = (Path("var/state/locks"), Path("var/locks"))
+
+
+def clear_repo_runtime_locks(repo_root: Path) -> None:
+    """Clear stale locks under default repo runtime lock dirs."""
+    for rel in _REPO_LOCK_DIRS:
+        clear_stale_locks(repo_root / rel)
+
+
 class FileLockStore:
     """Exclusive lock files — safe across processes on the same machine."""
 

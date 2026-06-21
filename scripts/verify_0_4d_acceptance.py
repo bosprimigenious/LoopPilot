@@ -15,6 +15,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from loop_pilot.runtime.locks import clear_repo_runtime_locks
+
 
 @dataclass
 class StepResult:
@@ -146,6 +148,7 @@ def _extract_summary_path(output: str) -> Path | None:
 
 def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
     results: list[StepResult] = []
+    clear_repo_runtime_locks(repo)
     readiness, ready = _readiness_checks(repo)
     results.extend(readiness)
 
@@ -169,6 +172,7 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
 
     record("0.4-d readiness gate", [sys.executable, "-c", "readiness"], True, "all prerequisites present")
 
+    clear_repo_runtime_locks(repo)
     prerequisites_passed = True
     for version, script_name in PREREQUISITE_SCRIPTS:
         cmd = [sys.executable, str(repo / "scripts" / script_name), "--cwd", str(repo)]
