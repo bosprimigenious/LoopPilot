@@ -9,7 +9,7 @@ import pytest
 from loop_pilot.app import App
 from loop_pilot.domain.models import RunRecord, RunRequest
 from loop_pilot.domain.states import RunOutcome, RunPhase
-from loop_pilot.runtime.approvals import approve_run, cancel_run
+from loop_pilot.runtime.approvals import cancel_run
 from loop_pilot.runtime.orchestrator import ResumeError
 from loop_pilot.runtime.recovery import build_recovery_plan
 from loop_pilot.storage.sqlite import SQLiteStateStore
