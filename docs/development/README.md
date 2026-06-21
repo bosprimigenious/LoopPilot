@@ -26,7 +26,7 @@
   - **0.4-a** 已交付（2026-06-21，分支 `personal-daily-loop-0.4-a`）— SQLite + db/recovery CLI
   - **0.4-b** inbox/queue/today（WIP / 验收中）
   - **0.4-c** 规格已就绪（2026-06-21）— Review Layer；实现待起
-  - **0.4-d+** summary/schedule 待 0.4-c 后
+  - **0.4-d** 规格已就绪（2026-06-21）— summary/schedule/daily dry-run；实现可并行
   - **0.5+** 文档规划；Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
@@ -92,7 +92,9 @@
 45. [44-personal-daily-loop-0.4b-acceptance.md](44-personal-daily-loop-0.4b-acceptance.md) — **0.4-b 验收**
 46. [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) — **0.4-c 验收**
 47. [46-review-layer-design.md](46-review-layer-design.md) — **0.4-c 审阅层设计**
-48. [47-output-interface-spec.md](47-output-interface-spec.md) — **输出接口：人 MD / 机器 JSON**
+48. [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) — **0.4-d 验收（planned）**
+49. [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) — **0.4-d Summary Engine 架构**
+50. [47-output-interface-spec.md](47-output-interface-spec.md) — **输出接口：人 MD / 机器 JSON**
 
 ## 中文认知层对应关系
 
@@ -119,6 +121,9 @@
 | [12-0.4c-审阅与决策层.md](../zh/12-0.4c-审阅与决策层.md) | [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) | 0.4-c 验收 |
 | [12-0.4c-审阅与决策层.md](../zh/12-0.4c-审阅与决策层.md) | [46-review-layer-design.md](46-review-layer-design.md) | 审阅层设计 |
 | [13-输出接口-人看MD机器看JSON.md](../zh/13-输出接口-人看MD机器看JSON.md) | [47-output-interface-spec.md](47-output-interface-spec.md) | 输出接口规格 |
+| [14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md) | [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) | 0.4-d 验收（planned） |
+| [14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md) | [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) | 0.4-d 架构 |
+| [14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md) | [logs/2026-06-21-0.4d-spec-and-prompt.md](logs/2026-06-21-0.4d-spec-and-prompt.md) | 0.4-d 规格决策 |
 
 ### 决策日志（中文）
 
@@ -129,6 +134,7 @@
 - [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md) — 0.3 验收跑记录
 - [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md) — 0.4-a 交付
 - [logs/2026-06-21-0.4c-spec-and-prompt.md](logs/2026-06-21-0.4c-spec-and-prompt.md) — 0.4-c 规格与 Cursor 提示词
+- [logs/2026-06-21-0.4d-spec-and-prompt.md](logs/2026-06-21-0.4d-spec-and-prompt.md) — 0.4-d 规格与 Cursor 提示词
 - [logs/2026-06-21-output-interface-md-json.md](logs/2026-06-21-output-interface-md-json.md) — 输出接口 MD/JSON 决策
 - [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md) — 0.1 交付
 - [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划
@@ -139,7 +145,7 @@
 - 架构冲突 → `01-architecture.md`
 - 运行流程冲突 → `02-runtime-mechanism.md`
 - 单 Loop 行为 → 对应 Loop 分册
-- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`；0.4-a/b/c 验收 → `43` / `44` / `45`；0.4-c 架构 → `46-review-layer-design.md`
+- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`；0.4-a/b/c/d 验收 → `43` / `44` / `45` / `48`；0.4-c/d 架构 → `46` / `49`
 - semver 索引（含历史 0.6–0.8 详细规格）→ `33-version-roadmap.md`
 - 是否完成 → `10-testing-and-acceptance.md` + 对应版本验收 doc（32/35/36）
 - 当前行动项 → `41-next-steps-after-0.3.md`

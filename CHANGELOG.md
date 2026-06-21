@@ -4,6 +4,13 @@
 
 ### Documentation
 
+- **0.4-d spec (planned)**: Daily Summary + Schedule Preview + Daily Dry-Run — usable daily dashboard, not feature demo
+  - [48-personal-daily-loop-0.4d-acceptance.md](docs/development/48-personal-daily-loop-0.4d-acceptance.md) — four-layer acceptance + 8 must-haves + SQL queries
+  - [49-daily-summary-engine-design.md](docs/development/49-daily-summary-engine-design.md) — summary engine architecture
+  - [14-0.4d-日汇总与调度预览.md](docs/zh/14-0.4d-日汇总与调度预览.md) — Chinese guide
+  - [CURSOR_0.4D_DAILY_SUMMARY_PROMPT.md](prompts/CURSOR_0.4D_DAILY_SUMMARY_PROMPT.md) — implementation prompt
+  - [verify_0_4d_acceptance.py](scripts/verify_0_4d_acceptance.py) — readiness gate skeleton
+  - [2026-06-21-0.4d-spec-and-prompt.md](docs/development/logs/2026-06-21-0.4d-spec-and-prompt.md) — decision log
 - **0.4-c spec (planned)**: Review Layer — AI suggests only; human decides; no auto-approve
   - [45-personal-daily-loop-0.4c-acceptance.md](docs/development/45-personal-daily-loop-0.4c-acceptance.md) — acceptance (8 must-haves, schema v3, CLI)
   - [46-review-layer-design.md](docs/development/46-review-layer-design.md) — architecture

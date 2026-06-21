@@ -177,17 +177,20 @@ pytest tests/integration/test_review_cli.py tests/integration/test_v1_recovery.p
 **0.4-d 验收命令**：
 
 ```bash
-loop-pilot run all --profile demo
 loop-pilot summary today
 loop-pilot summary week
 loop-pilot schedule print
 loop-pilot schedule install --dry-run
-python scripts/install_scheduler.py --dry-run
+loop-pilot run daily --dry-run
+python scripts/verify_0_4d_acceptance.py
+pytest tests/integration/test_daily_summary_cli.py -q
 
 # 0.1 回归（json 后端）
 loop-pilot run all --fixture-set mini --dry-run
 pytest -q
 ```
+
+**0.4-d acceptance (planned):** See [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) for four-layer checklist, SQL verification queries, pipeline closure, and 8 must-haves. Architecture: [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md). Chinese guide: [../zh/14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md). Spec log: [logs/2026-06-21-0.4d-spec-and-prompt.md](logs/2026-06-21-0.4d-spec-and-prompt.md).
 
 ---
 
@@ -214,8 +217,9 @@ pytest -q
 | inbox/queue | `src/loop_pilot/tasks/`（新建） | 0.4-b |
 | approvals | `src/loop_pilot/runtime/approvals.py` | 0.4-c |
 | recovery | `src/loop_pilot/runtime/recovery.py` | 0.4-a/c |
-| daily_summary | `src/loop_pilot/reporting/daily_summary.py` | 0.4-d |
-| schedule CLI | `src/loop_pilot/cli_schedule.py` | 0.4-d |
+| summary engine | `src/loop_pilot/summary/` | 0.4-d |
+| schedule CLI | `src/loop_pilot/cli_schedule.py`, `src/loop_pilot/scheduler/` | 0.4-d |
+| daily dry-run | `src/loop_pilot/runtime/daily_run.py` | 0.4-d |
 | db CLI | `src/loop_pilot/cli_db.py` | 0.4-a |
 
 ---
@@ -268,6 +272,8 @@ pytest -q
 
 ## 9. 相关文档
 
+- [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) — **0.4-d 验收清单（planned）**
+- [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) — **0.4-d Summary Engine 架构**
 - [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) — **0.4-c 验收清单（planned）**
 - [46-review-layer-design.md](46-review-layer-design.md) — **0.4-c Review Layer 架构**
 - [44-personal-daily-loop-0.4b-acceptance.md](44-personal-daily-loop-0.4b-acceptance.md) — **0.4-b 验收清单**
