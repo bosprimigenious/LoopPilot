@@ -31,9 +31,10 @@
 |-----------|--------|-------|
 | 0.4-b Task Entry | ✅ complete | inbox/queue/today green |
 | 0.4-d Summary + Schedule Preview | ✅ complete | summary + `schedule install --dry-run` |
-| **0.4-c Review Layer** | ❌ **blocker** | 0/16 NOT READY — must pass before formal 0.5 |
+| **0.4-c Review Layer** | ✅ complete | `verify_0_4c_acceptance.py` 22/22 |
+| Truthful 0.4 Milestone A | ⏸ in progress | aggregate gate may still have open items — see [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md) |
 | 0.5 Spec | ✅ drafted | this document |
-| 0.5 Implementation | ⏸ blocked by 0.4-c | no Step 1 until 0.4-c complete |
+| 0.5 Implementation | ⏸ blocked on Milestone A | no Step 1 until aggregate truthful 0.4 green |
 
 **Rule**: Do **not** start 0.5 Step 1 (SafetyGate v1) until 0.4-c Review Layer is complete and acceptance is green.
 
@@ -246,7 +247,7 @@ Manual: on Windows, compare `schedule install --dry-run` vs `--yes`; confirm ins
 
 **0.5 Safe Autonomy** 目标：在 0.4 个人日用闭环上，实现 OS 调度 + 分级无人值守，默认 fail-closed。
 
-**硬前置**：0.4-c Review Layer 未完成（0/16 NOT READY）前，不得启动 0.5 Step 1。
+**硬前置**：0.4-c Review Layer 已通过（22/22）；Truthful 0.4 Milestone A 聚合验收全绿前，不得启动 0.5 Step 1。
 
 **实施顺序**：
 
