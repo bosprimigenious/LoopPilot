@@ -17,7 +17,7 @@
 | **0.5** | Public Beta / PyPI | 发布质量、安装体验、文档、开源协作 | 还差 15–25%（若 0.4 完成） | 1–2 周 |
 | **1.0** | Stable personal production | 长期稳定个人生产 | — | — |
 
-**当前聚焦**：完成 **0.1 Mini-MVP**，然后进入 **0.2 Practical MVP**。**不要现在冲 0.3**。
+**当前聚焦**：**0.2 Practical MVP 已验收**（`v0.2.0a1`，见 [35-practical-mvp-0.2-acceptance.md](35-practical-mvp-0.2-acceptance.md)）。下一步：**0.3 Real Adapter MVP**（分支 `adapter-mvp-0.3`；规格见 [36](36-adapter-mvp-0.3-acceptance.md)–[39](39-next-steps-0.3.md)）。
 
 ```
 0.1 Mini-MVP ──► 0.2 Practical MVP ──► 0.3 Real Adapter MVP
@@ -529,7 +529,12 @@ GitHub Release 与 CHANGELOG 条目使用以下结构：
 | 文档 | 关系 |
 |------|------|
 | [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md) | 0.1 验收记录 |
-| [33-next-steps-0.2.md](33-next-steps-0.2.md) | 当前行动项：先 0.1 后 0.2 |
+| [35-practical-mvp-0.2-acceptance.md](35-practical-mvp-0.2-acceptance.md) | 0.2 验收记录（2026-06-21） |
+| [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md) | **0.3 验收清单** |
+| [37-adapter-safety-policy.md](37-adapter-safety-policy.md) | 0.3 Adapter 安全策略 |
+| [38-toolbroker-design.md](38-toolbroker-design.md) | 0.3 ToolBroker 设计 |
+| [39-next-steps-0.3.md](39-next-steps-0.3.md) | **0.3 开发 Phase 1–8** |
+| [33-next-steps-0.2.md](33-next-steps-0.2.md) | 0.2 行动项（已完成） |
 | [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) | 0.5 规划决策日志 |
 | [09-versions.md](09-versions.md) | Legacy 能力描述；冲突以本文为准 |
 | [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md) | Legacy 任务分解；见 §10 映射 |

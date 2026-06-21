@@ -9,7 +9,7 @@
 - PyPI distribution 与 CLI：`loop-pilot`。
 - Python import 与源码目录：`loop_pilot` / `src/loop_pilot/`。
 - **阶段版本**：采用 **0.x 体系**（0.1 → … → **0.5 public-beta** → **0.6 plugin-ecosystem** → **0.7 evaluation-benchmark** → **0.8 team-cloud-preview** → **0.9 release-candidate** → **1.0 stable**），semver 权威见 [33-version-roadmap.md](33-version-roadmap.md)；**0.5 完整实现清单**见 [34-version-roadmap-0x.md §6](34-version-roadmap-0x.md#6-05-public-beta--pypi050-public-beta)；**0.9 RC 规格**见 [34-version-roadmap-0x.md §10](34-version-roadmap-0x.md#10-09-release-candidate--stability-freeze090-release-candidate)。
-- **当前工程焦点**：**仅 0.1 Mini-MVP**（Phase A checklist）；**0.2–1.0 均为文档规划，不得提前实现**。
+- **当前工程焦点**：**0.2 Practical MVP 已验收**（`v0.2.0a1`）；**0.3 Adapter MVP 为下一实现阶段**（文档 36–39）；0.4–1.0 仍为文档规划。
 - 0.1 状态：本地 JSON 快照 + JSONL 事件，通过 `StateStore` 接口访问。
 - 0.4 状态：SQLite、事务检查点、恢复、审批、调度、daily-summary（**旧称「V1」每日自动化 = 0.4，不是 0.3**）。
 - 0.5 状态：PyPI、开源 README、`init demo`、examples、release CI、CONTRIBUTING/SECURITY（**旧 V1 PyPI/开源 = 0.5，不是 0.4**）。
@@ -58,9 +58,14 @@
 33. [33-next-steps-v1.md](33-next-steps-v1.md)：V1 后续规划（Legacy → 0.2/0.3/0.4/0.5 映射）。
 34. [33-next-steps-0.2.md](33-next-steps-0.2.md)：当前行动项（0.1 后 0.2）；§7 含 **0.5 远期 checklist**。
 35. [34-version-roadmap-0x.md](34-version-roadmap-0x.md)：**0.1→1.0 详细路线图**；§6 = 0.5 Public Beta；**§10 = 0.9 RC 完整规格**；§11 = 1.0 概要。
-36. [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md)：0.5 规划决策日志。
-37. [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md)：0.9 RC / Stability Freeze 规划决策日志。
-38. [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md)：0.1 Mini-MVP 交付与验证日志。
+36. [35-practical-mvp-0.2-acceptance.md](35-practical-mvp-0.2-acceptance.md)：**0.2 验收记录**（2026-06-21，`v0.2.0a1`）。
+37. [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md)：**0.3 Adapter MVP 验收清单**。
+38. [37-adapter-safety-policy.md](37-adapter-safety-policy.md)：0.3 Adapter 安全策略。
+39. [38-toolbroker-design.md](38-toolbroker-design.md)：0.3 ToolBroker 设计。
+40. [39-next-steps-0.3.md](39-next-steps-0.3.md)：**0.3 开发 Phase 1–8** 与分支 `adapter-mvp-0.3`。
+41. [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md)：0.5 规划决策日志。
+42. [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md)：0.9 RC / Stability Freeze 规划决策日志。
+43. [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md)：0.1 Mini-MVP 交付与验证日志。
 
 ## 文档权威性
 
@@ -72,7 +77,7 @@
 - 是否完成以 `10-testing-and-acceptance.md` 与 `32-mini-mvp-acceptance.md`（0.1）为准。
 - 0.1 Mini-MVP 边界以 `33-version-roadmap.md` §0.1、`32-mini-mvp-acceptance.md` 与 `25-mini-run-path.md` 为准。
 - 仓库内 sqlite/recovery/approvals 等 WIP 代码归属 **0.4**，见 `33-version-roadmap.md` §0.4「既有 WIP」。
-- 当前行动项以 `33-next-steps-v1.md` 与 `33-next-steps-0.2.md` 为准。
+- 当前行动项以 [39-next-steps-0.3.md](39-next-steps-0.3.md) 为准；0.2 见 [33-next-steps-0.2.md](33-next-steps-0.2.md)。
 - Legacy 任务细节以 `31-v1-v2-v3-implementation-roadmap.md` 为准（旧 V1 每日自动化 → 0.4；旧 V1 PyPI/开源 → **0.5**）。
 - 新设计必须先修改文档，再修改代码。
 
