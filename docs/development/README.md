@@ -2,15 +2,24 @@
 
 本目录是 LoopPilot 的正式开发说明。`ideas.md` 仅保存原始思路，根目录 `DEVELOPMENT_PLAN.md` 只作为入口。
 
-## 命名与 Mini 决策基线
+## 命名与版本基线
 
 - 项目名：`LoopPilot`。
+- GitHub 仓库：[bosprimigenious/loop-pilot](https://github.com/bosprimigenious/loop-pilot)。
 - PyPI distribution 与 CLI：`loop-pilot`。
 - Python import 与源码目录：`loop_pilot` / `src/loop_pilot/`。
-- Mini 状态：本地 JSON 快照 + JSONL 事件，通过 `StateStore` 接口访问。
-- V1 状态：SQLite、事务检查点和完整恢复。
-- Mini CLI：`doctor`、`run`、`run all`、`status`、`inspect`。
-- `resume`、`approve`、`reject`、`cancel` 从 V1 开始；Mini 不暴露占位或假成功命令。
+- **阶段版本**：采用 **0.x 体系**（0.1 → … → **0.5 public-beta** → **0.6 plugin-ecosystem** → **0.7 evaluation-benchmark** → **0.8 team-cloud-preview** → **0.9 release-candidate** → **1.0 stable**），semver 权威见 [33-version-roadmap.md](33-version-roadmap.md)；**0.5 完整实现清单**见 [34-version-roadmap-0x.md §6](34-version-roadmap-0x.md#6-05-public-beta--pypi050-public-beta)；**0.9 RC 规格**见 [34-version-roadmap-0x.md §10](34-version-roadmap-0x.md#10-09-release-candidate--stability-freeze090-release-candidate)。
+- **当前工程焦点**：**仅 0.1 Mini-MVP**（Phase A checklist）；**0.2–1.0 均为文档规划，不得提前实现**。
+- 0.1 状态：本地 JSON 快照 + JSONL 事件，通过 `StateStore` 接口访问。
+- 0.4 状态：SQLite、事务检查点、恢复、审批、调度、daily-summary（**旧称「V1」每日自动化 = 0.4，不是 0.3**）。
+- 0.5 状态：PyPI、开源 README、`init demo`、examples、release CI、CONTRIBUTING/SECURITY（**旧 V1 PyPI/开源 = 0.5，不是 0.4**）。
+- 0.6 状态：本地插件生态（Loop/Skill/Connector/Adapter 扩展框架）。
+- 0.7 状态：Evaluation Harness、`loop-pilot eval`、benchmarks/、指标、Golden Case、模型对比、agentic-rubric-runner 外部 evaluator（**文档规划**）。
+- 0.8 状态：本地优先团队协作（多项目 RBAC、共享审批、用量核算、Dashboard preview；**非** cloud SaaS）。
+- 0.9 状态：RC 稳定化（API/配置/DB 冻结、conformance、安全审计、7 天长跑）。
+- 1.0 状态：**生产就绪稳定承诺**（非功能堆叠；见 [33-version-roadmap.md §1.0](33-version-roadmap.md#100-stable--stableproduction-ready)）。
+- 0.1 CLI：`doctor`、`run`、`run all`、`status`、`inspect`。
+- `resume`、`approve`、`reject`、`cancel` 从 **0.4** 开始；0.1 不暴露占位或假成功命令。
 
 ## 阅读顺序
 
@@ -42,15 +51,29 @@
 26. [25-mini-run-path.md](25-mini-run-path.md)：从 Mock 到真实 Adapter 的最小可运行路径。
 27. [28-agent-development-guide.md](28-agent-development-guide.md)：Agent 语言、层级、调用图、权限、契约与逐 Loop 角色。
 28. [29-model-routing-and-runtime-policy.md](29-model-routing-and-runtime-policy.md)：模型角色、Adapter 选择、Fallback、隐私、成本和替换策略。
+29. [30-adapter-and-model-router-roadmap.md](30-adapter-and-model-router-roadmap.md)：Adapter 契约、ModelRouter 能力与 V1 接入顺序。
+30. [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md)：Mini 后 V1/MVP、V2、V3 的实施路线和阶段边界（Legacy 任务分解）。
+31. [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md)：0.1 Mini-MVP 验收范围与验证命令。
+32. [33-version-roadmap.md](33-version-roadmap.md)：**权威** semver 路线图（**完整链 0.1–1.0**；含 **§1.0 production-ready 规格**）。
+33. [33-next-steps-v1.md](33-next-steps-v1.md)：V1 后续规划（Legacy → 0.2/0.3/0.4/0.5 映射）。
+34. [33-next-steps-0.2.md](33-next-steps-0.2.md)：当前行动项（0.1 后 0.2）；§7 含 **0.5 远期 checklist**。
+35. [34-version-roadmap-0x.md](34-version-roadmap-0x.md)：**0.1→1.0 详细路线图**；§6 = 0.5 Public Beta；**§10 = 0.9 RC 完整规格**；§11 = 1.0 概要。
+36. [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md)：0.5 规划决策日志。
+37. [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md)：0.9 RC / Stability Freeze 规划决策日志。
+38. [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md)：0.1 Mini-MVP 交付与验证日志。
 
 ## 文档权威性
 
 - 架构冲突时，以 `01-architecture.md` 为准。
 - 运行流程冲突时，以 `02-runtime-mechanism.md` 为准。
 - 单个 Loop 行为以对应 Loop 分册为准。
-- 版本范围以 `09-versions.md` 为准。
-- 是否完成以 `10-testing-and-acceptance.md` 为准。
-- Mini 边界以 `09-versions.md` 与 `25-mini-run-path.md` 为准。
+- **阶段版本与推进顺序以 `33-version-roadmap.md` 为准**（完整链 **0.1 → … → 1.0**）；**0.5 发布规格以 `34-version-roadmap-0x.md` §6 为准**；**0.9 RC 以 §10 为准**；**1.0 稳定承诺以 33 §1.0 为准**。
+- 版本能力描述见 `09-versions.md`（Legacy）；与 33 冲突时以 33 为准。
+- 是否完成以 `10-testing-and-acceptance.md` 与 `32-mini-mvp-acceptance.md`（0.1）为准。
+- 0.1 Mini-MVP 边界以 `33-version-roadmap.md` §0.1、`32-mini-mvp-acceptance.md` 与 `25-mini-run-path.md` 为准。
+- 仓库内 sqlite/recovery/approvals 等 WIP 代码归属 **0.4**，见 `33-version-roadmap.md` §0.4「既有 WIP」。
+- 当前行动项以 `33-next-steps-v1.md` 与 `33-next-steps-0.2.md` 为准。
+- Legacy 任务细节以 `31-v1-v2-v3-implementation-roadmap.md` 为准（旧 V1 每日自动化 → 0.4；旧 V1 PyPI/开源 → **0.5**）。
 - 新设计必须先修改文档，再修改代码。
 
 ## 核心结论

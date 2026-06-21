@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, Callable
 
-from loop_pilot.adapters.mock_adapter import MockAdapter
+from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -19,6 +20,8 @@ from loop_pilot.domain.models import (
 from loop_pilot.domain.states import EvaluationVerdict, RunOutcome, RunPhase
 from loop_pilot.loops.fixture_validation import validate_paper_fixture
 from loop_pilot.loops.paper.bibtex import assess_citation_support, parse_bibtex
+from loop_pilot.loops.paper.workspace import create_paper_working_copy
+from loop_pilot.models.router import ModelRouter
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -36,14 +39,25 @@ class PaperLoop:
         policy: PolicyEngine,
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
+        router: ModelRouter | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=12))
+        self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
         self.state_machine = StateMachine()
 
-    def run(self, request: RunRequest, record: RunRecord) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+    def run(
+        self,
+        request: RunRequest,
+        record: RunRecord,
+        *,
+        phase_hook: Callable[[RunRecord], None] | None = None,
+        resume_from: dict[str, Any] | None = None,
+    ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+        self._phase_hook = phase_hook
+        _ = resume_from
         fixture_name = request.fixture or "unsupported_claim"
         fixture_dir = self.FIXTURE_ROOT / fixture_name
         run_dir = self.artifact_dir / "paper" / record.run_id
@@ -51,7 +65,18 @@ class PaperLoop:
         trace = TraceWriter(run_dir / "trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
-        adapter = MockAdapter(fixture_dir)
+        try:
+            adapter = create_adapter(
+                self.router,
+                "analysis_medium",
+                fixture_dir=fixture_dir,
+                artifact_dir=self.artifact_dir,
+            )
+        except AdapterBlockedError as exc:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = exc.message
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         validation = validate_paper_fixture(fixture_dir)
         if not validation.ok:
@@ -69,8 +94,21 @@ class PaperLoop:
             self._transition(record, phase, trace)
 
         paper_path = fixture_dir / "input" / "paper.md"
-        paper_text = paper_path.read_text(encoding="utf-8") if paper_path.exists() else ""
         citations_path = fixture_dir / "input" / "references.bib"
+        working_copy: Path | None = None
+        if not request.dry_run:
+            try:
+                working_copy = create_paper_working_copy(
+                    fixture_dir / "input",
+                    run_dir / "working-copy",
+                    read_only_patterns=["experiments/raw/**"],
+                )
+                paper_path = working_copy / "paper.md"
+                citations_path = working_copy / "references.bib"
+            except FileNotFoundError:
+                pass
+
+        paper_text = paper_path.read_text(encoding="utf-8") if paper_path.exists() else ""
         citations = citations_path.read_text(encoding="utf-8") if citations_path.exists() else ""
 
         claims = self._extract_claims(paper_text)
@@ -98,15 +136,9 @@ class PaperLoop:
         )
         rounds.append(round_record)
 
-        if evaluation.verdict == EvaluationVerdict.PASS.value:
-            record.outcome = RunOutcome.SUCCEEDED
-            record.terminal_reason = "Unsupported claims revised with fixture evidence"
-        elif any("SOURCE REQUIRED" in r for r in revisions):
-            record.outcome = RunOutcome.PARTIAL
-            record.terminal_reason = "Claim requires additional source"
-        else:
-            record.outcome = RunOutcome.PARTIAL
-            record.terminal_reason = "Claim evidence incomplete"
+        record.outcome, record.terminal_reason = self._resolve_outcome(
+            evaluation, revised_text, evidence_map
+        )
 
         evidence_artifact = self._save_json(run_dir, "evidence-map.json", evidence_map, "claim_evidence_checker")
         artifacts.append(evidence_artifact)
@@ -146,7 +178,7 @@ class PaperLoop:
         return claims
 
     def _map_evidence(
-        self, claims: list[dict[str, str]], citations: str, adapter: MockAdapter
+        self, claims: list[dict[str, str]], citations: str, adapter: Any
     ) -> list[dict[str, object]]:
         adapter.execute({"role": "research"})
         mapped: list[dict[str, object]] = []
@@ -217,9 +249,18 @@ class PaperLoop:
         ]
         unsupported = [e for e in evidence_map if e.get("support_status") == "unsupported"]
         has_source_required = "SOURCE REQUIRED" in revised
-        if unsupported and not has_source_required:
+
+        if "fake" in revised.lower():
+            verdict = EvaluationVerdict.FATAL.value
+            checks[2]["status"] = "fail"
+        elif unsupported and not has_source_required:
             verdict = EvaluationVerdict.FATAL.value
             checks[1]["status"] = "fail"
+            checks[1]["message"] = "Missing citation, experiment, or source"
+        elif has_source_required:
+            verdict = EvaluationVerdict.NEEDS_HUMAN.value
+            checks[1]["status"] = "warn"
+            checks[1]["message"] = "Some claims marked SOURCE REQUIRED"
         else:
             verdict = EvaluationVerdict.PASS.value
 
@@ -229,6 +270,26 @@ class PaperLoop:
             checks=checks,
             blocking_findings=[{"claim_id": e["claim_id"]} for e in unsupported] if unsupported else [],
         )
+
+    def _resolve_outcome(
+        self,
+        evaluation: EvaluationResult,
+        revised_text: str,
+        evidence_map: list[dict[str, object]],
+    ) -> tuple[RunOutcome, str]:
+        has_source_required = "SOURCE REQUIRED" in revised_text
+        if "fake" in revised_text.lower():
+            return RunOutcome.FAILED, "Fabricated or inconsistent content detected"
+        if evaluation.verdict == EvaluationVerdict.FATAL.value:
+            unsupported = [e for e in evidence_map if e.get("support_status") == "unsupported"]
+            if unsupported and not has_source_required:
+                return RunOutcome.BLOCKED, "Missing citation, experiment, or source evidence"
+            return RunOutcome.FAILED, "Claim-evidence evaluation failed"
+        if has_source_required:
+            return RunOutcome.PARTIAL, "Claim requires additional source"
+        if evaluation.verdict == EvaluationVerdict.PASS.value:
+            return RunOutcome.SUCCEEDED, "Claims supported by fixture evidence"
+        return RunOutcome.PARTIAL, "Claim evidence incomplete"
 
     def _save_json(self, run_dir: Path, name: str, data: object, created_by: str) -> ArtifactReference:
         path = run_dir / name
@@ -254,6 +315,9 @@ class PaperLoop:
         self.state_machine.validate_transition(record.phase, phase)
         record.phase = phase
         trace.append({"event": "state_transition", "phase": phase.value})
+        hook = getattr(self, "_phase_hook", None)
+        if hook is not None:
+            hook(record)
 
     def _finalize(
         self,

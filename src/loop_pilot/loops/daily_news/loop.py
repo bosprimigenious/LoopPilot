@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Callable
 
-from loop_pilot.adapters.mock_adapter import MockAdapter
+from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -18,6 +18,7 @@ from loop_pilot.domain.models import (
 )
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.loops.fixture_validation import validate_daily_news_fixture
+from loop_pilot.models.router import ModelRouter
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -34,11 +35,13 @@ class DailyNewsLoop:
         policy: PolicyEngine,
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
+        router: ModelRouter | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=6))
+        self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
         self.state_machine = StateMachine()
 
     def run(
@@ -46,7 +49,12 @@ class DailyNewsLoop:
         request: RunRequest,
         record: RunRecord,
         snapshot_day: str = "day2",
+        *,
+        phase_hook: Callable[[RunRecord], None] | None = None,
+        resume_from: dict[str, Any] | None = None,
     ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+        self._phase_hook = phase_hook
+        _ = resume_from
         fixture_name = request.fixture or "github_star_snapshots"
         fixture_dir = self.FIXTURE_ROOT / fixture_name
         run_dir = self.artifact_dir / "daily-news" / record.run_id
@@ -54,7 +62,18 @@ class DailyNewsLoop:
         trace = TraceWriter(run_dir / "trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
-        adapter = MockAdapter(fixture_dir)
+        try:
+            adapter = create_adapter(
+                self.router,
+                "analysis_medium",
+                fixture_dir=fixture_dir,
+                artifact_dir=self.artifact_dir,
+            )
+        except AdapterBlockedError as exc:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = exc.message
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         validation = validate_daily_news_fixture(fixture_dir)
         if not validation.ok:
@@ -84,9 +103,18 @@ class DailyNewsLoop:
         normalized = self._normalize_items(raw_items)
         deduped = self._deduplicate(normalized)
         filtered = self._filter_low_confidence(deduped, min_confidence)
-        ranked = self._rank_github(filtered, fixture_dir, snapshot_day)[:max_items]
+        ranked_github = self._rank_github(filtered, fixture_dir, snapshot_day)
+        github_items = [i for i in ranked_github if i.get("category", "github") in self.INTERN_CATEGORIES][:max_items]
+        paper_items = [
+            i
+            for i in filtered
+            if i.get("category", "") in self.PAPER_CATEGORIES and i.get("confidence") == "high"
+        ]
+        seen_urls = {i.get("canonical_url") for i in github_items}
+        ranked = github_items + [i for i in paper_items if i.get("canonical_url") not in seen_urls]
 
-        inbox_candidates = [item for item in ranked if item.get("confidence") == "high"]
+        high_confidence = [item for item in ranked if item.get("confidence") == "high"]
+        intern_candidates, paper_candidates, candidate_actions = self._route_candidates(high_confidence)
         record.outcome = RunOutcome.SUCCEEDED
         record.terminal_reason = f"Processed {len(ranked)} items from {snapshot_day}"
 
@@ -97,7 +125,9 @@ class DailyNewsLoop:
         report_body = {
             "snapshot_day": snapshot_day,
             "item_count": str(len(ranked)),
-            "inbox_candidates": str(len(inbox_candidates)),
+            "inbox_candidates": str(len(high_confidence)),
+            "intern_candidates": str(len(intern_candidates)),
+            "paper_candidates": str(len(paper_candidates)),
             "star_delta_computed": "yes" if snapshot_day == "day2" else "no",
         }
         report_path = run_dir / "daily-news-report.md"
@@ -116,17 +146,47 @@ class DailyNewsLoop:
             )
         )
 
-        inbox_path = run_dir / "intern-candidates.md"
-        inbox_content = self._render_inbox(inbox_candidates)
-        inbox_path.write_text(inbox_content, encoding="utf-8")
+        intern_path = run_dir / "intern-candidates.md"
+        intern_content = self._render_candidate_list("Intern", intern_candidates)
+        intern_path.write_text(intern_content, encoding="utf-8")
         artifacts.append(
             ArtifactReference(
-                artifact_id=f"{record.run_id}-inbox",
+                artifact_id=f"{record.run_id}-intern-candidates",
                 kind="draft",
-                path=str(inbox_path),
+                path=str(intern_path),
                 media_type="text/markdown",
-                sha256=content_hash({"content": inbox_content}),
-                size_bytes=len(inbox_content.encode()),
+                sha256=content_hash({"content": intern_content}),
+                size_bytes=len(intern_content.encode()),
+                created_by="router",
+            )
+        )
+
+        paper_path = run_dir / "paper-candidates.md"
+        paper_content = self._render_candidate_list("Paper", paper_candidates)
+        paper_path.write_text(paper_content, encoding="utf-8")
+        artifacts.append(
+            ArtifactReference(
+                artifact_id=f"{record.run_id}-paper-candidates",
+                kind="draft",
+                path=str(paper_path),
+                media_type="text/markdown",
+                sha256=content_hash({"content": paper_content}),
+                size_bytes=len(paper_content.encode()),
+                created_by="router",
+            )
+        )
+
+        actions_path = run_dir / "candidate-actions.json"
+        actions_content = json.dumps({"candidates": candidate_actions}, indent=2)
+        actions_path.write_text(actions_content, encoding="utf-8")
+        artifacts.append(
+            ArtifactReference(
+                artifact_id=f"{record.run_id}-candidate-actions",
+                kind="source",
+                path=str(actions_path),
+                media_type="application/json",
+                sha256=content_hash({"content": actions_content}),
+                size_bytes=len(actions_content.encode()),
                 created_by="router",
             )
         )
@@ -173,6 +233,9 @@ class DailyNewsLoop:
         low_path = fixture_dir / "input" / "low_confidence.json"
         if low_path.exists():
             items.extend(json.loads(low_path.read_text(encoding="utf-8")).get("items", []))
+        paper_path = fixture_dir / "input" / "paper_signal.json"
+        if paper_path.exists():
+            items.extend(json.loads(paper_path.read_text(encoding="utf-8")).get("items", []))
         return items
 
     def _normalize_items(self, raw: list[dict]) -> list[dict]:
@@ -219,7 +282,6 @@ class DailyNewsLoop:
             return sorted(items, key=lambda x: x.get("stars") or 0, reverse=True)
 
         day1_path = fixture_dir / "input" / "snapshots" / "github_day1.json"
-        day2_path = fixture_dir / "input" / "snapshots" / "github_day2.json"
         prev: dict[str, int] = {}
         if day1_path.exists():
             for repo in json.loads(day1_path.read_text(encoding="utf-8")).get("repositories", []):
@@ -244,13 +306,79 @@ class DailyNewsLoop:
             reverse=True,
         )
 
-    def _render_inbox(self, candidates: list[dict]) -> str:
-        lines = ["# Intern Inbox Candidates", ""]
+    def load_local_source_set(self, source_set: Path, min_confidence: str = "medium") -> list[dict]:
+        """Load offline/local DailyNews items and apply confidence filtering."""
+        items_path = source_set / "items.json"
+        if not items_path.exists():
+            raise FileNotFoundError(f"Local source set missing items.json: {source_set}")
+        raw_items = json.loads(items_path.read_text(encoding="utf-8")).get("items", [])
+        normalized = self._normalize_items(raw_items)
+        return self._filter_low_confidence(normalized, min_confidence)
+
+    INTERN_CATEGORIES = frozenset({"github", "engineering", "dependency", "tooling", "security"})
+    PAPER_CATEGORIES = frozenset({"paper", "benchmark", "dataset", "research", "controversy"})
+
+    def _route_candidates(
+        self, items: list[dict]
+    ) -> tuple[list[dict], list[dict], list[dict[str, str]]]:
+        intern_candidates: list[dict] = []
+        paper_candidates: list[dict] = []
+        actions: list[dict[str, str]] = []
+
+        for item in items:
+            category = str(item.get("category", "github")).lower()
+            target_loop = self._target_loop_for_category(category)
+            candidate = dict(item)
+            candidate["target_loop"] = target_loop
+            if target_loop == "paper":
+                paper_candidates.append(candidate)
+                recommended_action = "review_claim_evidence"
+            else:
+                intern_candidates.append(candidate)
+                recommended_action = "evaluate_for_intern_task"
+
+            actions.append(
+                {
+                    "target_loop": target_loop,
+                    "priority": "high" if item.get("confidence") == "high" else "normal",
+                    "source_item_id": str(item.get("source_item_id", "unknown")),
+                    "reason": f"{category} signal routed to {target_loop}",
+                    "recommended_action": recommended_action,
+                }
+            )
+        return intern_candidates, paper_candidates, actions
+
+    def _target_loop_for_category(self, category: str) -> str:
+        if category in self.PAPER_CATEGORIES:
+            return "paper"
+        if category in self.INTERN_CATEGORIES:
+            return "intern"
+        return "intern"
+
+    def _render_candidate_list(self, loop_name: str, candidates: list[dict]) -> str:
+        lines = [f"# {loop_name} Inbox Candidates", ""]
         for item in candidates:
-            lines.append(f"- [{item.get('confidence', 'medium')}] {item.get('title')} -> {item.get('canonical_url')}")
+            lines.append(
+                f"- [{item.get('confidence', 'medium')}] {item.get('title')} -> {item.get('canonical_url')}"
+            )
         if len(lines) == 2:
             lines.append("- No high-confidence candidates")
         return "\n".join(lines)
+
+    def route_inbox(self, items: list[dict]) -> str:
+        """Render high-confidence candidates for Intern/Paper inbox routing."""
+        intern_candidates, paper_candidates, _ = self._route_candidates(
+            [item for item in items if item.get("confidence") == "high"]
+        )
+        sections = [
+            self._render_candidate_list("Intern", intern_candidates),
+            "",
+            self._render_candidate_list("Paper", paper_candidates),
+        ]
+        return "\n".join(sections)
+
+    def _render_inbox(self, candidates: list[dict]) -> str:
+        return self._render_candidate_list("Intern", candidates)
 
     def _save_json(self, run_dir: Path, name: str, data: object, created_by: str) -> ArtifactReference:
         path = run_dir / name
@@ -276,6 +404,9 @@ class DailyNewsLoop:
         self.state_machine.validate_transition(record.phase, phase)
         record.phase = phase
         trace.append({"event": "state_transition", "phase": phase.value})
+        hook = getattr(self, "_phase_hook", None)
+        if hook is not None:
+            hook(record)
 
     def _finalize(
         self,

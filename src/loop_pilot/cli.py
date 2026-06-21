@@ -1,4 +1,4 @@
-"""LoopPilot CLI."""
+"""LoopPilot CLI — Mini command surface."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ def doctor(ctx: click.Context) -> None:
     """Check configuration and runtime health."""
     config_dir: Path = ctx.obj["config_dir"]
     issues: list[str] = []
+    warnings: list[str] = []
 
     if not config_dir.exists():
         issues.append(f"Config directory missing: {config_dir}")
@@ -36,6 +37,8 @@ def doctor(ctx: click.Context) -> None:
             cfg = load_config(config_dir)
             for sub in (cfg.state_dir, cfg.artifact_dir):
                 sub.mkdir(parents=True, exist_ok=True)
+            if cfg.allow_real_adapters:
+                warnings.append("runtime.allow_real_adapters=true (Mini defaults to false)")
         except Exception as exc:
             issues.append(str(exc))
 
@@ -58,6 +61,9 @@ def doctor(ctx: click.Context) -> None:
     click.echo("  Config loaded")
     click.echo("  Fixtures present")
     click.echo("  State directories ready")
+    click.echo("  MockAdapter default (allow_real_adapters=false)")
+    for warning in warnings:
+        click.echo(f"  Warning: {warning}")
 
 
 @app.group()

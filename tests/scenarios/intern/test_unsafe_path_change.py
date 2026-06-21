@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from loop_pilot.domain.models import RunRecord, RunRequest
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.loops.intern.loop import InternLoop

@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Bootstrap local directories
+        run: python scripts/bootstrap_local.py --dry-run
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Pytest
+        run: pytest -q
+
+      - name: Doctor
+        run: loop-pilot doctor
+
+      - name: Mini dry-run runs
+        run: |
+          loop-pilot run intern --fixture simple_python_bug --dry-run
+          loop-pilot run paper --fixture unsupported_claim --dry-run
+          loop-pilot run daily-news --fixture github_star_snapshots --dry-run
+          loop-pilot run all --fixture-set mini --dry-run

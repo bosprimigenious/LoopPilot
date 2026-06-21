@@ -8,6 +8,8 @@ import tempfile
 import os
 from pathlib import Path
 
+from loop_pilot.domain.errors import ErrorCode, LoopPilotError
+
 
 class GitWorkspaceError(Exception):
     pass
@@ -63,6 +65,55 @@ def prepare_git_worktree(fixture_input: Path, dry_run: bool) -> tuple[Path, Path
         raise GitWorkspaceError(f"git worktree add failed: {worktree.stderr}")
 
     return worktree_dir, temp_root
+
+
+def ensure_clean_git_workspace(repo_dir: Path) -> None:
+    """Fail before creating worktrees when the user's configured repo is dirty."""
+    result = _run_git(["status", "--porcelain"], repo_dir)
+    if result.returncode != 0:
+        raise LoopPilotError(
+            code=ErrorCode.WORKSPACE_CHANGED,
+            component="intern.workspace",
+            message=f"Unable to inspect git workspace: {result.stderr.strip()}",
+            retryable=False,
+        )
+    if result.stdout.strip():
+        raise LoopPilotError(
+            code=ErrorCode.WORKSPACE_CHANGED,
+            component="intern.workspace",
+            message="Configured repository has uncommitted changes; refusing to create worktree",
+            retryable=False,
+        )
+
+
+def create_approved_worktree(
+    repo_dir: Path,
+    worktree_root: Path,
+    *,
+    branch: str = "HEAD",
+    worktree_name: str,
+) -> Path:
+    """Create an isolated git worktree from a clean configured repository."""
+    ensure_clean_git_workspace(repo_dir)
+    worktree_root.mkdir(parents=True, exist_ok=True)
+    worktree_dir = worktree_root / worktree_name
+    if worktree_dir.exists():
+        raise LoopPilotError(
+            code=ErrorCode.WORKSPACE_CHANGED,
+            component="intern.workspace",
+            message=f"Worktree destination already exists: {worktree_dir}",
+            retryable=False,
+        )
+
+    result = _run_git(["worktree", "add", "--detach", str(worktree_dir), branch], repo_dir)
+    if result.returncode != 0:
+        raise LoopPilotError(
+            code=ErrorCode.WORKSPACE_CHANGED,
+            component="intern.workspace",
+            message=f"git worktree add failed: {result.stderr.strip()}",
+            retryable=False,
+        )
+    return worktree_dir
 
 
 def git_diff_summary(work_dir: Path) -> str:

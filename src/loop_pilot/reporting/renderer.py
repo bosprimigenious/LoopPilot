@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from loop_pilot.domain.models import ArtifactManifest, RunRecord, rfc3339
+from loop_pilot.domain.models import RunRecord, rfc3339
 
 
 class ReportRenderer:
