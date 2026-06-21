@@ -2,18 +2,22 @@
 
 ## Unreleased
 
+### Added
+
+- **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, verify 22/22
+
 ### Stabilization
 
-- **0.4.0b1 stabilization in progress; Full 0.4 is NOT READY.** The 0.4-d summary/schedule implementation exists, but release acceptance is blocked by regression failures, the incomplete 0.4-c review layer, migration v3 conflict, recovery defects, and failure-path audit gaps. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
+- **0.4.0b1 stabilization in progress.** 0.4-c review layer delivered; Truthful 0.4 Milestone A aggregate gate may still have open items. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
 
 ### Documentation
 
-- **0.5 Safe Autonomy (revised plan)**: SafetyGate first, 0.4-c blocker, no daemon — spec drafted; impl paused
+- **0.5 Safe Autonomy (revised plan)**: SafetyGate first, no daemon — spec drafted; 0.5-prep allowed in parallel
   - [50-personal-daily-loop-0.5-spec.md](docs/development/50-personal-daily-loop-0.5-spec.md) — full spec (Steps 0–4, 0.5-a/b/c/d)
   - [52-0.5-revised-plan-rationale.md](docs/development/52-0.5-revised-plan-rationale.md) — why SafetyGate first, why 0.4-c blocker, why no daemon
   - [53-0.5-acceptance.md](docs/development/53-0.5-acceptance.md) — acceptance for 0.5-a/b/c/d
   - [15-0.5-安全自治.md](docs/zh/15-0.5-安全自治.md) — Chinese guide
-  - [CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md](prompts/CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md) — implementation prompt (blocked on 0.4-c)
+  - [CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md](prompts/CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md) — implementation prompt (blocked on Truthful 0.4 Milestone A)
   - [2026-06-21-0.5-plan-revision.md](docs/development/logs/2026-06-21-0.5-plan-revision.md) — decision log
   - [CURSOR_0.4C_REVIEW_LAYER_PROMPT.md](prompts/CURSOR_0.4C_REVIEW_LAYER_PROMPT.md) — Priority 1 blocker note
 
