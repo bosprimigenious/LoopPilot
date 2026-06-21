@@ -7,7 +7,11 @@
 - **`verify_0_4_acceptance.py` bootstrap**: insert `src` into `sys.path` before `loop_pilot` imports (source checkout without install).
 - **`snapshot_hash()`**: include `schedule` and `safety` so audit trails distinguish prep/ready and `allow_install`.
 
-See [logs/2026-06-21-codex-p2-fixes.md](docs/development/logs/2026-06-21-codex-p2-fixes.md).
+See [logs/2026-06-21-codex-p2-fixes.md](docs/development/logs/2026-06-21-codex-p2-fixes.md) (includes self-audit, verify counts, known gaps).
+
+### Fixed (Codex P2 — verify bootstrap parity)
+
+- **`verify_0_3_acceptance.py` / `verify_0_4d_acceptance.py`**: same `src` bootstrap as aggregate gate (chained by 0.4-d).
 
 ### Fixed (Codex PR #8 — patch review gate on feat/0.5-safe-autonomy)
 

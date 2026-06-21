@@ -23,7 +23,7 @@
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
   - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4.0b1 stabilization in progress**；Full 0.4 **NOT READY**
+  - **0.4.0b1 stabilization in progress**；Truthful 0.4 aggregate **11/11 READY** on `feat/0.5-safe-autonomy`（待 PR 合并）
   - **0.4-a/b** 部分实现；全量回归与恢复语义仍需修复
   - **0.4-c** Review Layer ✅（`verify_0_4c_acceptance.py` 22/22）
   - **0.4-d** summary/schedule 实现存在；Truthful 0.4 聚合验收见 [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
@@ -149,6 +149,9 @@
 - [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md) — 0.1 交付
 - [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划（旧 Public Beta 口径，部分 supersede）
 - [logs/2026-06-21-0.5-plan-revision.md](logs/2026-06-21-0.5-plan-revision.md) — 0.5 Safe Autonomy 计划修订
+- [logs/2026-06-21-0.5-prep-codex-fixes.md](logs/2026-06-21-0.5-prep-codex-fixes.md) — 0.5-prep fail-closed（Codex PR #7 P0）
+- [logs/2026-06-21-patch-review-gate-fix.md](logs/2026-06-21-patch-review-gate-fix.md) — Patch review gate（Codex PR #8）
+- [logs/2026-06-21-codex-p2-fixes.md](logs/2026-06-21-codex-p2-fixes.md) — Codex P2 bootstrap + config hash
 - [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md) — 0.9 RC 规划
 
 ## 文档权威性

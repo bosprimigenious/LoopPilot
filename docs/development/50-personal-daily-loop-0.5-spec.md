@@ -210,7 +210,17 @@ The following may proceed **in parallel with 0.4-c** on a separate branch, but m
 
 Verify: `python scripts/verify_0_5_prep.py` → `0.5-prep: PASS` / `0.5-ready: NOT READY`
 
-Log: [logs/2026-06-21-0.5-prep-codex-fixes.md](logs/2026-06-21-0.5-prep-codex-fixes.md)
+Log: [logs/2026-06-21-0.5-prep-codex-fixes.md](logs/2026-06-21-0.5-prep-codex-fixes.md), [logs/2026-06-21-codex-p2-fixes.md](logs/2026-06-21-codex-p2-fixes.md)
+
+---
+
+## 13. Roadmap snapshot (2026-06-22)
+
+**Done this step:** 0.5-prep fail-closed, patch review gate, Codex P2 fixes, Truthful 0.4 aggregate 11/11 on branch.
+
+**Next:** PR #7 merge after Codex re-review; PR #8 if needed; 0.5-ready prerequisites (automated readiness + `safety.stage=ready`); then 0.5-b unattended.
+
+**Future:** readiness automation, 0.5-c recovery, 5-day trial.
 
 ---
 
