@@ -69,6 +69,8 @@ class RunRequest:
     fixture: str | None = None
     workspace: str | None = None
     source_profile: str | None = None
+    adapter_override: str | None = None
+    allow_real_adapters: bool | None = None
     review_only: bool = False
     dry_run: bool = False
 

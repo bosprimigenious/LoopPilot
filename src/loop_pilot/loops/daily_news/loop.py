@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
+from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
+from loop_pilot.adapters.errors import AdapterBlockedError
+from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -17,7 +19,6 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import RunOutcome, RunPhase
-from loop_pilot.connectors.local_json import fetch_source
 from loop_pilot.loops.fixture_validation import validate_daily_news_fixture
 from loop_pilot.models.router import ModelRouter
 from loop_pilot.reporting.human_review import write_next_actions, write_review_required
@@ -26,6 +27,7 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.tools.broker import ToolBroker
 
 
 class DailyNewsLoop:
@@ -38,12 +40,14 @@ class DailyNewsLoop:
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=6))
         self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
+        self.tool_broker = tool_broker or ToolBroker()
         self.state_machine = StateMachine()
 
     def run(
@@ -55,16 +59,24 @@ class DailyNewsLoop:
         phase_hook: Callable[[RunRecord], None] | None = None,
         resume_from: dict[str, Any] | None = None,
         source_profile: dict[str, Any] | None = None,
+        adapter_override: str | None = None,
     ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
         self._phase_hook = phase_hook
         _ = resume_from
         if request.source_profile and source_profile is not None:
-            return self._run_source_profile(request, record, source_profile, phase_hook=phase_hook)
+            return self._run_source_profile(
+                request,
+                record,
+                source_profile,
+                phase_hook=phase_hook,
+                adapter_override=adapter_override or request.adapter_override,
+            )
         fixture_name = request.fixture or "github_star_snapshots"
         fixture_dir = self.FIXTURE_ROOT / fixture_name
         run_dir = self.artifact_dir / "daily-news" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
         try:
@@ -73,8 +85,17 @@ class DailyNewsLoop:
                 "analysis_medium",
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
+                adapter_override=adapter_override or request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=adapter_override or request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message
@@ -197,6 +218,14 @@ class DailyNewsLoop:
         )
 
         artifacts.extend(self._write_human_review(run_dir, record, intern_candidates, paper_candidates))
+        artifacts.append(
+            self._save_json(
+                run_dir,
+                "tool-results.json",
+                {"dry_run": request.dry_run, "audit": self.tool_broker.audit_records()},
+                "tool_broker",
+            )
+        )
 
         rounds.append(
             RoundRecord(
@@ -217,12 +246,14 @@ class DailyNewsLoop:
         profile_cfg: dict[str, Any],
         *,
         phase_hook: Callable[[RunRecord], None] | None = None,
+        adapter_override: str | None = None,
     ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
         self._phase_hook = phase_hook
         record.fixture = request.source_profile
         run_dir = self.artifact_dir / "daily-news" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
 
@@ -233,8 +264,17 @@ class DailyNewsLoop:
                 "analysis_medium",
                 fixture_dir=demo_fixture if demo_fixture.exists() else None,
                 artifact_dir=self.artifact_dir,
+                adapter_override=adapter_override or request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=adapter_override or request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message
@@ -259,7 +299,7 @@ class DailyNewsLoop:
             if not source_cfg.get("enabled", True):
                 continue
             try:
-                raw_items.extend(fetch_source(source_cfg))
+                raw_items.extend(self.tool_broker.fetch_source(source_cfg))
             except (FileNotFoundError, ValueError):
                 continue
 
@@ -346,6 +386,14 @@ class DailyNewsLoop:
             )
         )
         artifacts.extend(self._write_human_review(run_dir, record, intern_candidates, paper_candidates))
+        artifacts.append(
+            self._save_json(
+                run_dir,
+                "tool-results.json",
+                {"dry_run": request.dry_run, "audit": self.tool_broker.audit_records()},
+                "tool_broker",
+            )
+        )
 
         rounds.append(
             RoundRecord(

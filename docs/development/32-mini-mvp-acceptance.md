@@ -14,17 +14,17 @@
 
 | # | 项 | 状态 |
 |---|---|---|
-| 1 | `pip install -e ".[dev]"` 本地安装 | ✅ |
-| 2 | `loop-pilot doctor` 成功 | ✅ |
-| 3 | `pytest -q` + `ruff check .` | ✅ (85 passed) |
-| 4 | 三条 Loop 各自 dry-run 成功 | ✅ |
-| 5 | `loop-pilot run all --fixture-set mini --dry-run` | ✅ |
-| 6 | `status` / `inspect` 可用 | ✅ |
-| 7 | PaperLoop `unsupported_claim` → `partial`（SOURCE REQUIRED） | ✅ |
-| 8 | DailyNews 输出 `paper-candidates.md` + `candidate-actions.json` | ✅ |
-| 9 | `runtime.allow_real_adapters=false` 守卫 | ✅ |
-| 10 | `.github/workflows/ci.yml` | ✅ |
-| 11 | 命名统一 LoopPilot / loop-pilot（无 LoopPolit 残留） | ✅ |
+| 1 | `pip install -e ".[dev]"` 本地安装 | 通过 |
+| 2 | `loop-pilot doctor` 成功 | 通过 |
+| 3 | `pytest -q` + `ruff check .` | 通过（85 passed） |
+| 4 | 三条 Loop 各自 dry-run 成功 | 通过 |
+| 5 | `loop-pilot run all --fixture-set mini --dry-run` | 通过 |
+| 6 | `status` / `inspect` 可用 | 通过 |
+| 7 | PaperLoop `unsupported_claim` → `partial`（SOURCE REQUIRED） | 通过 |
+| 8 | DailyNews 输出 `paper-candidates.md` + `candidate-actions.json` | 通过 |
+| 9 | `runtime.allow_real_adapters=false` 守卫 | 通过 |
+| 10 | `.github/workflows/ci.yml` | 通过 |
+| 11 | 命名统一 LoopPilot / loop-pilot（无 LoopPolit 残留） | 通过 |
 
 ## 自验收命令与结果（2026-06-21）
 
@@ -57,10 +57,10 @@ ruff check .  →  All checks passed
 
 | 命令 | 结果 | 预期 |
 |---|---|---|
-| `run intern --fixture simple_python_bug --dry-run` | `succeeded` | ✅ |
-| `run paper --fixture unsupported_claim --dry-run` | `partial`（Claim requires additional source） | ✅ |
-| `run daily-news --fixture github_star_snapshots --dry-run` | `succeeded` | ✅ |
-| `run all --fixture-set mini --dry-run` | daily_news/intern `succeeded`, paper `partial` | ✅ |
+| `run intern --fixture simple_python_bug --dry-run` | `succeeded` | 通过 |
+| `run paper --fixture unsupported_claim --dry-run` | `partial`（Claim requires additional source） | 通过 |
+| `run daily-news --fixture github_star_snapshots --dry-run` | `succeeded` | 通过 |
+| `run all --fixture-set mini --dry-run` | daily_news/intern `succeeded`, paper `partial` | 通过 |
 
 ### 8. Status
 

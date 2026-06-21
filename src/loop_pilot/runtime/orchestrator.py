@@ -24,6 +24,7 @@ from loop_pilot.runtime.locks import FileLockStore
 from loop_pilot.runtime.recovery import RecoveryPlan, build_recovery_plan
 from loop_pilot.runtime.run_ids import new_run_id
 from loop_pilot.storage.base import StateStore
+from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.workspaces import resolve_workspace
 
 _SECRET_PATTERNS = (
@@ -91,11 +92,19 @@ class Orchestrator:
 
         lock_key = f"loop:{request.loop_type}"
         phase_hook = self.checkpoints.on_phase_change if self.checkpoints.enabled() else None
+        effective_allow_real = (
+            request.allow_real_adapters
+            if request.allow_real_adapters is not None
+            else self.config.allow_real_adapters
+        )
+        router = self.router
+        if effective_allow_real != self.router.allow_real_adapters:
+            router = ModelRouter(self.config.models, allow_real_adapters=effective_allow_real)
 
         try:
             with self.locks.acquire(lock_key, request.run_id):
                 self.checkpoints.write(record, {"event": "lock_acquired"})
-                loop = self._get_loop(request.loop_type)
+                loop = self._get_loop(request.loop_type, router=router)
                 run_kwargs: dict[str, Any] = {
                     "phase_hook": phase_hook,
                     "resume_from": resume_from,
@@ -286,19 +295,44 @@ class Orchestrator:
             redacted = pattern.sub("<redacted>", redacted)
         return redacted
 
-    def _get_loop(self, loop_type: str) -> InternLoop | PaperLoop | DailyNewsLoop:
+    def _get_loop(
+        self,
+        loop_type: str,
+        *,
+        router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
+    ) -> InternLoop | PaperLoop | DailyNewsLoop:
         policy = self._budget_policy(loop_type)
         budget_mgr = BudgetManager(policy)
+        active_router = router or self.router
+        broker = tool_broker or ToolBroker(self.config.runtime.get("tool_broker", {}))
         if loop_type == "intern":
             return InternLoop(
-                self.artifact_dir, self.policy, self.renderer, budget_mgr, router=self.router
+                self.artifact_dir,
+                self.policy,
+                self.renderer,
+                budget_mgr,
+                router=active_router,
+                tool_broker=broker,
             )
         if loop_type == "paper":
             return PaperLoop(
-                self.artifact_dir, self.policy, self.renderer, budget_mgr, router=self.router
+                self.artifact_dir,
+                self.policy,
+                self.renderer,
+                budget_mgr,
+                router=active_router,
+                tool_broker=broker,
             )
         if loop_type == "daily_news":
-            return DailyNewsLoop(self.artifact_dir, self.policy, self.renderer, budget_mgr)
+            return DailyNewsLoop(
+                self.artifact_dir,
+                self.policy,
+                self.renderer,
+                budget_mgr,
+                router=active_router,
+                tool_broker=broker,
+            )
         raise ValueError(f"Unknown loop type: {loop_type}")
 
     def _budget_policy(self, loop_type: str) -> BudgetPolicy:

@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
+from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
+from loop_pilot.adapters.errors import AdapterBlockedError
+from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -33,6 +35,7 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.workspaces import WorkspaceSpec
 
 
@@ -47,12 +50,14 @@ class PaperLoop:
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=12))
         self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
+        self.tool_broker = tool_broker or ToolBroker()
         self.state_machine = StateMachine()
 
     def run(
@@ -63,12 +68,15 @@ class PaperLoop:
         phase_hook: Callable[[RunRecord], None] | None = None,
         resume_from: dict[str, Any] | None = None,
         workspace_spec: WorkspaceSpec | None = None,
+        adapter_override: str | None = None,
     ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
         self._phase_hook = phase_hook
         _ = resume_from
         read_only_patterns = ["experiments/raw/**"]
         draft_file = "paper.md"
         references_file = "references.bib"
+        allowed_paths = ["**"]
+        forbidden_paths = read_only_patterns
 
         if workspace_spec is not None:
             fixture_dir = workspace_spec.root
@@ -76,6 +84,7 @@ class PaperLoop:
             draft_file = workspace_spec.draft_file
             references_file = workspace_spec.references_file
             read_only_patterns = workspace_spec.forbidden_paths or read_only_patterns
+            forbidden_paths = read_only_patterns
             validation = validate_paper_workspace(
                 workspace_spec.root,
                 draft_file=draft_file,
@@ -89,6 +98,7 @@ class PaperLoop:
         run_dir = self.artifact_dir / "paper" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
         try:
@@ -97,8 +107,17 @@ class PaperLoop:
                 "analysis_medium",
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
+                adapter_override=adapter_override or request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=adapter_override or request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message
@@ -149,8 +168,18 @@ class PaperLoop:
                 except FileNotFoundError:
                     pass
 
-        paper_text = paper_path.read_text(encoding="utf-8") if paper_path.exists() else ""
-        citations = citations_path.read_text(encoding="utf-8") if citations_path.exists() else ""
+        paper_text = (
+            self.tool_broker.read_file(paper_path, allowed=allowed_paths, forbidden=forbidden_paths)
+            if paper_path.exists()
+            else ""
+        )
+        citations = (
+            self.tool_broker.read_file(
+                citations_path, allowed=allowed_paths, forbidden=forbidden_paths
+            )
+            if citations_path.exists()
+            else ""
+        )
 
         claims = self._extract_claims(paper_text)
         evidence_map = self._map_evidence(claims, citations, adapter)
@@ -161,8 +190,29 @@ class PaperLoop:
 
         revised_text, revisions = self._revise_claims(paper_text, evidence_map, request.dry_run)
         revised_path = run_dir / "paper-revised.md"
+        proposed_path = run_dir / "proposed-revision.md"
+        if not request.dry_run and not request.review_only and working_copy is not None:
+            self.tool_broker.write_file(
+                working_copy / draft_file,
+                revised_text,
+                allowed=allowed_paths,
+                forbidden=forbidden_paths,
+                dry_run=False,
+            )
         if not request.dry_run and not request.review_only:
-            revised_path.write_text(revised_text, encoding="utf-8")
+            self.tool_broker.write_file(
+                revised_path,
+                revised_text,
+                allowed=["**"],
+                dry_run=False,
+            )
+        self.tool_broker.write_file(
+            proposed_path,
+            revised_text,
+            allowed=["**"],
+            dry_run=False,
+        )
+        adapter_trace.append({"event": "adapter_call", "role": "research", "revisions": len(revisions)})
 
         self._transition(record, RunPhase.EVALUATING, trace)
         evaluation = self._run_checks(paper_text, revised_text, evidence_map)
@@ -183,6 +233,16 @@ class PaperLoop:
 
         evidence_artifact = self._save_json(run_dir, "evidence-map.json", evidence_map, "claim_evidence_checker")
         artifacts.append(evidence_artifact)
+        artifacts.append(
+            self._save_text(run_dir, "proposed-revision.md", revised_text, "writing_agent")
+        )
+        tool_artifact = self._save_json(
+            run_dir,
+            "tool-results.json",
+            {"dry_run": request.dry_run, "audit": self.tool_broker.audit_records()},
+            "tool_broker",
+        )
+        artifacts.append(tool_artifact)
 
         manifest_rel = f"paper/{record.run_id}/artifact-manifest.json"
         report_body = {
@@ -369,6 +429,19 @@ class PaperLoop:
             kind="evaluation",
             path=str(path),
             media_type="application/json",
+            sha256=content_hash({"content": content}),
+            size_bytes=len(content.encode()),
+            created_by=created_by,
+        )
+
+    def _save_text(self, run_dir: Path, name: str, content: str, created_by: str) -> ArtifactReference:
+        path = run_dir / name
+        path.write_text(content, encoding="utf-8")
+        return ArtifactReference(
+            artifact_id=f"{run_dir.name}-{name}",
+            kind="report",
+            path=str(path),
+            media_type="text/markdown",
             sha256=content_hash({"content": content}),
             size_bytes=len(content.encode()),
             created_by=created_by,

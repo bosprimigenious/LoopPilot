@@ -1,5 +1,7 @@
 # 33 下一步行动：先完成 0.1，再进入 0.2
 
+> **历史文档**：0.1/0.2 已完成。**当前行动项** → [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md)（0.3→0.4 个人 daily loop）。路线图 → [34-version-roadmap-0x.md](34-version-roadmap-0x.md)。
+
 本文将原「V1 任务清单」重映射到 **0.2 / 0.3 / 0.4**，并明确**当前应聚焦 0.1 Mini-MVP 收尾**。
 
 > 版本体系权威定义见 [34-version-roadmap-0x.md](34-version-roadmap-0x.md)。**0.3 ≠ V1**；不要现在冲 0.3。
@@ -38,14 +40,14 @@
 
 | # | 任务 | 状态 | 验收 |
 |---|------|------|------|
-| 1 | PaperLoop SOURCE_REQUIRED → `partial` | ✅ | `run paper --fixture unsupported_claim` → partial |
-| 2 | DailyNews 候选路由产物 | ✅ | intern/paper candidates + candidate-actions.json |
-| 3 | `allow_real_adapters` 默认 false | ✅ | Router/Registry 阻止 cli/api |
-| 4 | pyproject extras 清理 | ✅ | 无自引用 `all` |
-| 5 | GitHub Actions CI | ✅ | ruff + pytest + doctor + dry-run |
-| 6 | 异常 traceback Artifact | ✅ | error-traceback.txt + 脱敏 |
-| 7 | README Mini-MVP 状态 | ✅ | 验收命令块 |
-| 8 | 全量验证 | ✅ | 93 passed + CLI 全绿 |
+| 1 | PaperLoop SOURCE_REQUIRED → `partial` | 通过 | `run paper --fixture unsupported_claim` → partial |
+| 2 | DailyNews 候选路由产物 | 通过 | intern/paper candidates + candidate-actions.json |
+| 3 | `allow_real_adapters` 默认 false | 通过 | Router/Registry 阻止 cli/api |
+| 4 | pyproject extras 清理 | 通过 | 无自引用 `all` |
+| 5 | GitHub Actions CI | 通过 | ruff + pytest + doctor + dry-run |
+| 6 | 异常 traceback Artifact | 通过 | error-traceback.txt + 脱敏 |
+| 7 | README Mini-MVP 状态 | 通过 | 验收命令块 |
+| 8 | 全量验证 | 通过 | 93 passed + CLI 全绿 |
 
 **0.1 完成定义**：上述八项全部通过 + CI 绿 + 交付日志已归档。
 

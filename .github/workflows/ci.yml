@@ -28,8 +28,24 @@ jobs:
       - name: Pytest
         run: pytest -q
 
+      - name: 0.3 acceptance verify
+        run: python scripts/verify_0_3_acceptance.py
+
       - name: Doctor
         run: loop-pilot doctor
+
+      - name: Adapter CLI
+        run: |
+          loop-pilot adapters list
+          loop-pilot adapters doctor
+
+      - name: Adapter unit tests
+        run: |
+          pytest tests/unit/test_adapter_gating.py tests/unit/test_tool_broker_policy.py tests/unit/test_secret_redaction.py tests/unit/test_adapter_router.py -q
+
+      - name: Adapter integration tests
+        run: |
+          pytest tests/integration/test_adapter_blocked_by_default.py tests/integration/test_cursor_adapter_contract.py tests/integration/test_openai_compatible_adapter_contract.py -q
 
       - name: Mini dry-run runs
         run: |
@@ -43,3 +59,5 @@ jobs:
           loop-pilot run intern --workspace examples/intern_demo --dry-run
           loop-pilot run paper --workspace examples/paper_demo --dry-run
           loop-pilot run daily-news --source-profile demo --dry-run
+          # 0.2 profile demo regression (orchestrated run all)
+          loop-pilot run all --profile demo --dry-run

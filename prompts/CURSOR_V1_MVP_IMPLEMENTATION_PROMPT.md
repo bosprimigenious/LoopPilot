@@ -1,11 +1,21 @@
-# Cursor V1/MVP Implementation Prompt
+# Cursor V1/MVP Implementation Prompt (_legacy)
+
+> **Legacy prompt — do not use for current work without version confirmation.**  
+> - **Current focus (2026-06):** 0.3 → use [CURSOR_0.3_ADAPTER_MVP_PROMPT.md](CURSOR_0.3_ADAPTER_MVP_PROMPT.md)  
+> - **Doc system:** [docs/zh/05-文档体系说明.md](../docs/zh/05-文档体系说明.md) · [docs/en-core.md](../docs/en-core.md)
 
 > **遗留文件名说明**  
 > 本文件名为历史「V1/MVP」保留，**不代表当前应实现的单一版本**。  
-> - **近 term 顺序**：`0.1.0-mini`（当前焦点）→ `0.2.0-practical-mvp` → `0.3.0-adapter-mvp`  
+> - **近 term 顺序**：`0.1.0-mini`（已完成）→ `0.2.0-practical-mvp`（已完成）→ `0.3.0-adapter-mvp`（进行中）  
 > - **0.3 ≠ 旧称 V1**：0.3 只证明真实 Adapter 安全可用  
 > - **0.4.0-daily-runner** = 旧文档「V1」主体（SQLite、恢复、`resume`/`approve`、OS 调度）  
 > 权威编号见 `docs/development/33-version-roadmap.md`。实施前确认目标版本，勿一次性实现全文范围。
+
+## 目标（中文，Legacy V1 范围 — 现对应 0.4+）
+
+本文件描述的是**旧 V1/MVP 全集**（含 SQLite、审批、调度）。当前仓库尚未到达该阶段；若只需 Adapter，请改用 0.3 prompt。
+
+---
 
 你是 Cursor Agent，在仓库 [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
 

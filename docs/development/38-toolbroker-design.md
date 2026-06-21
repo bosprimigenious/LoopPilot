@@ -203,7 +203,7 @@ tool_broker:
 
 ## 13. 非目标（0.3）
 
-- 通用插件 Tool 注册（0.6）
+- 通用插件 Tool 注册（0.7 Personal Extensions）
 - 分布式 / 远程 Broker
 - 写 HTTP (POST/PUT)
 - 交互式 TUI shell
@@ -214,4 +214,4 @@ tool_broker:
 - [08-security-and-recovery.md](08-security-and-recovery.md)
 - [37-adapter-safety-policy.md](37-adapter-safety-policy.md)
 - [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md)
-- [34-version-roadmap-0x.md §4.2.3](34-version-roadmap-0x.md#423-toolbroker)
+- [34-version-roadmap-0x.md](34-version-roadmap-0x.md)

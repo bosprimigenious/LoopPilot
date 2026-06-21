@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
+import json
 import shutil
 from pathlib import Path
 from typing import Any, Callable
 
-from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
+from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
+from loop_pilot.adapters.errors import AdapterBlockedError
+from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -38,6 +39,8 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.tools.broker import ToolBroker
+from loop_pilot.tools.policy import ToolPolicy
 from loop_pilot.workspaces import WorkspaceSpec
 
 
@@ -62,12 +65,16 @@ class InternLoop:
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=8))
         self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
+        self.tool_broker = tool_broker or ToolBroker(
+            ToolPolicy(allowed_commands=["pytest", "python", "git"])
+        )
         self.state_machine = StateMachine()
 
     def run(
@@ -107,6 +114,7 @@ class InternLoop:
         run_dir = self.artifact_dir / "intern" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
 
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
@@ -116,8 +124,17 @@ class InternLoop:
                 "coding_agent",
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
+                adapter_override=request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message
@@ -175,8 +192,16 @@ class InternLoop:
                         self._transition(record, RunPhase.ACTING, trace)
                     elif self._phase_hook is not None:
                         self._phase_hook(record)
-                    adapter.execute({"role": "coding", "round": round_num})
+                    adapter_result = adapter.execute({"role": "coding", "round": round_num, "dry_run": request.dry_run})
                     self.budget_manager.consume_model_call(record)
+                    adapter_trace.append(
+                        {
+                            "event": "adapter_call",
+                            "round": round_num,
+                            "status": adapter_result.status,
+                            "duration_ms": adapter_result.duration_ms,
+                        }
+                    )
 
                     if round_num >= 2 and self._should_apply_controlled_fix(request, work_dir):
                         self._apply_fix(work_dir)
@@ -246,6 +271,17 @@ class InternLoop:
             diff_summary = self._build_diff_summary(work_dir, request.dry_run)
             diff_artifact = self._save_text(run_dir, "diff-summary.md", diff_summary, "worker")
             artifacts.append(diff_artifact)
+            patch_artifact = self._save_text(run_dir, "patch.diff", diff_summary, "worker")
+            artifacts.append(patch_artifact)
+
+            tool_results = {
+                "pytest_rounds": len(rounds),
+                "adapter_calls": round_num,
+                "dry_run": request.dry_run,
+                "audit": self.tool_broker.audit_records(),
+            }
+            tool_artifact = self._save_json(run_dir, "tool-results.json", tool_results, "tool_broker")
+            artifacts.append(tool_artifact)
 
             manifest_rel = f"intern/{record.run_id}/artifact-manifest.json"
             report_body = {
@@ -342,7 +378,9 @@ class InternLoop:
         target = work_dir / "src" / "calculator.py"
         if not target.exists():
             return
-        content = target.read_text(encoding="utf-8")
+        allowed = ["src/**", "tests/**"]
+        forbidden = [".env*", "secrets/**"]
+        content = self.tool_broker.read_file(target, allowed=allowed, forbidden=forbidden)
         if "def add" not in content:
             return
         add_block, separator, remainder = content.partition("def subtract")
@@ -351,7 +389,9 @@ class InternLoop:
         patched = add_block.replace("return a - b", "return a + b", 1)
         if separator:
             patched += separator + remainder
-        target.write_text(patched, encoding="utf-8")
+        self.tool_broker.write_file(
+            target, patched, allowed=allowed, forbidden=forbidden, dry_run=False
+        )
         self._clear_pycache(work_dir)
 
     def _clear_pycache(self, work_dir: Path) -> None:
@@ -373,7 +413,7 @@ class InternLoop:
             expected_root = expected_dir or fixture_dir / "expected"
             expected = expected_root / f"test-report-round-{round_num:02d}.md"
             if expected.exists():
-                return expected.read_text(encoding="utf-8")
+                return self.tool_broker.read_file(expected, allowed=["**"])
             return "DRY_RUN: pytest simulated PASS"
         if work_dir is None:
             return "exit_code=1\n\nstdout:\nno workspace\n"
@@ -381,14 +421,11 @@ class InternLoop:
         if round_num >= 2:
             self._clear_pycache(work_dir)
 
-        result = subprocess.run(
-            [sys.executable, "-B", "-m", "pytest", "-q"],
-            cwd=work_dir,
-            capture_output=True,
-            text=True,
-            timeout=60,
+        cmd_result = self.tool_broker.run_command(["pytest", "-q"], cwd=work_dir, timeout=60)
+        exit_code = cmd_result.exit_code if cmd_result.exit_code is not None else 1
+        return (
+            f"exit_code={exit_code}\n\nstdout:\n{cmd_result.stdout}\n\nstderr:\n{cmd_result.stderr}"
         )
-        return f"exit_code={result.returncode}\n\nstdout:\n{result.stdout}\n\nstderr:\n{result.stderr}"
 
     def _evaluate_tests(
         self,
@@ -425,6 +462,20 @@ class InternLoop:
         if dry_run or work_dir is None:
             return "Dry-run: would patch src/calculator.py (a - b -> a + b)"
         return git_diff_summary(work_dir)
+
+    def _save_json(self, run_dir: Path, name: str, data: object, created_by: str) -> ArtifactReference:
+        path = run_dir / name
+        content = json.dumps(data, indent=2)
+        path.write_text(content, encoding="utf-8")
+        return ArtifactReference(
+            artifact_id=f"{run_dir.name}-{name}",
+            kind="log",
+            path=str(path),
+            media_type="application/json",
+            sha256=content_hash({"content": content}),
+            size_bytes=len(content.encode()),
+            created_by=created_by,
+        )
 
     def _save_text(self, run_dir: Path, name: str, content: str, created_by: str) -> ArtifactReference:
         path = run_dir / name
