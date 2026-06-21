@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from pathlib import Path
 from typing import Any, Callable
 
@@ -38,6 +39,7 @@ from loop_pilot.reporting.human_review import (
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
+from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
 from loop_pilot.runtime.trace import TraceWriter
 from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.tools.policy import ToolPolicy
@@ -211,6 +213,7 @@ class InternLoop:
                         work_dir, request.dry_run, fixture_dir, round_num, expected_dir=expected_dir
                     )
                 except (InterruptedError, TimeoutError, OSError) as exc:
+                    record.current_round = round_num
                     record.outcome = RunOutcome.FAILED
                     record.terminal_reason = f"ACTING interrupted: {exc}"
                     trace.append({"event": "interrupted", "round": round_num, "error": str(exc)})
@@ -421,7 +424,9 @@ class InternLoop:
         if round_num >= 2:
             self._clear_pycache(work_dir)
 
-        cmd_result = self.tool_broker.run_command(["pytest", "-q"], cwd=work_dir, timeout=60)
+        cmd_result = self.tool_broker.run_command(
+            [sys.executable, "-m", "pytest", "-q"], cwd=work_dir, timeout=60
+        )
         exit_code = cmd_result.exit_code if cmd_result.exit_code is not None else 1
         return (
             f"exit_code={exit_code}\n\nstdout:\n{cmd_result.stdout}\n\nstderr:\n{cmd_result.stderr}"
@@ -532,6 +537,7 @@ class InternLoop:
             __import__("json").dumps(manifest.to_dict(), indent=2),
             encoding="utf-8",
         )
+        finalize_terminal_artifacts(run_dir, record)
         return record, manifest, rounds
 
     def _finalize_blocked(

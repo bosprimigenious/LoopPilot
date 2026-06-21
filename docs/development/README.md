@@ -23,13 +23,13 @@
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
   - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4-a** 已交付（2026-06-21）— SQLite + db/recovery CLI
-  - **0.4-b** 已验收（2026-06-21）— inbox/queue/today
-  - **0.4-c** Review Layer — 实现中（feat/0.5-safe-autonomy 前置）
-  - **0.4-d** 已验收（2026-06-21）— summary/schedule/daily dry-run
-  - **0.5 Safe Autonomy** — 当前分支；SafetyGate → schedule install → unattended daily
-  - 稳定化行动项：[50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
-  - **0.5+** 文档规划；Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
+  - **0.4.0b1 stabilization in progress**；Full 0.4 **NOT READY**
+  - **0.4-a/b** 部分实现；全量回归与恢复语义仍需修复
+  - **0.4-c** Review Layer 未实现，当前验收 0/16
+  - **0.4-d** summary/schedule 实现存在，但不得在 0.4-c、全量测试、迁移和审计缺口未解决时声明 Full 0.4 READY
+  - 当前权威行动项：[50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
+  - **0.5** Safe Autonomy 规格已起草；实现 **暂停**（0.4-c 阻塞）— 见 [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md)
+  - **0.5+** Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
 - `resume`/`approve`/`reject`/`cancel` 从 **0.4** 开始
@@ -98,6 +98,9 @@
 49. [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) — **0.4-d Summary Engine 架构**
 50. [47-output-interface-spec.md](47-output-interface-spec.md) — **输出接口：人 MD / 机器 JSON**
 51. [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md) — **0.4 稳定化、诚实验收与 Ideas 验收**
+52. [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md) — **0.5 Safe Autonomy 规格**
+53. [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md) — **0.5 修订理由（SafetyGate 优先、无 daemon）**
+54. [53-0.5-acceptance.md](53-0.5-acceptance.md) — **0.5 验收（0.5-a/b/c/d）**
 
 ## 中文认知层对应关系
 
@@ -127,6 +130,10 @@
 | [14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md) | [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) | 0.4-d 验收（planned） |
 | [14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md) | [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) | 0.4-d 架构 |
 | [14-0.4d-日汇总与调度预览.md](../zh/14-0.4d-日汇总与调度预览.md) | [logs/2026-06-21-0.4d-spec-and-prompt.md](logs/2026-06-21-0.4d-spec-and-prompt.md) | 0.4-d 规格决策 |
+| [15-0.5-安全自治.md](../zh/15-0.5-安全自治.md) | [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md) | 0.5 Safe Autonomy 规格 |
+| [15-0.5-安全自治.md](../zh/15-0.5-安全自治.md) | [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md) | 0.5 修订理由 |
+| [15-0.5-安全自治.md](../zh/15-0.5-安全自治.md) | [53-0.5-acceptance.md](53-0.5-acceptance.md) | 0.5 验收 |
+| [15-0.5-安全自治.md](../zh/15-0.5-安全自治.md) | [logs/2026-06-21-0.5-plan-revision.md](logs/2026-06-21-0.5-plan-revision.md) | 0.5 计划修订 |
 
 ### 决策日志（中文）
 
@@ -140,7 +147,8 @@
 - [logs/2026-06-21-0.4d-spec-and-prompt.md](logs/2026-06-21-0.4d-spec-and-prompt.md) — 0.4-d 规格与 Cursor 提示词
 - [logs/2026-06-21-output-interface-md-json.md](logs/2026-06-21-output-interface-md-json.md) — 输出接口 MD/JSON 决策
 - [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md) — 0.1 交付
-- [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划
+- [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划（旧 Public Beta 口径，部分 supersede）
+- [logs/2026-06-21-0.5-plan-revision.md](logs/2026-06-21-0.5-plan-revision.md) — 0.5 Safe Autonomy 计划修订
 - [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md) — 0.9 RC 规划
 
 ## 文档权威性
@@ -148,7 +156,7 @@
 - 架构冲突 → `01-architecture.md`
 - 运行流程冲突 → `02-runtime-mechanism.md`
 - 单 Loop 行为 → 对应 Loop 分册
-- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`；0.4-a/b/c/d 验收 → `43` / `44` / `45` / `48`；0.4-c/d 架构 → `46` / `49`
+- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`；0.4-a/b/c/d 验收 → `43` / `44` / `45` / `48`；0.4-c/d 架构 → `46` / `49`；**0.5 Safe Autonomy** → `50-personal-daily-loop-0.5-spec.md` / `52` / `53`
 - semver 索引（含历史 0.6–0.8 详细规格）→ `33-version-roadmap.md`
 - 是否完成 → `10-testing-and-acceptance.md` + 对应版本验收 doc（32/35/36）
 - 当前行动项 → `41-next-steps-after-0.3.md`

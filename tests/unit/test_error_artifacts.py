@@ -62,3 +62,13 @@ def test_run_failure_writes_error_traceback_and_trace_event(orchestrator: Orches
     assert error_events
     assert error_events[-1]["error_type"] == "RuntimeError"
     assert error_events[-1]["phase"] == RunPhase.LOCKING.value
+
+    from loop_pilot.runtime.terminal_artifacts import assert_terminal_artifacts
+
+    missing = assert_terminal_artifacts(run_dir)
+    assert missing == []
+
+    from loop_pilot.runtime.terminal_artifacts import assert_terminal_artifacts
+
+    missing = assert_terminal_artifacts(run_dir)
+    assert missing == []

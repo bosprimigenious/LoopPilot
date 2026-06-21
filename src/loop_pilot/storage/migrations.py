@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Callable
 
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 
 MigrationFn = Callable[[sqlite3.Connection], None]
 
@@ -177,6 +177,46 @@ def _migrate_v3(conn: sqlite3.Connection) -> None:
     )
 
 
+@_migration(4)
+def _migrate_v4(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS review_items (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            loop_type TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            decision TEXT,
+            reason TEXT,
+            deferred_until TEXT,
+            artifact_path TEXT,
+            created_at TEXT NOT NULL,
+            decided_at TEXT,
+            FOREIGN KEY(run_id) REFERENCES runs(run_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_review_items_run_id
+        ON review_items(run_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_review_items_status
+        ON review_items(status)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_queue_items_scheduled_for
+        ON queue_items(scheduled_for)
+        WHERE scheduled_for IS NOT NULL
+        """
+    )
+
+
 def get_applied_versions(conn: sqlite3.Connection) -> set[int]:
     conn.execute(
         """
@@ -231,4 +271,5 @@ def required_tables() -> tuple[str, ...]:
         "queue_items",
         "task_events",
         "summaries",
+        "review_items",
     )

@@ -5,9 +5,8 @@ from __future__ import annotations
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
-
 from loop_pilot.domain.models import RunRecord
+from loop_pilot.util.timezone import zone_info
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.runtime.recovery_scan import scan_recovery
 from loop_pilot.storage.base import StateStore
@@ -48,7 +47,29 @@ def read_gate_result(artifact_dir: Path, loop_type: str, run_id: str) -> str | N
 
 def report_path(artifact_dir: Path, loop_type: str, run_id: str) -> str | None:
     run_dir = run_artifact_dir(artifact_dir, loop_type, run_id)
-    for name in ("report.md", "daily-news-report.md"):
+    manifest_path = run_dir / "artifact-manifest.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for entry in manifest.get("artifacts", []):
+                if not isinstance(entry, dict):
+                    continue
+                path_name = entry.get("path", "")
+                if not path_name.endswith(".md"):
+                    continue
+                if entry.get("human_readable") is False:
+                    continue
+                candidate = run_dir / path_name
+                if candidate.exists():
+                    return str(candidate)
+        except json.JSONDecodeError:
+            pass
+    for name in (
+        "report.md",
+        "development-report.md",
+        "paper-development-report.md",
+        "daily-news-report.md",
+    ):
         candidate = run_dir / name
         if candidate.exists():
             return str(candidate)
@@ -85,7 +106,7 @@ class SummaryCollector:
     def resolve_date(self, date_str: str | None) -> str:
         if date_str:
             return date_str
-        return datetime.now(ZoneInfo(self.timezone)).date().isoformat()
+        return datetime.now(zone_info(self.timezone)).date().isoformat()
 
     def collect_daily(self, date_str: str | None = None) -> DailySummaryData:
         target = self.resolve_date(date_str)
@@ -230,7 +251,7 @@ class SummaryCollector:
     def _needs_review(self, record: RunRecord) -> bool:
         if record.phase == RunPhase.WAITING_APPROVAL:
             return True
-        if record.review_status in {"pending", "needs_review", "needs_revision"}:
+        if record.review_status in {"pending", "needs_review", "needs_revision", "resume_requested"}:
             return True
         if record.outcome in {RunOutcome.PARTIAL, RunOutcome.BLOCKED, RunOutcome.EXHAUSTED}:
             return True
@@ -302,7 +323,7 @@ class SummaryCollector:
             start = date.fromisocalendar(year, week_num, 1)
             label = f"{year}-W{week_num:02d}"
         else:
-            today = datetime.now(ZoneInfo(self.timezone)).date()
+            today = datetime.now(zone_info(self.timezone)).date()
             iso = today.isocalendar()
             start = date.fromisocalendar(iso.year, iso.week, 1)
             label = f"{iso.year}-W{iso.week:02d}"
