@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
+import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -33,6 +35,20 @@ def test_missing_ready_when_pytest_fails() -> None:
 
 def test_verify_script_exists() -> None:
     assert (ROOT / "scripts" / "verify_0_4_acceptance.py").is_file()
+
+
+def test_verify_0_4_imports_without_package_install() -> None:
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "verify_0_4_acceptance.py"), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    assert "Truthful 0.4 aggregate acceptance gate" in proc.stdout
 
 
 def test_verify_0_4_returns_nonzero_when_prereq_missing(monkeypatch: pytest.MonkeyPatch) -> None:

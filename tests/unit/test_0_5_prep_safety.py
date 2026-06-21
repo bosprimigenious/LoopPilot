@@ -146,3 +146,19 @@ def test_prep_blocks_level_3_adapter_invoke(tmp_path: Path) -> None:
     )
     result = gate.check("adapter.invoke", level=SafetyLevel.REAL_GUARDED)
     assert result.denied and result.reason_code == PREP_STAGE_BLOCKED
+
+
+def test_snapshot_hash_includes_safety_stage() -> None:
+    base = LoopPilotConfig(runtime={"state_dir": "var/state"})
+    prep = LoopPilotConfig(runtime={"state_dir": "var/state"}, safety={"stage": "prep"})
+    ready = LoopPilotConfig(runtime={"state_dir": "var/state"}, safety={"stage": "ready"})
+    assert base.snapshot_hash() != prep.snapshot_hash()
+    assert prep.snapshot_hash() != ready.snapshot_hash()
+
+
+def test_snapshot_hash_includes_schedule_allow_install() -> None:
+    base = LoopPilotConfig(runtime={"state_dir": "var/state"})
+    denied = LoopPilotConfig(runtime={"state_dir": "var/state"}, schedule={"allow_install": False})
+    allowed = LoopPilotConfig(runtime={"state_dir": "var/state"}, schedule={"allow_install": True})
+    assert base.snapshot_hash() != denied.snapshot_hash()
+    assert denied.snapshot_hash() != allowed.snapshot_hash()

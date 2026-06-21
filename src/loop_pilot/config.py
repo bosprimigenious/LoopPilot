@@ -76,6 +76,8 @@ class LoopPilotConfig:
             "intern": self.intern,
             "paper": self.paper,
             "daily_news": self.daily_news,
+            "schedule": self.schedule,
+            "safety": self.safety,
         }
         canonical = json.dumps(payload, sort_keys=True)
         return hashlib.sha256(canonical.encode()).hexdigest()
