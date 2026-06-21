@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import shutil
 from pathlib import Path
 from typing import Any, Callable
 
@@ -42,6 +43,17 @@ from loop_pilot.workspaces import WorkspaceSpec
 
 class InternLoop:
     FIXTURE_ROOT = Path(__file__).resolve().parents[4] / "tests" / "fixtures" / "intern"
+
+    @classmethod
+    def _resolve_fixture_root(cls) -> Path:
+        for parent in Path(__file__).resolve().parents:
+            candidate = parent / "tests" / "fixtures" / "intern"
+            if candidate.is_dir():
+                return candidate
+        cwd_candidate = Path("tests/fixtures/intern")
+        if cwd_candidate.is_dir():
+            return cwd_candidate
+        return cls.FIXTURE_ROOT
 
     def __init__(
         self,
@@ -84,7 +96,7 @@ class InternLoop:
             plan_target = "src/calculator.py"
             expected_dir = workspace_root / "expected"
         else:
-            fixture_dir = self.FIXTURE_ROOT / fixture_name
+            fixture_dir = self._resolve_fixture_root() / fixture_name
             validation = validate_intern_fixture(fixture_dir)
             allowed_paths = ["src/**", "tests/**"]
             forbidden_paths = [".env*", "secrets/**"]
@@ -340,6 +352,11 @@ class InternLoop:
         if separator:
             patched += separator + remainder
         target.write_text(patched, encoding="utf-8")
+        self._clear_pycache(work_dir)
+
+    def _clear_pycache(self, work_dir: Path) -> None:
+        for cache_dir in work_dir.rglob("__pycache__"):
+            shutil.rmtree(cache_dir, ignore_errors=True)
 
     def _run_pytest(
         self,
@@ -361,8 +378,11 @@ class InternLoop:
         if work_dir is None:
             return "exit_code=1\n\nstdout:\nno workspace\n"
 
+        if round_num >= 2:
+            self._clear_pycache(work_dir)
+
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q"],
+            [sys.executable, "-B", "-m", "pytest", "-q"],
             cwd=work_dir,
             capture_output=True,
             text=True,
