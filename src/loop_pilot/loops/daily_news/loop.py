@@ -19,7 +19,6 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import RunOutcome, RunPhase
-from loop_pilot.connectors import fetch_source
 from loop_pilot.loops.fixture_validation import validate_daily_news_fixture
 from loop_pilot.models.router import ModelRouter
 from loop_pilot.reporting.human_review import write_next_actions, write_review_required
@@ -28,6 +27,7 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.tools.broker import ToolBroker
 
 
 class DailyNewsLoop:
@@ -40,12 +40,14 @@ class DailyNewsLoop:
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=6))
         self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
+        self.tool_broker = tool_broker or ToolBroker()
         self.state_machine = StateMachine()
 
     def run(
@@ -216,6 +218,14 @@ class DailyNewsLoop:
         )
 
         artifacts.extend(self._write_human_review(run_dir, record, intern_candidates, paper_candidates))
+        artifacts.append(
+            self._save_json(
+                run_dir,
+                "tool-results.json",
+                {"dry_run": request.dry_run, "audit": self.tool_broker.audit_records()},
+                "tool_broker",
+            )
+        )
 
         rounds.append(
             RoundRecord(
@@ -289,7 +299,7 @@ class DailyNewsLoop:
             if not source_cfg.get("enabled", True):
                 continue
             try:
-                raw_items.extend(fetch_source(source_cfg))
+                raw_items.extend(self.tool_broker.fetch_source(source_cfg))
             except (FileNotFoundError, ValueError):
                 continue
 
@@ -376,6 +386,14 @@ class DailyNewsLoop:
             )
         )
         artifacts.extend(self._write_human_review(run_dir, record, intern_candidates, paper_candidates))
+        artifacts.append(
+            self._save_json(
+                run_dir,
+                "tool-results.json",
+                {"dry_run": request.dry_run, "audit": self.tool_broker.audit_records()},
+                "tool_broker",
+            )
+        )
 
         rounds.append(
             RoundRecord(

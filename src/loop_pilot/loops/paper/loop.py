@@ -35,6 +35,7 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.workspaces import WorkspaceSpec
 
 
@@ -49,12 +50,14 @@ class PaperLoop:
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=12))
         self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
+        self.tool_broker = tool_broker or ToolBroker()
         self.state_machine = StateMachine()
 
     def run(
@@ -72,6 +75,8 @@ class PaperLoop:
         read_only_patterns = ["experiments/raw/**"]
         draft_file = "paper.md"
         references_file = "references.bib"
+        allowed_paths = ["**"]
+        forbidden_paths = read_only_patterns
 
         if workspace_spec is not None:
             fixture_dir = workspace_spec.root
@@ -79,6 +84,7 @@ class PaperLoop:
             draft_file = workspace_spec.draft_file
             references_file = workspace_spec.references_file
             read_only_patterns = workspace_spec.forbidden_paths or read_only_patterns
+            forbidden_paths = read_only_patterns
             validation = validate_paper_workspace(
                 workspace_spec.root,
                 draft_file=draft_file,
@@ -162,8 +168,18 @@ class PaperLoop:
                 except FileNotFoundError:
                     pass
 
-        paper_text = paper_path.read_text(encoding="utf-8") if paper_path.exists() else ""
-        citations = citations_path.read_text(encoding="utf-8") if citations_path.exists() else ""
+        paper_text = (
+            self.tool_broker.read_file(paper_path, allowed=allowed_paths, forbidden=forbidden_paths)
+            if paper_path.exists()
+            else ""
+        )
+        citations = (
+            self.tool_broker.read_file(
+                citations_path, allowed=allowed_paths, forbidden=forbidden_paths
+            )
+            if citations_path.exists()
+            else ""
+        )
 
         claims = self._extract_claims(paper_text)
         evidence_map = self._map_evidence(claims, citations, adapter)
@@ -175,9 +191,27 @@ class PaperLoop:
         revised_text, revisions = self._revise_claims(paper_text, evidence_map, request.dry_run)
         revised_path = run_dir / "paper-revised.md"
         proposed_path = run_dir / "proposed-revision.md"
+        if not request.dry_run and not request.review_only and working_copy is not None:
+            self.tool_broker.write_file(
+                working_copy / draft_file,
+                revised_text,
+                allowed=allowed_paths,
+                forbidden=forbidden_paths,
+                dry_run=False,
+            )
         if not request.dry_run and not request.review_only:
-            revised_path.write_text(revised_text, encoding="utf-8")
-        proposed_path.write_text(revised_text, encoding="utf-8")
+            self.tool_broker.write_file(
+                revised_path,
+                revised_text,
+                allowed=["**"],
+                dry_run=False,
+            )
+        self.tool_broker.write_file(
+            proposed_path,
+            revised_text,
+            allowed=["**"],
+            dry_run=False,
+        )
         adapter_trace.append({"event": "adapter_call", "role": "research", "revisions": len(revisions)})
 
         self._transition(record, RunPhase.EVALUATING, trace)
@@ -202,6 +236,13 @@ class PaperLoop:
         artifacts.append(
             self._save_text(run_dir, "proposed-revision.md", revised_text, "writing_agent")
         )
+        tool_artifact = self._save_json(
+            run_dir,
+            "tool-results.json",
+            {"dry_run": request.dry_run, "audit": self.tool_broker.audit_records()},
+            "tool_broker",
+        )
+        artifacts.append(tool_artifact)
 
         manifest_rel = f"paper/{record.run_id}/artifact-manifest.json"
         report_body = {

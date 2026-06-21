@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import shutil
 from pathlib import Path
 from typing import Any, Callable
@@ -41,6 +39,8 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.tools.broker import ToolBroker
+from loop_pilot.tools.policy import ToolPolicy
 from loop_pilot.workspaces import WorkspaceSpec
 
 
@@ -65,12 +65,16 @@ class InternLoop:
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=8))
         self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
+        self.tool_broker = tool_broker or ToolBroker(
+            ToolPolicy(allowed_commands=["pytest", "python", "git"])
+        )
         self.state_machine = StateMachine()
 
     def run(
@@ -274,6 +278,7 @@ class InternLoop:
                 "pytest_rounds": len(rounds),
                 "adapter_calls": round_num,
                 "dry_run": request.dry_run,
+                "audit": self.tool_broker.audit_records(),
             }
             tool_artifact = self._save_json(run_dir, "tool-results.json", tool_results, "tool_broker")
             artifacts.append(tool_artifact)
@@ -373,7 +378,9 @@ class InternLoop:
         target = work_dir / "src" / "calculator.py"
         if not target.exists():
             return
-        content = target.read_text(encoding="utf-8")
+        allowed = ["src/**", "tests/**"]
+        forbidden = [".env*", "secrets/**"]
+        content = self.tool_broker.read_file(target, allowed=allowed, forbidden=forbidden)
         if "def add" not in content:
             return
         add_block, separator, remainder = content.partition("def subtract")
@@ -382,7 +389,9 @@ class InternLoop:
         patched = add_block.replace("return a - b", "return a + b", 1)
         if separator:
             patched += separator + remainder
-        target.write_text(patched, encoding="utf-8")
+        self.tool_broker.write_file(
+            target, patched, allowed=allowed, forbidden=forbidden, dry_run=False
+        )
         self._clear_pycache(work_dir)
 
     def _clear_pycache(self, work_dir: Path) -> None:
@@ -404,7 +413,7 @@ class InternLoop:
             expected_root = expected_dir or fixture_dir / "expected"
             expected = expected_root / f"test-report-round-{round_num:02d}.md"
             if expected.exists():
-                return expected.read_text(encoding="utf-8")
+                return self.tool_broker.read_file(expected, allowed=["**"])
             return "DRY_RUN: pytest simulated PASS"
         if work_dir is None:
             return "exit_code=1\n\nstdout:\nno workspace\n"
@@ -412,14 +421,11 @@ class InternLoop:
         if round_num >= 2:
             self._clear_pycache(work_dir)
 
-        result = subprocess.run(
-            [sys.executable, "-B", "-m", "pytest", "-q"],
-            cwd=work_dir,
-            capture_output=True,
-            text=True,
-            timeout=60,
+        cmd_result = self.tool_broker.run_command(["pytest", "-q"], cwd=work_dir, timeout=60)
+        exit_code = cmd_result.exit_code if cmd_result.exit_code is not None else 1
+        return (
+            f"exit_code={exit_code}\n\nstdout:\n{cmd_result.stdout}\n\nstderr:\n{cmd_result.stderr}"
         )
-        return f"exit_code={result.returncode}\n\nstdout:\n{result.stdout}\n\nstderr:\n{result.stderr}"
 
     def _evaluate_tests(
         self,

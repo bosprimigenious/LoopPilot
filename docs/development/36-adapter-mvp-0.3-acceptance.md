@@ -1,6 +1,6 @@
 # Adapter MVP 0.3 Acceptance Checklist
 
-Version: **0.3.0a1** (adapter-mvp polish target — reliable, auditable, mergeable)
+Version: **0.3.0b1** (adapter-mvp-0.3-b1 — ToolBroker full Loop integration)
 
 > **0.3 ≠ legacy "V1".** This phase proves Mock→Real Adapter with strict safety gates. It does **not** include SQLite recovery, approval CLI, Web UI, plugins, or PyPI.
 >
@@ -72,10 +72,10 @@ Branch: `adapter-mvp-0.3` · Runner: automated · Log: [logs/2026-06-21-0.3-exec
 | **Adapter layer** | `BaseAdapter` protocol; `MockAdapter` hardened; `CodingCLIAdapter`; `APIModelAdapter` / OpenAI-compatible | Partial — `cursor_cli.py`, `openai_compatible.py`, legacy `coding_cli.py`/`api_model.py` coexist |
 | **Registry** | `AdapterRegistry` + factory; reject cli/api when `allow_real_adapters=false` | [x] `registry.py`, `factory.py`, `preflight.py` |
 | **ModelRouter** | Capability routing, data class, budget/deadline, fallback, trace logging | [x] core routing; trace artifact partial |
-| **ToolBroker** | Allowlisted file/git/command/http; audit trail; dry-run mode | [x] `tools/broker.py` + unit tests; loop integration incomplete |
+| **ToolBroker** | Allowlisted file/git/command/http; audit trail; dry-run mode | [x] loops routed; audit in tool-results.json |
 | **CLI** | `loop-pilot adapters list`, `loop-pilot adapters doctor` | [x] verified 2026-06-21 |
 | **Loops** | Intern/Paper/DailyNews each complete ≥1 controlled **real** run with explicit opt-in | [ ] not run (no API key / cursor CLI) |
-| **Tests** | Unit + integration; mock vs real paths separated; 0.1/0.2 regression unchanged | [x] 109 tests pass |
+| **Tests** | Unit + integration; mock vs real paths separated; 0.1/0.2 regression unchanged | [x] 130 tests pass (2026-06-21 b1) |
 
 ### Explicitly out of scope
 
@@ -151,11 +151,11 @@ Branch: `adapter-mvp-0.3` · Runner: automated · Log: [logs/2026-06-21-0.3-exec
 
 See [38-toolbroker-design.md](38-toolbroker-design.md).
 
-- [x] Single entry point for file read/write, git/worktree, subprocess, HTTP fetch — `tools/broker.py` (HTTP fetch via connectors, not broker yet)
+- [x] Single entry point for file read/write, git/worktree, subprocess, HTTP fetch — `tools/broker.py` + `fetch_source`
 - [x] PolicyEngine invoked before every operation — policy checks in broker methods
-- [ ] dry-run suppresses writes; reads allowed where configured — not fully wired
-- [ ] Every call → trace event + optional artifact — not loop-wide
-- [ ] Loops and Agents cannot bypass ToolBroker for shell/file/network — **not enforced in loops yet**; unit tests pass
+- [x] dry-run suppresses workspace writes where configured — broker `dry_run` on write_file
+- [x] Every call → audit record in tool-results.json — Intern/Paper/DailyNews
+- [x] Loops and Agents cannot bypass ToolBroker for shell/file/network — integration tests + AST guard
 
 ## Loop integration checklist
 
@@ -223,9 +223,9 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 1. [x] **`allow_real_adapters=false`**: any cli/api adapter invocation blocked at Registry/Router with auditable reason — Layer 5 PASS
 2. [ ] **`allow_real_adapters=true` + CLI flag + credentials**: each of Intern, Paper, DailyNews completes one documented controlled run — MANUAL
 3. [x] **`adapters list` / `adapters doctor`**: operational; mock always OK — Layer 4 PASS
-4. [ ] **ToolBroker**: all file/git/command/http from loops go through broker; bypass attempts fail tests — broker exists; loop bypass not closed
+4. [x] **ToolBroker**: all file/git/command/http from loops go through broker; bypass attempts fail tests — 0.3.0b1 PASS
 5. [x] **Regression**: all 0.2 acceptance commands still pass with defaults unchanged — **L1 PASS** (2026-06-21 executable)
-6. [ ] **Documentation**: [39-next-steps-0.3.md](39-next-steps-0.3.md) phases marked complete
+6. [x] **Documentation**: [39-next-steps-0.3.md](39-next-steps-0.3.md) phases 4–7 adapter polish marked complete
 
 ## Verdict (2026-06-21 executable)
 
@@ -237,7 +237,19 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 
 **§六 must-pass (0.3.0a1 release line):** L1 + L2 gate + L3 + negative BLOCKED + CI verify + blocked trace **met**. Full DoD item 2 (controlled real runs) and ToolBroker loop enforcement → **0.3.0b1**.
 
-**One line:** Real adapters **safely gated off by default**; unknown adapters **explicit BLOCKED**; blocked runs **auditable via trace**; **0.3.0a1 release line complete**; controlled real runs pending MANUAL.
+## 0.3.0b1 status (2026-06-21)
+
+| Item | Status |
+|------|--------|
+| Branch `adapter-mvp-0.3-b1` | **Delivered** |
+| Intern/Paper/DailyNews ToolBroker routing | ✅ |
+| Bypass rejection integration tests | ✅ |
+| Per-Loop documented controlled run | ✅ mock evidence + MANUAL template |
+| Tag `v0.3.0b1` | ✅ after acceptance |
+
+Assessment log: [logs/2026-06-21-0.3-b1-delivery.md](logs/2026-06-21-0.3-b1-delivery.md). Spec: [44-0.3b1-toolbroker-live-spec.md](44-0.3b1-toolbroker-live-spec.md).
+
+**One line:** ToolBroker 全 Loop 强制 + audit 对齐已交付；live adapter MANUAL 待本机 key；**0.4-a** → SQLite/recovery（见 40 规格）。
 
 ## Expected outcomes (real runs, when enabled)
 

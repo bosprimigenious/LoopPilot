@@ -3,18 +3,36 @@
 from __future__ import annotations
 
 import fnmatch
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-def is_path_allowed(path: Path, allowed: list[str], forbidden: list[str]) -> bool:
+def _path_candidates(path: Path) -> list[str]:
     rel = str(path).replace("\\", "/")
+    candidates = [rel, path.name]
+    parts = path.parts
+    for idx in range(len(parts)):
+        candidates.append("/".join(parts[idx:]).replace("\\", "/"))
+    return candidates
+
+
+def _glob_match(candidate: str, pattern: str) -> bool:
+    if pattern == "**":
+        return True
+    normalized = candidate.replace("\\", "/")
+    if fnmatch.fnmatch(normalized, pattern) or fnmatch.fnmatch(Path(normalized).name, pattern):
+        return True
+    return PurePosixPath(normalized).match(pattern)
+
+
+def is_path_allowed(path: Path, allowed: list[str], forbidden: list[str]) -> bool:
+    candidates = _path_candidates(path)
     for pattern in forbidden:
-        if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(path.name, pattern):
+        if any(_glob_match(candidate, pattern) for candidate in candidates):
             return False
     if not allowed:
         return True
-    return any(fnmatch.fnmatch(rel, pattern) for pattern in allowed)
+    return any(_glob_match(candidate, pattern) for candidate in candidates for pattern in allowed)
 
 
 def read_text(path: Path, *, allowed: list[str], forbidden: list[str]) -> str:
