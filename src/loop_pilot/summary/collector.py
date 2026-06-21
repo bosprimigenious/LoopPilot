@@ -47,12 +47,24 @@ def read_gate_result(artifact_dir: Path, loop_type: str, run_id: str) -> str | N
 
 def report_path(artifact_dir: Path, loop_type: str, run_id: str) -> str | None:
     run_dir = run_artifact_dir(artifact_dir, loop_type, run_id)
+    for name in (
+        "report.md",
+        "development-report.md",
+        "paper-development-report.md",
+        "daily-news-report.md",
+    ):
+        candidate = run_dir / name
+        if candidate.exists():
+            return str(candidate)
+
     manifest_path = run_dir / "artifact-manifest.json"
     if manifest_path.exists():
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             for entry in manifest.get("artifacts", []):
                 if not isinstance(entry, dict):
+                    continue
+                if entry.get("kind") != "report":
                     continue
                 path_name = entry.get("path", "")
                 if not path_name.endswith(".md"):
@@ -64,15 +76,6 @@ def report_path(artifact_dir: Path, loop_type: str, run_id: str) -> str | None:
                     return str(candidate)
         except json.JSONDecodeError:
             pass
-    for name in (
-        "report.md",
-        "development-report.md",
-        "paper-development-report.md",
-        "daily-news-report.md",
-    ):
-        candidate = run_dir / name
-        if candidate.exists():
-            return str(candidate)
     return None
 
 
@@ -185,7 +188,7 @@ class SummaryCollector:
             for row in data.runs:
                 stats = loop_stats.setdefault(row.loop_type, {"runs": 0, "succeeded": 0, "blocked": 0})
                 stats["runs"] += 1
-                if row.outcome == RunOutcome.SUCCEEDED.value:
+                if self._counts_as_completed(row):
                     stats["succeeded"] += 1
                     completed.append(f"{day}: {row.run_id} ({row.loop_type}) succeeded")
                 if row.outcome in {RunOutcome.BLOCKED.value, RunOutcome.FAILED.value}:
@@ -258,6 +261,15 @@ class SummaryCollector:
         gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id)
         return gate in {"needs_review", "blocked"}
 
+    def _counts_as_completed(self, row: RunSummaryRow) -> bool:
+        if row.outcome != RunOutcome.SUCCEEDED.value:
+            return False
+        if row.phase == RunPhase.WAITING_APPROVAL.value:
+            return False
+        if row.gate in {"needs_review", "blocked"}:
+            return False
+        return True
+
     def _build_highlights(
         self,
         *,
@@ -278,7 +290,13 @@ class SummaryCollector:
         if today_items:
             highlights.append(f"Today: {len(today_items)} scheduled task(s)")
         if not highlights and runs:
-            highlights.append(f"{len(runs)} run(s) completed today")
+            completed_count = sum(
+                1
+                for record in runs
+                if record.outcome == RunOutcome.SUCCEEDED and not self._needs_review(record)
+            )
+            if completed_count:
+                highlights.append(f"{completed_count} run(s) completed today")
         if not highlights:
             highlights.append("No major activity recorded for this date")
         return highlights[:3]

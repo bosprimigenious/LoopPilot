@@ -11,8 +11,8 @@ from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.review.review_agent import suggest_review, write_suggestion
 from loop_pilot.review.store import ReviewItem, ReviewStore
 from loop_pilot.runtime.approvals import ApprovalError, approve_run, cancel_run, reject_run
-from loop_pilot.runtime.checkpoints import CheckpointWriter
 from loop_pilot.runtime.recovery import build_recovery_plan
+from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
 from loop_pilot.storage.base import StateStore
 from loop_pilot.summary.collector import read_gate_result, run_artifact_dir
 
@@ -24,6 +24,29 @@ def write_review_suggestion(run_dir: Path, record: RunRecord, gate: str) -> Path
     suggestion = suggest_review(record, run_dir)
     suggestion["gate"] = gate
     return write_suggestion(run_dir, suggestion)
+
+
+def mark_patch_run_waiting_review(
+    *,
+    artifact_dir: Path,
+    record: RunRecord,
+    state_store: StateStore | None = None,
+) -> RunRecord:
+    """Patch-producing runs are not final success until a human approves."""
+    record.phase = RunPhase.WAITING_APPROVAL
+    record.outcome = RunOutcome.PARTIAL
+    record.review_status = "needs_review"
+    record.report_status = "needs_review"
+    run_dir = run_artifact_dir(artifact_dir, record.loop_type, record.run_id)
+    finalize_terminal_artifacts(
+        run_dir,
+        record,
+        gate="needs_review",
+        review_required=True,
+    )
+    if state_store is not None:
+        state_store.save_run(record)
+    return record
 
 
 class ReviewService:
@@ -44,6 +67,22 @@ class ReviewService:
         if not self._needs_review(record):
             return None
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, record.run_id)
+        if (
+            record.outcome == RunOutcome.SUCCEEDED
+            and (run_dir / "patch.diff").exists()
+            and record.review_status not in {
+            "approved",
+            "rejected",
+            "cancelled",
+        }
+        ):
+            record = mark_patch_run_waiting_review(
+                artifact_dir=self.artifact_dir,
+                record=record,
+                state_store=self.state_store,
+            )
+        elif record.review_status is None:
+            record.review_status = "pending"
         gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id) or "needs_review"
         write_review_suggestion(run_dir, record, gate)
         review_path = run_dir / "review_required.md"
@@ -61,10 +100,6 @@ class ReviewService:
             loop_type=record.loop_type,
             artifact_path=str(run_dir),
         )
-        if record.outcome == RunOutcome.SUCCEEDED and (run_dir / "patch.diff").exists():
-            record.review_status = "needs_review"
-        elif record.review_status is None:
-            record.review_status = "pending"
         self.state_store.save_run(record)
         self.store.append_event(run_id=record.run_id, event_type="review_enqueued")
         return item
@@ -99,18 +134,19 @@ class ReviewService:
             raise ApprovalError(f"review already decided: {item.decision}")
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
         if (run_dir / "patch.diff").exists():
-            record.review_status = "resume_requested"
+            self.state_store.record_review(run_id, "approve", note)
+            record.review_status = "approved"
+            record.phase = RunPhase.TERMINATED
+            record.outcome = RunOutcome.SUCCEEDED
+            record.report_status = "completed"
+            record.finished_at = record.finished_at or rfc3339()
             self.store.record_decision(
                 run_id,
                 decision="approve",
-                status="resume_requested",
+                status="approved",
                 reason=note,
             )
-            CheckpointWriter(self.state_store).write(
-                record,
-                {"event": "resume_requested", "approved_by": actor},
-                resume_allowed=True,
-            )
+            finalize_terminal_artifacts(run_dir, record, gate="pass", review_required=False)
         else:
             record = approve_run(self.state_store, run_id)
             self.store.record_decision(
@@ -159,11 +195,18 @@ class ReviewService:
         from loop_pilot.runtime.orchestrator import ResumeError
 
         item = self.store.get_by_run_id(run_id)
-        if item is not None and item.status == "rejected":
-            raise ResumeError("cannot resume a rejected run")
+        if item is not None and item.status in {"rejected", "cancelled"}:
+            raise ResumeError(f"cannot resume a {item.status} run")
         record = self.state_store.get_run(run_id)
         if record is not None and record.review_status in {"rejected", "cancelled"}:
             raise ResumeError(f"cannot resume run with review_status={record.review_status}")
+        if (
+            record is not None
+            and record.review_status == "approved"
+            and record.phase == RunPhase.TERMINATED
+            and record.outcome == RunOutcome.SUCCEEDED
+        ):
+            raise ResumeError("cannot resume: run already finalized after approval")
         plan = build_recovery_plan(self.state_store, run_id)
         if plan is None:
             raise ResumeError(f"Run not found: {run_id}")

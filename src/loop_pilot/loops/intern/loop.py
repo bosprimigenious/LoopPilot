@@ -40,6 +40,7 @@ from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
+from loop_pilot.review.service import mark_patch_run_waiting_review
 from loop_pilot.runtime.trace import TraceWriter
 from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.tools.policy import ToolPolicy
@@ -522,10 +523,15 @@ class InternLoop:
         self._transition(record, RunPhase.FINALIZING, trace)
         self._transition(record, RunPhase.PERSISTING, trace)
         self._transition(record, RunPhase.REPORTING, trace)
-        record.phase = RunPhase.TERMINATED
         record.finished_at = rfc3339()
-        record.report_status = "generated"
         trace.append({"event": "terminated", "outcome": record.outcome.value if record.outcome else None})
+
+        if (run_dir / "patch.diff").exists() and record.outcome == RunOutcome.SUCCEEDED:
+            record = mark_patch_run_waiting_review(artifact_dir=self.artifact_dir, record=record)
+        else:
+            record.phase = RunPhase.TERMINATED
+            record.report_status = "generated"
+            finalize_terminal_artifacts(run_dir, record)
 
         manifest = ArtifactManifest(
             run_id=record.run_id,
@@ -537,7 +543,6 @@ class InternLoop:
             __import__("json").dumps(manifest.to_dict(), indent=2),
             encoding="utf-8",
         )
-        finalize_terminal_artifacts(run_dir, record)
         return record, manifest, rounds
 
     def _finalize_blocked(

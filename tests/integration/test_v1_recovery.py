@@ -76,7 +76,9 @@ def test_run_loop_writes_checkpoints_to_sqlite(tmp_path: Path) -> None:
     checkpoint = application.state_store.latest_checkpoint(record.run_id)
     assert checkpoint is not None
     assert record.last_checkpoint_id is not None
-    assert record.outcome == RunOutcome.SUCCEEDED
+    assert record.outcome == RunOutcome.PARTIAL
+    assert record.phase == RunPhase.WAITING_APPROVAL
+    assert record.review_status == "needs_review"
 
 
 def test_cancelled_run_cannot_resume(tmp_path: Path) -> None:
@@ -108,29 +110,35 @@ def test_cancelled_run_cannot_resume(tmp_path: Path) -> None:
 
 
 def test_resume_after_approval_completes_intern_dry_run(tmp_path: Path) -> None:
+    from loop_pilot.review.service import ReviewService
+
     config_dir = _sqlite_config(tmp_path)
     application = App.from_config_dir(config_dir)
-    store = application.state_store
-    record = RunRecord(
+    request = RunRequest(
         run_id="resume-intern-001",
         loop_type="intern",
-        phase=RunPhase.WAITING_APPROVAL,
         fixture="simple_python_bug",
         dry_run=True,
+        config_snapshot_hash=application.config.snapshot_hash(),
     )
-    store.save_run(record)
-    store.save_checkpoint(
-        record.run_id,
-        checkpoint_id="cp-waiting",
-        phase=RunPhase.WAITING_APPROVAL.value,
-        payload={"fixture": "simple_python_bug", "dry_run": True, "current_round": 1},
+    record = application.orchestrator.run_loop(request)
+    assert record.outcome == RunOutcome.PARTIAL
+
+    service = ReviewService(
+        config=application.config,
+        state_store=application.state_store,
+        orchestrator=application.orchestrator,
     )
-    approve_run(store, record.run_id)
+    service.maybe_enqueue(record)
+    approved = service.approve(record.run_id, note="approved for test")
 
-    resumed = application.orchestrator.resume_run(record.run_id)
+    assert approved.phase == RunPhase.TERMINATED
+    assert approved.outcome == RunOutcome.SUCCEEDED
+    assert approved.review_status == "approved"
+    assert approved.review_status != "resume_requested"
 
-    assert resumed.phase == RunPhase.TERMINATED
-    assert resumed.outcome == RunOutcome.SUCCEEDED
+    with pytest.raises(ResumeError, match="finalized|already succeeded"):
+        service.resume(record.run_id)
 
 
 def test_resume_without_approval_is_blocked(tmp_path: Path) -> None:
@@ -192,10 +200,13 @@ def test_acting_interrupt_can_resume_from_exact_round(tmp_path: Path, monkeypatc
     assert plan.checkpoint.get("payload", {}).get("current_round", 0) >= 2
 
     resumed = application.orchestrator.resume_run(record.run_id)
-    assert resumed.outcome == RunOutcome.SUCCEEDED
+    assert resumed.outcome == RunOutcome.PARTIAL
+    assert resumed.phase == RunPhase.WAITING_APPROVAL
 
 
 def test_duplicate_resume_after_success_is_rejected(tmp_path: Path) -> None:
+    from loop_pilot.review.service import ReviewService
+
     config_dir = _sqlite_config(tmp_path)
     application = App.from_config_dir(config_dir)
     request = RunRequest(
@@ -206,10 +217,19 @@ def test_duplicate_resume_after_success_is_rejected(tmp_path: Path) -> None:
         config_snapshot_hash=application.config.snapshot_hash(),
     )
     record = application.orchestrator.run_loop(request)
-    assert record.outcome == RunOutcome.SUCCEEDED
+    assert record.outcome == RunOutcome.PARTIAL
 
-    with pytest.raises(ResumeError, match="already succeeded"):
-        application.orchestrator.resume_run(record.run_id)
+    service = ReviewService(
+        config=application.config,
+        state_store=application.state_store,
+        orchestrator=application.orchestrator,
+    )
+    service.maybe_enqueue(record)
+    approved = service.approve(record.run_id, note="ok")
+    assert approved.outcome == RunOutcome.SUCCEEDED
+
+    with pytest.raises(ResumeError, match="finalized|already succeeded"):
+        service.resume(record.run_id)
 
 
 def test_lock_not_left_after_failed_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

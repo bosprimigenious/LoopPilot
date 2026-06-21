@@ -48,7 +48,7 @@ def test_dry_run_cli_runs_produce_candidate_artifacts_for_manual_log() -> None:
     """Controlled mock CLI runs match MANUAL log structure (no credentials required)."""
     runner = CliRunner()
     cases = [
-        (["run", "intern", "--fixture", "simple_python_bug", "--dry-run"], "succeeded"),
+        (["run", "intern", "--fixture", "simple_python_bug", "--dry-run"], "partial"),
         (["run", "paper", "--fixture", "unsupported_claim", "--dry-run"], "partial"),
         (["run", "daily-news", "--source-profile", "demo", "--dry-run"], "succeeded"),
     ]

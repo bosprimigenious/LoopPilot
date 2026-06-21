@@ -18,10 +18,11 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(app, ["run", "intern", "--fixture", "simple_python_bug", "--dry-run"])
         assert result.exit_code == 0, result.output
-        assert "completed: succeeded" in result.output
+        assert "completed: partial" in result.output
 
     def test_run_all_dry_run(self) -> None:
         runner = CliRunner()
         result = runner.invoke(app, ["run", "all", "--fixture-set", "mini", "--dry-run"])
         assert result.exit_code == 0, result.output
         assert "daily_news: succeeded" in result.output
+        assert "intern: partial" in result.output
