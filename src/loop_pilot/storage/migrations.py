@@ -1,13 +1,27 @@
-"""SQLite schema migrations for V1 state."""
+"""SQLite schema migrations for V1+ state."""
 
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
 
 CURRENT_SCHEMA_VERSION = 1
 
+MigrationFn = Callable[[sqlite3.Connection], None]
 
-def apply_migrations(conn: sqlite3.Connection) -> None:
+MIGRATIONS: dict[int, MigrationFn] = {}
+
+
+def _migration(version: int) -> Callable[[MigrationFn], MigrationFn]:
+    def register(fn: MigrationFn) -> MigrationFn:
+        MIGRATIONS[version] = fn
+        return fn
+
+    return register
+
+
+@_migration(1)
+def _migrate_v1(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -62,7 +76,76 @@ def apply_migrations(conn: sqlite3.Connection) -> None:
         """
     )
     conn.execute(
-        "INSERT OR IGNORE INTO schema_migrations(version) VALUES (?)",
-        (CURRENT_SCHEMA_VERSION,),
+        """
+        CREATE TABLE IF NOT EXISTS events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(run_id) REFERENCES runs(run_id)
+        )
+        """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS run_locks (
+            lock_key TEXT PRIMARY KEY,
+            holder_run_id TEXT NOT NULL,
+            acquired_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+
+def get_applied_versions(conn: sqlite3.Connection) -> set[int]:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version INTEGER PRIMARY KEY,
+            applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    rows = conn.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall()
+    return {int(row[0]) for row in rows}
+
+
+def get_current_schema_version(conn: sqlite3.Connection) -> int:
+    applied = get_applied_versions(conn)
+    return max(applied) if applied else 0
+
+
+def plan_migrations(conn: sqlite3.Connection) -> list[int]:
+    applied = get_applied_versions(conn)
+    return sorted(version for version in MIGRATIONS if version not in applied)
+
+
+def apply_migrations(conn: sqlite3.Connection, *, dry_run: bool = False) -> list[int]:
+    pending = plan_migrations(conn)
+    if dry_run:
+        return pending
+
+    applied: list[int] = []
+    for version in pending:
+        migration = MIGRATIONS[version]
+        migration(conn)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_migrations(version) VALUES (?)",
+            (version,),
+        )
+        applied.append(version)
     conn.commit()
+    return applied
+
+
+def required_tables() -> tuple[str, ...]:
+    return (
+        "schema_migrations",
+        "runs",
+        "checkpoints",
+        "reviews",
+        "artifact_manifests",
+        "events",
+        "run_locks",
+    )

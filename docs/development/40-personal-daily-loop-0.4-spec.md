@@ -64,8 +64,11 @@ loop-pilot db migrate
 loop-pilot db verify
 loop-pilot db backup --dry-run
 loop-pilot recovery-scan
-pytest tests/unit/test_sqlite_state_store.py -q
+loop-pilot doctor
+pytest tests/unit/test_db_ops.py tests/unit/test_recovery_scan.py -q
 ```
+
+**0.4-a acceptance (delivered):** See [43-personal-daily-loop-0.4a-acceptance.md](43-personal-daily-loop-0.4a-acceptance.md) for checklist, expected outputs, and delivery log [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md). Chinese guide: [../zh/11-0.4a-SQLite与恢复扫描.md](../zh/11-0.4a-SQLite与恢复扫描.md).
 
 ---
 
@@ -248,6 +251,8 @@ pytest -q
 
 ## 9. 相关文档
 
+- [43-personal-daily-loop-0.4a-acceptance.md](43-personal-daily-loop-0.4a-acceptance.md) — **0.4-a 验收清单**
+- [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md) — 0.4-a 交付记录
 - [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) — 实施顺序
 - [08-security-and-recovery.md](08-security-and-recovery.md) — recovery 规则
 - [18-state-transition-spec.md](18-state-transition-spec.md) — 状态机

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0a1] - 2026-06-21
+
+### 0.4-a State reliability
+
+- **CLI**: `loop-pilot db status|migrate|backup|verify` (requires `state_backend=sqlite`)
+- **CLI**: `loop-pilot recovery-scan` — stale/interrupted/WAITING_APPROVAL/ACTING/FAILED/stale lock
+- **CLI**: `loop-pilot doctor` — sqlite writability and schema checks; json mode hints sqlite requirement
+- **Storage**: versioned migrations v1 (`runs`, `checkpoints`, `reviews`, `artifact_manifests`, `events`, `run_locks`)
+- **Recovery**: ACTING interrupted → `manual_review_required` (no auto-resume)
+- **Tests**: `test_db_ops`, `test_recovery_scan`; full suite 141 passed
+- **Config**: default remains `state_backend=json`; acceptance fixture at `tests/fixtures/acceptance_0_4a/config`
+- **Docs**: [43-personal-daily-loop-0.4a-acceptance.md](docs/development/43-personal-daily-loop-0.4a-acceptance.md)
+
+### Unchanged / deferred to 0.4-b+
+
+- inbox/queue/today (0.4-b), review/approve/defer (0.4-c), summary/schedule (0.4-d)
+
 ## [0.3.0b1] - 2026-06-21
 
 ### ToolBroker full Loop integration (0.3.0b1)

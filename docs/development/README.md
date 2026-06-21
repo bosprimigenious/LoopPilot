@@ -23,7 +23,8 @@
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
   - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4** 下一焦点 — Personal Recovery & Daily Loop（inbox/queue/today/review/summary）
+  - **0.4-a** 已交付（2026-06-21，分支 `personal-daily-loop-0.4-a`）— SQLite + db/recovery CLI
+  - **0.4-b+** 下一焦点 — inbox/queue/today/review/summary
   - **0.5+** 文档规划；Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
@@ -81,7 +82,8 @@
 40. [39-next-steps-0.3.md](39-next-steps-0.3.md) — 0.3 后续步骤
 41. [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md) — **0.4 个人日用链规格**
 42. [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) — **0.3→0.4 行动顺序**
-43. [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) — **1.x 个人→协作权威规格**
+43. [43-personal-daily-loop-0.4a-acceptance.md](43-personal-daily-loop-0.4a-acceptance.md) — **0.4-a 验收**
+44. [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) — **1.x 个人→协作权威规格**
 
 ## 中文认知层对应关系
 
@@ -95,6 +97,8 @@
 | [07-0.3-Adapter验收说明.md](../zh/07-0.3-Adapter验收说明.md) | [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md) | 0.3 验收 |
 | [07-0.3-Adapter验收说明.md](../zh/07-0.3-Adapter验收说明.md) | [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md) | 0.3 验收跑记录 |
 | [08-0.4-个人日用闭环.md](../zh/08-0.4-个人日用闭环.md) | [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md) | 0.4 规格 |
+| [11-0.4a-SQLite与恢复扫描.md](../zh/11-0.4a-SQLite与恢复扫描.md) | [43-personal-daily-loop-0.4a-acceptance.md](43-personal-daily-loop-0.4a-acceptance.md) | 0.4-a 验收 |
+| [11-0.4a-SQLite与恢复扫描.md](../zh/11-0.4a-SQLite与恢复扫描.md) | [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md) | 0.4-a 交付记录 |
 | [08-0.4-个人日用闭环.md](../zh/08-0.4-个人日用闭环.md) | [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) | 0.3→0.4 行动 |
 | [09-1.x-个人到协作.md](../zh/09-1.x-个人到协作.md) | [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) | 1.x 路线 |
 | [04-如何跑验收.md](../zh/04-如何跑验收.md) | [32](32-mini-mvp-acceptance.md) / [35](35-practical-mvp-0.2-acceptance.md) / [36](36-adapter-mvp-0.3-acceptance.md) | 验收命令 |
@@ -108,6 +112,7 @@
 - [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md) — 0.x 个人优先 pivot
 - [logs/2026-06-21-1x-roadmap-personal-stable.md](logs/2026-06-21-1x-roadmap-personal-stable.md) — 1.x 四段式决策
 - [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md) — 0.3 验收跑记录
+- [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md) — 0.4-a 交付
 - [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md) — 0.1 交付
 - [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划
 - [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md) — 0.9 RC 规划
@@ -117,7 +122,7 @@
 - 架构冲突 → `01-architecture.md`
 - 运行流程冲突 → `02-runtime-mechanism.md`
 - 单 Loop 行为 → 对应 Loop 分册
-- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`
+- **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`；0.4-a 验收 → `43-personal-daily-loop-0.4a-acceptance.md`
 - semver 索引（含历史 0.6–0.8 详细规格）→ `33-version-roadmap.md`
 - 是否完成 → `10-testing-and-acceptance.md` + 对应版本验收 doc（32/35/36）
 - 当前行动项 → `41-next-steps-after-0.3.md`

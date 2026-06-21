@@ -29,11 +29,5 @@ class App:
     def _create_state_store(self) -> StateStore:
         backend = str(self.config.runtime.get("state_backend", "json")).lower()
         if backend == "sqlite":
-            db_path = Path(
-                self.config.runtime.get(
-                    "sqlite_path",
-                    self.config.state_dir / "loop-pilot.sqlite3",
-                )
-            )
-            return SQLiteStateStore(db_path)
+            return SQLiteStateStore(self.config.sqlite_path)
         return JsonStateStore(self.config.state_dir)

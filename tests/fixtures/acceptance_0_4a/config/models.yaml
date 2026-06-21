@@ -1,0 +1,88 @@
+roles:
+  planning: {adapter: mock}
+  coding: {adapter: mock}
+  research: {adapter: mock}
+  writing: {adapter: mock}
+  screening: {adapter: mock}
+  evaluation: {adapter: mock}
+
+model_roles:
+  reasoning_strong:
+    candidates: [mock]
+    require: {structured_output: true}
+    no_capable_adapter: block
+  coding_agent:
+    candidates: [cursor_cli, configured_coding_cli, mock]
+    require: {file_write: true, tool_calls: true, dry_run: true}
+    no_capable_adapter: block
+  analysis_medium:
+    candidates: [deepseek, openai_compatible_example, mock]
+    require: {structured_output: true}
+    no_capable_adapter: block
+  screening_economical:
+    candidates: [mock]
+    require: {structured_output: true}
+    no_capable_adapter: block
+
+adapters:
+  mock:
+    kind: mock
+    timeout_seconds: 60
+    capabilities:
+      supports_structured_output: true
+      supports_dry_run: true
+      supports_file_write: true
+      supports_tools: true
+    data_policy:
+      max_data_class: PROJECT
+  cursor_cli:
+    kind: cursor_cli
+    command: ["cursor", "agent", "--print"]
+    timeout_seconds: 900
+    env_allowlist: []
+    capabilities:
+      supports_structured_output: true
+      supports_dry_run: true
+      supports_file_write: true
+      supports_tools: true
+    data_policy:
+      max_data_class: SENSITIVE
+  deepseek:
+    kind: openai_compatible
+    provider: deepseek
+    endpoint: "https://api.deepseek.com/v1/chat/completions"
+    model: "deepseek-chat"
+    auth_env: DEEPSEEK_API_KEY
+    timeout_seconds: 60
+    capabilities:
+      supports_structured_output: true
+      supports_dry_run: true
+      supports_file_write: false
+      supports_tools: false
+    data_policy:
+      max_data_class: PROJECT
+  configured_coding_cli:
+    kind: cli
+    command: ["configured-cli"]
+    timeout_seconds: 900
+    env_allowlist: []
+    capabilities:
+      supports_structured_output: true
+      supports_dry_run: true
+      supports_file_write: true
+      supports_tools: true
+    data_policy:
+      max_data_class: SENSITIVE
+  openai_compatible_example:
+    kind: api
+    endpoint: "https://example.invalid/v1/chat/completions"
+    model: "configured-model"
+    auth_env: LOOPPILOT_API_KEY
+    timeout_seconds: 60
+    capabilities:
+      supports_structured_output: true
+      supports_dry_run: true
+      supports_file_write: false
+      supports_tools: false
+    data_policy:
+      max_data_class: PROJECT
