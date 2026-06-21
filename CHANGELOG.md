@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #7 — P2 on feat/0.5-safe-autonomy)
+
+- **`verify_0_4_acceptance.py` bootstrap**: insert `src` into `sys.path` before `loop_pilot` imports (source checkout without install).
+- **`snapshot_hash()`**: include `schedule` and `safety` so audit trails distinguish prep/ready and `allow_install`.
+
+See [logs/2026-06-21-codex-p2-fixes.md](docs/development/logs/2026-06-21-codex-p2-fixes.md).
+
 ### Fixed (Codex PR #8 — patch review gate on feat/0.5-safe-autonomy)
 
 - **P0-1 patch review gate**: `patch.diff` runs finalize as `TERMINATED` / `PARTIAL` / `needs_review` until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
