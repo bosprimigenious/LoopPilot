@@ -1,3 +1,5 @@
-# InternLoop demo scaffold
+# Intern Demo Workspace
 
-Cursor should build a tiny synthetic repository containing one reproducible bug and one failing test. It must not use a real internship or company repository.
+Controlled demo project for LoopPilot 0.2 Practical MVP.
+
+Contains a deliberate bug in `src/calculator.py` (`add` uses subtraction).
