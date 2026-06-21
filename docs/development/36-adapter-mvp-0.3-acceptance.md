@@ -6,6 +6,13 @@ Version: **0.3.0a1** (adapter-mvp polish target — reliable, auditable, mergeab
 >
 > Polish roadmap: [43-0.3-polish-roadmap-a-to-f.md](43-0.3-polish-roadmap-a-to-f.md)
 
+
+## Release line (0.3.0a1 → 0.3.0b1)
+
+**EN:** The **0.3.0a1 release line** is complete at commit `0988f992be5341e75510b3673163bbdf194a9767` (annotated tag `v0.3.0a1`). Remaining 0.3 work moves to **0.3.0b1** on branch `adapter-mvp-0.3-b1`: ToolBroker full Loop integration + documented manual controlled live runs.
+
+**中文：** **0.3.0a1 发布线**已在提交 `0988f99` 完成（tag `v0.3.0a1`）。剩余 0.3 工作迁至 **0.3.0b1**（分支 `adapter-mvp-0.3-b1`）：ToolBroker 全 Loop 强制 + 手动受控 live run。详见 [44-0.3b1-toolbroker-live-spec.md](44-0.3b1-toolbroker-live-spec.md)。
+
 **Last acceptance run:** [2026-06-21-0.3-executable-acceptance.md](logs/2026-06-21-0.3-executable-acceptance.md)（可执行 L1/L2/L3）；[2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)（静态分层）
 
 ## Prerequisites (gate before starting)
