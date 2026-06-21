@@ -21,6 +21,25 @@ def _missing(paths: list[Path]) -> list[str]:
     return [str(p) for p in paths if not p.exists()]
 
 
+def validate_intern_workspace(workspace_root: Path) -> FixtureValidation:
+    required = [
+        workspace_root / "src",
+        workspace_root / "mock_responses",
+    ]
+    missing = _missing(required)
+    return FixtureValidation(ok=not missing, missing=missing)
+
+
+def validate_paper_workspace(workspace_root: Path, *, draft_file: str, references_file: str) -> FixtureValidation:
+    required = [
+        workspace_root / draft_file,
+        workspace_root / references_file,
+        workspace_root / "mock_responses",
+    ]
+    missing = _missing(required)
+    return FixtureValidation(ok=not missing, missing=missing)
+
+
 def validate_intern_fixture(fixture_dir: Path) -> FixtureValidation:
     required = [
         fixture_dir / "README.md",

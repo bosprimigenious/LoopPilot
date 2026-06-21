@@ -17,8 +17,10 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.connectors.local_json import fetch_source
 from loop_pilot.loops.fixture_validation import validate_daily_news_fixture
 from loop_pilot.models.router import ModelRouter
+from loop_pilot.reporting.human_review import write_next_actions, write_review_required
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
@@ -52,9 +54,12 @@ class DailyNewsLoop:
         *,
         phase_hook: Callable[[RunRecord], None] | None = None,
         resume_from: dict[str, Any] | None = None,
+        source_profile: dict[str, Any] | None = None,
     ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
         self._phase_hook = phase_hook
         _ = resume_from
+        if request.source_profile and source_profile is not None:
+            return self._run_source_profile(request, record, source_profile, phase_hook=phase_hook)
         fixture_name = request.fixture or "github_star_snapshots"
         fixture_dir = self.FIXTURE_ROOT / fixture_name
         run_dir = self.artifact_dir / "daily-news" / record.run_id
@@ -191,6 +196,8 @@ class DailyNewsLoop:
             )
         )
 
+        artifacts.extend(self._write_human_review(run_dir, record, intern_candidates, paper_candidates))
+
         rounds.append(
             RoundRecord(
                 round_id=1,
@@ -202,6 +209,184 @@ class DailyNewsLoop:
         )
 
         return self._finalize(record, trace, run_dir, artifacts, rounds)
+
+    def _run_source_profile(
+        self,
+        request: RunRequest,
+        record: RunRecord,
+        profile_cfg: dict[str, Any],
+        *,
+        phase_hook: Callable[[RunRecord], None] | None = None,
+    ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+        self._phase_hook = phase_hook
+        record.fixture = request.source_profile
+        run_dir = self.artifact_dir / "daily-news" / record.run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        trace = TraceWriter(run_dir / "trace.jsonl")
+        rounds: list[RoundRecord] = []
+        artifacts: list[ArtifactReference] = []
+
+        demo_fixture = Path("examples/daily_news_demo")
+        try:
+            adapter = create_adapter(
+                self.router,
+                "analysis_medium",
+                fixture_dir=demo_fixture if demo_fixture.exists() else None,
+                artifact_dir=self.artifact_dir,
+            )
+        except AdapterBlockedError as exc:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = exc.message
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
+
+        self._enter_observing(record, trace)
+        for phase in (
+            RunPhase.SELECTING,
+            RunPhase.PLANNING,
+            RunPhase.POLICY_CHECK,
+            RunPhase.ACTING,
+            RunPhase.EVALUATING,
+        ):
+            self._transition(record, phase, trace)
+
+        self.budget_manager.consume_round(record)
+        adapter.execute({"role": "screening"})
+
+        min_confidence = str(profile_cfg.get("minimum_confidence", "medium"))
+        raw_items: list[dict] = []
+        for source_cfg in profile_cfg.get("sources", []):
+            if not source_cfg.get("enabled", True):
+                continue
+            try:
+                raw_items.extend(fetch_source(source_cfg))
+            except (FileNotFoundError, ValueError):
+                continue
+
+        normalized = self._normalize_items(raw_items)
+        deduped = self._deduplicate(normalized)
+        filtered = self._filter_low_confidence(deduped, min_confidence)
+        for item in filtered:
+            item.setdefault("rank_label", "demo_local_source")
+            item["star_delta_24h"] = None
+
+        high_confidence = [item for item in filtered if item.get("confidence") == "high"]
+        intern_candidates, paper_candidates, candidate_actions = self._route_candidates(high_confidence)
+        record.outcome = RunOutcome.SUCCEEDED
+        record.terminal_reason = f"Processed {len(filtered)} items from profile {request.source_profile}"
+
+        artifacts.append(self._save_json(run_dir, "processed-items.json", filtered, "normalizer"))
+        manifest_rel = f"daily-news/{record.run_id}/artifact-manifest.json"
+        report_body = {
+            "snapshot_day": request.source_profile or "demo",
+            "item_count": str(len(filtered)),
+            "inbox_candidates": str(len(high_confidence)),
+            "intern_candidates": str(len(intern_candidates)),
+            "paper_candidates": str(len(paper_candidates)),
+            "star_delta_computed": "no",
+        }
+        report_path = run_dir / "daily-news-report.md"
+        self.renderer.write_report(
+            report_path, "daily_news/daily-news-report.md", record, report_body, manifest_rel
+        )
+        artifacts.append(
+            ArtifactReference(
+                artifact_id=f"{record.run_id}-daily-news-report",
+                kind="report",
+                path=str(report_path),
+                media_type="text/markdown",
+                sha256=content_hash({"path": str(report_path)}),
+                size_bytes=report_path.stat().st_size if report_path.exists() else 0,
+                created_by="reporting",
+            )
+        )
+
+        intern_path = run_dir / "intern-candidates.md"
+        intern_content = self._render_candidate_list("Intern", intern_candidates)
+        intern_path.write_text(intern_content, encoding="utf-8")
+        artifacts.append(
+            ArtifactReference(
+                artifact_id=f"{record.run_id}-intern-candidates",
+                kind="draft",
+                path=str(intern_path),
+                media_type="text/markdown",
+                sha256=content_hash({"content": intern_content}),
+                size_bytes=len(intern_content.encode()),
+                created_by="router",
+            )
+        )
+
+        paper_path = run_dir / "paper-candidates.md"
+        paper_content = self._render_candidate_list("Paper", paper_candidates)
+        paper_path.write_text(paper_content, encoding="utf-8")
+        artifacts.append(
+            ArtifactReference(
+                artifact_id=f"{record.run_id}-paper-candidates",
+                kind="draft",
+                path=str(paper_path),
+                media_type="text/markdown",
+                sha256=content_hash({"content": paper_content}),
+                size_bytes=len(paper_content.encode()),
+                created_by="router",
+            )
+        )
+
+        actions_path = run_dir / "candidate-actions.json"
+        actions_content = json.dumps({"candidates": candidate_actions}, indent=2)
+        actions_path.write_text(actions_content, encoding="utf-8")
+        artifacts.append(
+            ArtifactReference(
+                artifact_id=f"{record.run_id}-candidate-actions",
+                kind="source",
+                path=str(actions_path),
+                media_type="application/json",
+                sha256=content_hash({"content": actions_content}),
+                size_bytes=len(actions_content.encode()),
+                created_by="router",
+            )
+        )
+        artifacts.extend(self._write_human_review(run_dir, record, intern_candidates, paper_candidates))
+
+        rounds.append(
+            RoundRecord(
+                round_id=1,
+                state_before=RunPhase.ACTING.value,
+                decision="pass",
+                reason_code="daily_news_complete",
+                finished_at=rfc3339(),
+            )
+        )
+        return self._finalize(record, trace, run_dir, artifacts, rounds)
+
+    def _write_human_review(
+        self,
+        run_dir: Path,
+        record: RunRecord,
+        intern_candidates: list[dict],
+        paper_candidates: list[dict],
+    ) -> list[ArtifactReference]:
+        return [
+            write_review_required(
+                run_dir,
+                record,
+                recommended="continue",
+                rationale="Review routed candidates before spawning intern or paper runs.",
+                checklist=[
+                    "Accept intern candidates worth investigating",
+                    "Accept paper candidates needing evidence review",
+                    "Reject low-value noise items",
+                ],
+            ),
+            write_next_actions(
+                run_dir,
+                record,
+                [
+                    f"Review {len(intern_candidates)} intern candidate(s)",
+                    f"Review {len(paper_candidates)} paper candidate(s)",
+                    "Use candidate-actions.json for routing decisions",
+                ],
+            ),
+        ]
 
     def _load_fixture_config(self, fixture_dir: Path) -> dict:
         path = fixture_dir / "config" / "daily_news.yaml"

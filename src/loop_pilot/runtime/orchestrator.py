@@ -24,6 +24,7 @@ from loop_pilot.runtime.locks import FileLockStore
 from loop_pilot.runtime.recovery import RecoveryPlan, build_recovery_plan
 from loop_pilot.runtime.run_ids import new_run_id
 from loop_pilot.storage.base import StateStore
+from loop_pilot.workspaces import resolve_workspace
 
 _SECRET_PATTERNS = (
     re.compile(r"(?i)(api[_-]?key|token|secret|password)\s*[:=]\s*\S+"),
@@ -99,6 +100,16 @@ class Orchestrator:
                     "phase_hook": phase_hook,
                     "resume_from": resume_from,
                 }
+                if request.loop_type in {"intern", "paper"} and request.workspace:
+                    run_kwargs["workspace_spec"] = resolve_workspace(
+                        self.config.workspaces,
+                        request.workspace,
+                        loop_type=request.loop_type,
+                    )
+                if request.loop_type == "daily_news" and request.source_profile:
+                    run_kwargs["source_profile"] = self.config.get_source_profile(
+                        request.source_profile
+                    )
                 if request.loop_type == "daily_news" and snapshot_day:
                     record, _, _ = loop.run(request, record, snapshot_day=snapshot_day, **run_kwargs)
                 else:
@@ -189,24 +200,39 @@ class Orchestrator:
     def recovery_plan(self, run_id: str) -> RecoveryPlan | None:
         return build_recovery_plan(self.state_store, run_id)
 
-    def run_all(self, fixture_set: str = "mini", dry_run: bool = False) -> list[RunRecord]:
+    def run_all(
+        self,
+        fixture_set: str = "mini",
+        profile: str | None = None,
+        dry_run: bool = False,
+    ) -> list[RunRecord]:
+        if profile == "demo" or fixture_set == "demo":
+            sequence = [
+                ("daily_news", None, None, "demo"),
+                ("intern", None, "intern_demo", None),
+                ("paper", None, "paper_demo", None),
+            ]
+        else:
+            sequence = [
+                ("daily_news", "github_star_snapshots", None, None),
+                ("intern", "simple_python_bug", None, None),
+                ("paper", "unsupported_claim", None, None),
+            ]
         results: list[RunRecord] = []
-        sequence = [
-            ("daily_news", "github_star_snapshots", "day2"),
-            ("intern", "simple_python_bug", None),
-            ("paper", "unsupported_claim", None),
-        ]
         summary_sections: list[str] = []
 
-        for loop_type, fixture, extra in sequence:
+        for loop_type, fixture, workspace, source_profile in sequence:
             request = RunRequest(
                 run_id=self.new_run_id(loop_type),
                 loop_type=loop_type,
                 fixture=fixture,
+                workspace=workspace,
+                source_profile=source_profile,
                 dry_run=dry_run,
                 config_snapshot_hash=self.config.snapshot_hash(),
             )
-            record = self.run_loop(request, snapshot_day=extra)
+            snapshot_day = "day2" if loop_type == "daily_news" and not source_profile else None
+            record = self.run_loop(request, snapshot_day=snapshot_day)
             results.append(record)
             outcome = record.outcome.value if record.outcome else "unknown"
             summary_sections.append(f"## {loop_type}\n\nOutcome: {outcome}\n")

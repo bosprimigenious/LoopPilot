@@ -7,7 +7,7 @@
 > - **0.4.0-daily-runner** = 旧文档「V1」主体（SQLite、恢复、`resume`/`approve`、OS 调度）  
 > 权威编号见 `docs/development/33-version-roadmap.md`。实施前确认目标版本，勿一次性实现全文范围。
 
-你是 Cursor Agent，在仓库 [bosprimigenious/loop-pilot](https://github.com/bosprimigenious/loop-pilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
+你是 Cursor Agent，在仓库 [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
 
 ## Scope
 

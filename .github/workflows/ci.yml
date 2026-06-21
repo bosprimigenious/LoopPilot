@@ -37,3 +37,9 @@ jobs:
           loop-pilot run paper --fixture unsupported_claim --dry-run
           loop-pilot run daily-news --fixture github_star_snapshots --dry-run
           loop-pilot run all --fixture-set mini --dry-run
+
+      - name: Practical MVP demo dry-run runs
+        run: |
+          loop-pilot run intern --workspace examples/intern_demo --dry-run
+          loop-pilot run paper --workspace examples/paper_demo --dry-run
+          loop-pilot run daily-news --source-profile demo --dry-run

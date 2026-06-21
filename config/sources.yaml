@@ -9,3 +9,13 @@ sources:
     path: tests/fixtures/daily_news/github_star_snapshots/input/paper_signal.json
     tier: B
     enabled: true
+
+profiles:
+  demo:
+    minimum_confidence: medium
+    sources:
+      - id: demo_items
+        kind: local_json
+        path: examples/daily_news_demo/items.json
+        tier: B
+        enabled: true

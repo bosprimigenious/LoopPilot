@@ -1,3 +1,15 @@
+workspaces:
+  intern_demo:
+    root: examples/intern_demo
+    allowed_paths: [src/**, tests/**]
+    forbidden_paths: [.env*, secrets/**]
+    allow_write: false
+  paper_demo:
+    root: examples/paper_demo
+    allowed_paths: [draft.md, references.bib, notes/**]
+    forbidden_paths: [experiments/raw/**]
+    allow_write: false
+
 runtime:
   timezone: Asia/Shanghai
   state_backend: json

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loop-pilot"
-version = "0.0.0"
+version = "0.2.0a1"
 description = "LoopPilot — a controlled runtime for loop-engineered personal AI workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,9 +19,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bosprimigenious/loop-pilot"
-Repository = "https://github.com/bosprimigenious/loop-pilot"
-Documentation = "https://github.com/bosprimigenious/loop-pilot/tree/main/docs/development"
+Homepage = "https://github.com/bosprimigenious/LoopPilot"
+Repository = "https://github.com/bosprimigenious/LoopPilot"
+Documentation = "https://github.com/bosprimigenious/LoopPilot/tree/main/docs/development"
 
 [project.scripts]
 loop-pilot = "loop_pilot.cli:app"

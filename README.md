@@ -1,5 +1,11 @@
 # LoopPilot
 
+> Part of the Loop Engineering Ecosystem.
+
+LoopPilot is the runtime layer. It runs controlled AI work loops, manages state, calls adapters, and produces auditable artifacts.
+
+For rubric-based evaluation of LoopPilot outputs, see [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner).
+
 LoopPilot is a controlled runtime for three personal AI work loops:
 
 - **InternLoop**: resolve one real development problem with verification.
@@ -9,7 +15,7 @@ LoopPilot is a controlled runtime for three personal AI work loops:
 ## Canonical names
 
 - Product/project: `LoopPilot`
-- GitHub repository: [bosprimigenious/loop-pilot](https://github.com/bosprimigenious/loop-pilot)
+- GitHub repository: [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot)
 - Distribution name: `loop-pilot`
 - CLI command: `loop-pilot`
 - Python import and source package: `loop_pilot`
@@ -22,8 +28,8 @@ LoopPilot uses a **0.x release track** (not simple "V1" naming):
 
 | Version | Name | Focus |
 |---------|------|-------|
-| **0.1** | mini | Three dry-run Loops, MockAdapter, CI (current target) |
-| 0.2 | practical-mvp | Controlled real workspaces, dry-run/report |
+| **0.1** | mini | Three dry-run Loops, MockAdapter, CI |
+| **0.2** | practical-mvp | Controlled demo workspaces, dry-run/report (current) |
 | 0.3 | adapter-mvp | Mock→Real Adapter, ToolBroker |
 | 0.4 | recovery-and-automation | SQLite, recovery, approval, scheduling |
 | 0.5 | public-beta | PyPI, init demo, open-source onboarding |
@@ -33,7 +39,24 @@ LoopPilot uses a **0.x release track** (not simple "V1" naming):
 | 0.9 | release-candidate | API/config/DB freeze, security audit, doc freeze — **no new features** |
 | 1.0 | stable | Formal semver stability promise after 0.9 RC |
 
-See [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) for full milestones. **Do not skip ahead to 0.3** — finish 0.1, then 0.2.
+See [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) for full milestones.
+
+## Practical MVP (0.2)
+
+0.2 moves from pure fixtures to **controlled demo workspaces** under `examples/`, still defaulting to **MockAdapter + dry-run**. Human review is Markdown-only (`review-required.md`, `next-actions.md`) — no approve/reject CLI yet.
+
+Demo commands:
+
+```bash
+loop-pilot run intern --workspace examples/intern_demo --dry-run
+loop-pilot run paper --workspace examples/paper_demo --dry-run
+loop-pilot run daily-news --source-profile demo --dry-run
+loop-pilot run all --profile demo --dry-run
+```
+
+Acceptance checklist: [docs/development/35-practical-mvp-0.2-acceptance.md](docs/development/35-practical-mvp-0.2-acceptance.md)
+
+0.1 `--fixture` commands remain supported for regression.
 
 ## Mini-MVP status (0.1)
 
@@ -60,6 +83,10 @@ loop-pilot run intern --fixture simple_python_bug --dry-run
 loop-pilot run paper --fixture unsupported_claim --dry-run
 loop-pilot run daily-news --fixture github_star_snapshots --dry-run
 loop-pilot run all --fixture-set mini --dry-run
+loop-pilot run intern --workspace examples/intern_demo --dry-run
+loop-pilot run paper --workspace examples/paper_demo --dry-run
+loop-pilot run daily-news --source-profile demo --dry-run
+loop-pilot run all --profile demo --dry-run
 loop-pilot status
 ```
 
@@ -121,13 +148,12 @@ ruff check .
 - [0.x version roadmap (0.1→1.0)](docs/development/34-version-roadmap-0x.md)
 - [Next steps: finish 0.1, then 0.2](docs/development/33-next-steps-0.2.md)
 - [Mini run path](docs/development/25-mini-run-path.md)
-- [Mini-MVP acceptance record](docs/development/32-mini-mvp-acceptance.md)
+- [Practical MVP 0.2 acceptance](docs/development/35-practical-mvp-0.2-acceptance.md)
 - [Mini-MVP delivery log](docs/development/logs/2026-06-20-mini-mvp-delivery.md)
 - [Cursor Mini implementation prompt](prompts/CURSOR_MINI_IMPLEMENTATION_PROMPT.md)
 
-## Deferred (0.2+)
+## Deferred (0.3+)
 
-- **0.2**: real workspace paths, controlled dry-run/report
 - **0.3**: real model/CLI adapters (`allow_real_adapters` gated)
 - **0.4**: `resume`, `approve`, `reject`, `cancel`, SQLite recovery, OS scheduling
 - **0.5**: PyPI publishing, init demo, open-source docs
