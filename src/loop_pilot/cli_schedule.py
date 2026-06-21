@@ -15,7 +15,7 @@ from loop_pilot.scheduler.printer import default_target
 
 @click.group()
 def schedule() -> None:
-    """Schedule preview and gated install (0.5-a)."""
+    """Schedule preview and gated install (0.5-prep blocks real OS writes)."""
 
 
 @schedule.command("print")
@@ -45,28 +45,54 @@ def schedule_install(ctx: click.Context, dry_run: bool, target: str | None, yes:
     cfg = load_config(config_dir)
     chosen = target or default_target()
     if yes and not dry_run:
-        result = SafetyGate.from_config(cfg).check("schedule.install", confirm=confirm_schedule, target=chosen)
+        result = SafetyGate.from_config(cfg).check(
+            "schedule.install",
+            confirm=confirm_schedule,
+            target=chosen,
+        )
         if result.denied:
-            raise click.ClickException(f"SafetyGate denied: {result.message} ({result.reason_code})")
+            raise click.ClickException(f"BLOCKED: {result.message} ({result.reason_code})")
         try:
-            installed = install_schedule(yes=True, target=chosen, cwd=Path.cwd(), config_dir=config_dir)
+            installed = install_schedule(
+                yes=True,
+                target=chosen,
+                cwd=Path.cwd(),
+                config_dir=config_dir,
+                config=cfg,
+            )
         except RuntimeError as exc:
             raise click.ClickException(str(exc)) from exc
-        click.echo(f"Schedule installed: {installed.task_name}\n  command: {installed.command}\n  marker: {installed.marker_path}")
+        click.echo(
+            f"Schedule {installed.install_status.value}: {installed.task_name}\n"
+            f"  command: {installed.command}\n"
+            f"  marker: {installed.marker_path}"
+        )
         return
     preview = preview_install(chosen, cwd=Path.cwd())
     output_dir = Path("var/artifacts/schedule")
     output_dir.mkdir(parents=True, exist_ok=True)
     preview_path = output_dir / "schedule-preview.md"
     preview_path.write_text(preview.preview_markdown, encoding="utf-8")
-    click.echo(f"# Schedule install preview (dry-run)\n\n{preview.config_text}\n\nPreview written: {preview_path}\nNo system scheduler entries were created.")
+    click.echo(
+        f"# Schedule install preview (dry-run)\n\n{preview.config_text}\n\n"
+        f"Preview written: {preview_path}\nNo system scheduler entries were created."
+    )
 
 
 @schedule.command("uninstall")
 @click.option("--yes", is_flag=True, default=False)
+@click.option("--confirm-schedule", is_flag=True, default=False)
 @click.pass_context
-def schedule_uninstall(ctx: click.Context, yes: bool) -> None:
+def schedule_uninstall(ctx: click.Context, yes: bool, confirm_schedule: bool) -> None:
     if not yes:
         raise click.ClickException("Refusing uninstall without --yes")
-    load_config(ctx.obj["config_dir"])
-    click.echo("Schedule uninstalled." if uninstall_schedule(cwd=Path.cwd()) else "No schedule install marker found.")
+    config_dir: Path = ctx.obj["config_dir"]
+    cfg = load_config(config_dir)
+    result = SafetyGate.from_config(cfg).check("schedule.uninstall", confirm=confirm_schedule)
+    if result.denied:
+        raise click.ClickException(f"BLOCKED: {result.message} ({result.reason_code})")
+    try:
+        removed = uninstall_schedule(cwd=Path.cwd(), config=cfg)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo("Schedule uninstalled." if removed else "No schedule install marker found.")

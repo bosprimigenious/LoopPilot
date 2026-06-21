@@ -28,3 +28,20 @@ def test_review_store_pending_and_decision(tmp_path: Path) -> None:
     assert decided.decided_at is not None
 
     store.append_event(run_id="run-001", event_type="review_approved", payload={"note": "ok"})
+
+
+def test_deferred_review_preserved_during_sync(tmp_path: Path) -> None:
+    db_path = tmp_path / "loop_pilot.db"
+    store = ReviewStore(db_path)
+    store.upsert_pending(run_id="run-002", loop_type="paper", artifact_path="/tmp/old")
+    store.record_decision(
+        "run-002",
+        decision="defer",
+        status="deferred",
+        reason="wait",
+        deferred_until="2099-01-01",
+    )
+    item = store.upsert_pending(run_id="run-002", loop_type="paper", artifact_path="/tmp/new")
+    assert item.status == "deferred"
+    assert item.deferred_until == "2099-01-01"
+    assert item.artifact_path == "/tmp/new"

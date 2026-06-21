@@ -5,14 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from loop_pilot.config import LoopPilotConfig
 from loop_pilot.safety.levels import SafetyLevel
 
 if TYPE_CHECKING:
-    from loop_pilot.config import LoopPilotConfig
+    pass
 
 
 @dataclass(frozen=True)
 class SafeAutonomyPolicy:
+    config: LoopPilotConfig
     max_level: SafetyLevel = SafetyLevel.REAL_GUARDED
     allow_schedule_install: bool = False
     require_confirm_schedule: bool = True
@@ -27,6 +29,7 @@ class SafeAutonomyPolicy:
             unattended = {}
         raw_max = safety.get("max_level", unattended.get("max_level", SafetyLevel.REAL_GUARDED))
         return cls(
+            config=config,
             max_level=SafetyLevel.parse(raw_max, default=SafetyLevel.REAL_GUARDED),
             allow_schedule_install=bool(schedule.get("allow_install", False)),
             require_confirm_schedule=bool(schedule.get("require_confirm", True)),

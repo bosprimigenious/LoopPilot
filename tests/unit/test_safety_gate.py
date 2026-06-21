@@ -9,6 +9,7 @@ from loop_pilot.safety.audit import AuditLog
 from loop_pilot.safety.gate import SafetyGate
 from loop_pilot.safety.levels import SafetyLevel
 from loop_pilot.safety.policy import SafeAutonomyPolicy
+from loop_pilot.safety.readiness import PREP_STAGE_BLOCKED
 
 
 def _gate(*, allow_install: bool = False, tmp_path: Path) -> SafetyGate:
@@ -24,17 +25,30 @@ def _gate(*, allow_install: bool = False, tmp_path: Path) -> SafetyGate:
 
 def test_schedule_install_denied_by_default(tmp_path: Path) -> None:
     result = _gate(tmp_path=tmp_path).check("schedule.install", confirm=True)
-    assert result.denied and result.reason_code == "SCHEDULE_INSTALL_DISABLED"
+    assert result.denied and result.reason_code == PREP_STAGE_BLOCKED
 
 
 def test_schedule_install_allowed_with_policy(tmp_path: Path) -> None:
     gate = _gate(allow_install=True, tmp_path=tmp_path)
+    cfg = LoopPilotConfig(
+        runtime={"state_dir": str(tmp_path / "state")},
+        schedule={"allow_install": True},
+        safety={"stage": "ready", "max_level": 3},
+        config_dir=tmp_path / "config",
+    )
+    gate = SafetyGate.from_config(cfg)
     result = gate.check("schedule.install", confirm=True)
     assert result.allowed and gate.audit.list_recent()[-1]["decision"] == "allow"
 
 
 def test_level_4_blocked(tmp_path: Path) -> None:
-    result = _gate(tmp_path=tmp_path).check("unattended.daily", unattended=True, safe=True, level=SafetyLevel.REAL_BOUNDED)
+    gate = SafetyGate.from_config(
+        LoopPilotConfig(
+            runtime={"state_dir": str(tmp_path / "state")},
+            safety={"stage": "ready", "max_level": 3},
+        )
+    )
+    result = gate.check("unattended.daily", unattended=True, safe=True, level=SafetyLevel.REAL_BOUNDED)
     assert result.denied and result.reason_code == "LEVEL_4_BLOCKED"
 
 
@@ -50,4 +64,6 @@ def test_audit_log(tmp_path: Path) -> None:
 
 def test_policy_defaults() -> None:
     policy = SafeAutonomyPolicy.from_config(LoopPilotConfig())
-    assert policy.max_level == SafetyLevel.REAL_GUARDED and not policy.allow_schedule_install
+    assert policy.max_level == SafetyLevel.REAL_GUARDED
+    assert not policy.allow_schedule_install
+    assert policy.config is not None
