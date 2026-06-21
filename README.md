@@ -1,5 +1,11 @@
 # LoopPilot
 
+> Part of the Loop Engineering Ecosystem.
+
+LoopPilot is the runtime layer. It runs controlled AI work loops, manages state, calls adapters, and produces auditable artifacts.
+
+For rubric-based evaluation of LoopPilot outputs, see [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner).
+
 LoopPilot is a controlled runtime for three personal AI work loops:
 
 - **InternLoop**: resolve one real development problem with verification.
