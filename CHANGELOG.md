@@ -8,6 +8,15 @@
 
 ### Documentation
 
+- **0.5 Safe Autonomy (revised plan)**: SafetyGate first, 0.4-c blocker, no daemon — spec drafted; impl paused
+  - [50-personal-daily-loop-0.5-spec.md](docs/development/50-personal-daily-loop-0.5-spec.md) — full spec (Steps 0–4, 0.5-a/b/c/d)
+  - [52-0.5-revised-plan-rationale.md](docs/development/52-0.5-revised-plan-rationale.md) — why SafetyGate first, why 0.4-c blocker, why no daemon
+  - [53-0.5-acceptance.md](docs/development/53-0.5-acceptance.md) — acceptance for 0.5-a/b/c/d
+  - [15-0.5-安全自治.md](docs/zh/15-0.5-安全自治.md) — Chinese guide
+  - [CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md](prompts/CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md) — implementation prompt (blocked on 0.4-c)
+  - [2026-06-21-0.5-plan-revision.md](docs/development/logs/2026-06-21-0.5-plan-revision.md) — decision log
+  - [CURSOR_0.4C_REVIEW_LAYER_PROMPT.md](prompts/CURSOR_0.4C_REVIEW_LAYER_PROMPT.md) — Priority 1 blocker note
+
 - **0.4-d spec (planned)**: Daily Summary + Schedule Preview + Daily Dry-Run — usable daily dashboard, not feature demo
   - [48-personal-daily-loop-0.4d-acceptance.md](docs/development/48-personal-daily-loop-0.4d-acceptance.md) — four-layer acceptance + 8 must-haves + SQL queries
   - [49-daily-summary-engine-design.md](docs/development/49-daily-summary-engine-design.md) — summary engine architecture

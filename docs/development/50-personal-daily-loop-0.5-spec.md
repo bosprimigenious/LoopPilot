@@ -3,7 +3,10 @@
 > **Version tag**: `0.5.0-safe-autonomy` (parallel to [34-version-roadmap-0x.md](34-version-roadmap-0x.md) §7 Personal Beta; this spec focuses on **unattended safe operation**)  
 > **Parent roadmap**: [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md)  
 > **Safety baseline**: [37-adapter-safety-policy.md](37-adapter-safety-policy.md), `schemas/gate_result.schema.json`  
-> **Review layer design**: [46-review-layer-design.md](46-review-layer-design.md), [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md)
+> **Review layer design**: [46-review-layer-design.md](46-review-layer-design.md), [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md)  
+> **Rationale:** [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md)  
+> **Acceptance:** [53-0.5-acceptance.md](53-0.5-acceptance.md)  
+> **Chinese guide:** [../zh/15-0.5-安全自治.md](../zh/15-0.5-安全自治.md)
 
 ---
 
@@ -228,6 +231,10 @@ Manual: on Windows, compare `schedule install --dry-run` vs `--yes`; confirm ins
 
 ## 12. References
 
+- [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md) — why SafetyGate first, 0.4-c blocker, no daemon
+- [53-0.5-acceptance.md](53-0.5-acceptance.md) — acceptance for 0.5-a/b/c/d
+- [logs/2026-06-21-0.5-plan-revision.md](logs/2026-06-21-0.5-plan-revision.md) — decision log
+- [prompts/CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md](../../prompts/CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md)
 - [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md)
 - [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md)
 - [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)

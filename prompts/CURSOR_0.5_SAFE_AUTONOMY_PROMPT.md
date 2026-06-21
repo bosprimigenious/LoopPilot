@@ -96,3 +96,10 @@ Not allowed in prep:
 
 - Real `--unattended` execution path
 - Default real schedule install
+
+### References
+
+- [52-0.5-revised-plan-rationale.md](../docs/development/52-0.5-revised-plan-rationale.md)
+- [53-0.5-acceptance.md](../docs/development/53-0.5-acceptance.md)
+- [CURSOR_0.4C_REVIEW_LAYER_PROMPT.md](CURSOR_0.4C_REVIEW_LAYER_PROMPT.md) — Priority 1 blocker
+- Chinese: [docs/zh/15-0.5-安全自治.md](../docs/zh/15-0.5-安全自治.md)
