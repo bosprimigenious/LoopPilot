@@ -77,7 +77,7 @@ def test_run_loop_writes_checkpoints_to_sqlite(tmp_path: Path) -> None:
     assert checkpoint is not None
     assert record.last_checkpoint_id is not None
     assert record.outcome == RunOutcome.PARTIAL
-    assert record.phase == RunPhase.WAITING_APPROVAL
+    assert record.phase == RunPhase.TERMINATED
     assert record.review_status == "needs_review"
 
 
@@ -201,7 +201,7 @@ def test_acting_interrupt_can_resume_from_exact_round(tmp_path: Path, monkeypatc
 
     resumed = application.orchestrator.resume_run(record.run_id)
     assert resumed.outcome == RunOutcome.PARTIAL
-    assert resumed.phase == RunPhase.WAITING_APPROVAL
+    assert resumed.phase == RunPhase.TERMINATED
 
 
 def test_duplicate_resume_after_success_is_rejected(tmp_path: Path) -> None:

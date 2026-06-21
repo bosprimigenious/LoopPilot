@@ -90,7 +90,7 @@ def test_collect_weekly_builds_stats(tmp_path: Path) -> None:
     assert data.week == week_label
 
 
-def test_report_path_prefers_actual_report_over_markdown_logs(tmp_path: Path) -> None:
+def test_report_path_prefers_final_report_over_diff_summary(tmp_path: Path) -> None:
     artifact_dir = tmp_path / "artifacts"
     run_dir = artifact_dir / "intern" / "run-report-001"
     run_dir.mkdir(parents=True)

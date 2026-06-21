@@ -75,7 +75,7 @@ def _seed_patch_run(
     return run_dir
 
 
-def test_patch_run_enters_review_gate_before_success(tmp_path: Path) -> None:
+def test_patch_run_writes_needs_review_gate_before_approval(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-001"
     _seed_patch_run(app, run_id=run_id)
@@ -84,7 +84,7 @@ def test_patch_run_enters_review_gate_before_success(tmp_path: Path) -> None:
 
     record = app.state_store.get_run(run_id)
     assert record is not None
-    assert record.phase == RunPhase.WAITING_APPROVAL
+    assert record.phase == RunPhase.TERMINATED
     assert record.outcome == RunOutcome.PARTIAL
     assert record.review_status == "needs_review"
     assert record.report_status == "needs_review"
@@ -95,6 +95,14 @@ def test_patch_run_enters_review_gate_before_success(tmp_path: Path) -> None:
 
     run_dir = app.config.artifact_dir / "intern" / run_id
     assert (run_dir / "review_required.md").exists()
+
+
+def test_patch_run_is_needs_review_not_completed_in_summary(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-summary"
+    _seed_patch_run(app, run_id=run_id)
+
+    service.maybe_enqueue(app.state_store.get_run(run_id))
 
     iso = datetime.now(ZoneInfo("UTC")).date().isocalendar()
     collector = SummaryCollector(
@@ -108,13 +116,13 @@ def test_patch_run_enters_review_gate_before_success(tmp_path: Path) -> None:
     assert not any(run_id in item and "succeeded" in item for item in weekly.completed)
 
 
-def test_approve_patch_run_finalizes_without_resume_deadlock(tmp_path: Path) -> None:
+def test_approve_patch_run_finalizes_directly(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-002"
     _seed_patch_run(
         app,
         run_id=run_id,
-        phase=RunPhase.WAITING_APPROVAL,
+        phase=RunPhase.TERMINATED,
         outcome=RunOutcome.PARTIAL,
         review_status="needs_review",
         report_status="needs_review",
@@ -126,10 +134,26 @@ def test_approve_patch_run_finalizes_without_resume_deadlock(tmp_path: Path) -> 
     assert record.phase == RunPhase.TERMINATED
     assert record.outcome == RunOutcome.SUCCEEDED
     assert record.report_status == "completed"
-    assert record.review_status != "resume_requested"
 
     gate = read_gate_result(app.config.artifact_dir, "intern", run_id)
     assert gate == "pass"
+
+
+def test_approved_patch_run_does_not_enter_resume_requested(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-resume-check"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    record = service.approve(run_id, note="looks good")
+    assert record.review_status != "resume_requested"
 
     with pytest.raises(ResumeError, match="finalized|approved|succeeded"):
         service.resume(run_id)
@@ -141,13 +165,16 @@ def test_rejected_patch_run_cannot_resume(tmp_path: Path) -> None:
     _seed_patch_run(
         app,
         run_id=run_id,
-        phase=RunPhase.WAITING_APPROVAL,
+        phase=RunPhase.TERMINATED,
         outcome=RunOutcome.PARTIAL,
         review_status="needs_review",
     )
     service.maybe_enqueue(app.state_store.get_run(run_id))
 
     service.reject(run_id, reason="unsafe patch")
+
+    gate = read_gate_result(app.config.artifact_dir, "intern", run_id)
+    assert gate == "blocked"
 
     with pytest.raises(ResumeError, match="rejected"):
         service.resume(run_id)
@@ -159,7 +186,7 @@ def test_cancelled_patch_run_cannot_resume(tmp_path: Path) -> None:
     _seed_patch_run(
         app,
         run_id=run_id,
-        phase=RunPhase.WAITING_APPROVAL,
+        phase=RunPhase.TERMINATED,
         outcome=RunOutcome.PARTIAL,
         review_status="needs_review",
     )
@@ -168,4 +195,20 @@ def test_cancelled_patch_run_cannot_resume(tmp_path: Path) -> None:
     service.cancel(run_id, reason="no longer needed")
 
     with pytest.raises(ResumeError, match="cancelled"):
+        service.resume(run_id)
+
+
+def test_patch_run_needs_review_blocks_resume(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-resume-block"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    with pytest.raises(ResumeError, match="approve/reject/cancel"):
         service.resume(run_id)
