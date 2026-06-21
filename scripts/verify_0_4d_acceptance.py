@@ -175,6 +175,7 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
     clear_repo_runtime_locks(repo)
     prerequisites_passed = True
     for version, script_name in PREREQUISITE_SCRIPTS:
+        clear_repo_runtime_locks(repo)
         cmd = [sys.executable, str(repo / "scripts" / script_name), "--cwd", str(repo)]
         proc = _run(cmd, cwd=repo)
         ok = proc.returncode == 0

@@ -95,6 +95,7 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
 
     clear_repo_runtime_locks(repo)
     for script, expect_ready in COMPONENT_SCRIPTS:
+        clear_repo_runtime_locks(repo)
         cmd = [sys.executable, str(repo / "scripts" / script)]
         proc = _run(cmd, cwd=repo, env=env)
         _record(results, script, cmd, proc, expect_ready=expect_ready)
