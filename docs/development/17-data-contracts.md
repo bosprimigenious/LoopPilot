@@ -225,3 +225,9 @@ artifact_manifest: relative/path
 ```
 
 正文标题由模板固定；缺失字段写“未执行/未知”，不得删节制造完整假象。
+
+## 13. 输出接口与 Run 产物布局
+
+每次 run 的双层输出（人读 Markdown、机器读 JSON/JSONL）、规范目录布局、`gate_result.json`、`artifact-manifest.json` 的 `human_readable` 标志，以及 0.4-b / 0.4-c 产物矩阵，见 **[47-output-interface-spec.md](47-output-interface-spec.md)**。
+
+本文件 §8 `ArtifactReference` / Manifest 与 §12 Markdown front matter 为对象级契约；47 为 per-run 文件级权威布局。

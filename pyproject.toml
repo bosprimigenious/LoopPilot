@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loop-pilot"
-version = "0.3.0b1"
+version = "0.4.0b1"
 description = "LoopPilot — a controlled runtime for loop-engineered personal AI workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,7 +40,7 @@ all = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = "--ignore=tests/fixtures --ignore=tests/integration/test_v1_recovery.py"
 
 [tool.ruff]

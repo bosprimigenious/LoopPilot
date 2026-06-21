@@ -17,6 +17,10 @@
 9. [08-0.4-个人日用闭环](08-0.4-个人日用闭环.md) — 0.4 四子阶段与范围
 10. [09-1.x-个人到协作](09-1.x-个人到协作.md) — 1.0→1.3 个人到协作
 11. [10-中英文文档管理](10-中英文文档管理.md) — 中英文放哪、谁维护、链接规则
+12. [11-0.4a-SQLite与恢复扫描](11-0.4a-SQLite与恢复扫描.md) — 0.4-a SQLite 与 recovery-scan
+13. [12-0.4c-审阅与决策层](12-0.4c-审阅与决策层.md) — 0.4-c 审阅 CLI 与产物
+14. [13-输出接口-人看MD机器看JSON](13-输出接口-人看MD机器看JSON.md) — 人看 MD、机器看 JSON
+15. [14-0.4d-日汇总与调度预览](14-0.4d-日汇总与调度预览.md) — 0.4-d 日汇总与调度预览
 
 ## 按场景跳转
 
@@ -26,6 +30,10 @@
 | 理解架构 | [01-系统是什么](01-系统是什么.md) + [development/01-architecture.md](../development/01-architecture.md) |
 | 0.3 状态与验收 | [07-0.3-Adapter验收说明](07-0.3-Adapter验收说明.md) + [development/36-adapter-mvp-0.3-acceptance.md](../development/36-adapter-mvp-0.3-acceptance.md) |
 | 规划 0.4 | [08-0.4-个人日用闭环](08-0.4-个人日用闭环.md) + [development/40-personal-daily-loop-0.4-spec.md](../development/40-personal-daily-loop-0.4-spec.md) |
+| 0.4-a SQLite 验收 | [11-0.4a-SQLite与恢复扫描](11-0.4a-SQLite与恢复扫描.md) + [development/43-personal-daily-loop-0.4a-acceptance.md](../development/43-personal-daily-loop-0.4a-acceptance.md) |
+| 0.4-c 审阅层 | [12-0.4c-审阅与决策层](12-0.4c-审阅与决策层.md) + [development/45-personal-daily-loop-0.4c-acceptance.md](../development/45-personal-daily-loop-0.4c-acceptance.md) |
+| 0.4-c 审阅与输出接口 | [12-0.4c-审阅与决策层](12-0.4c-审阅与决策层.md) + [13-输出接口-人看MD机器看JSON](13-输出接口-人看MD机器看JSON.md) + [development/47-output-interface-spec.md](../development/47-output-interface-spec.md) |
+| 0.4-d 日汇总 | [14-0.4d-日汇总与调度预览](14-0.4d-日汇总与调度预览.md) + [development/48-personal-daily-loop-0.4d-acceptance.md](../development/48-personal-daily-loop-0.4d-acceptance.md) |
 | 理解 1.x / Team 后移 | [09-1.x-个人到协作](09-1.x-个人到协作.md) + [development/42-1x-roadmap-personal-to-collaboration.md](../development/42-1x-roadmap-personal-to-collaboration.md) |
 | 文档怎么维护 | [10-中英文文档管理](10-中英文文档管理.md) |
 | 给 AI 的英文规格 | [en-core.md](../en-core.md) |

@@ -12,9 +12,16 @@ from loop_pilot.adapters.doctor import diagnose_adapters
 from loop_pilot.adapters.factory import list_adapters
 from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
+from loop_pilot.cli_db import db
+from loop_pilot.cli_schedule import schedule
+from loop_pilot.cli_summary import summary
+from loop_pilot.cli_tasks import inbox, queue, today
 from loop_pilot.config import load_config
 from loop_pilot.domain.models import RunRequest
+from loop_pilot.runtime.daily_run import DailyRunService
+from loop_pilot.runtime.recovery_scan import scan_recovery
 from loop_pilot.runtime.run_ids import new_run_id
+from loop_pilot.storage.db_ops import sqlite_doctor_checks
 
 
 @click.group()
@@ -64,6 +71,20 @@ def doctor(ctx: click.Context) -> None:
         for issue in issues:
             click.echo(f"  - {issue}")
         sys.exit(1)
+
+    cfg = load_config(config_dir)
+    backend = str(cfg.runtime.get("state_backend", "json")).lower()
+    if backend == "sqlite":
+        sqlite_issues = sqlite_doctor_checks(cfg.sqlite_path, cfg.lock_dir)
+        hard_failures = [item for item in sqlite_issues if not item.startswith("Warning:")]
+        warnings.extend(item.replace("Warning: ", "") for item in sqlite_issues if item.startswith("Warning:"))
+        if hard_failures:
+            click.echo("Doctor: FAIL")
+            for issue in hard_failures:
+                click.echo(f"  - {issue}")
+            sys.exit(1)
+    else:
+        warnings.append("state_backend=json (0.4 db commands require sqlite)")
 
     click.echo("Doctor: OK")
     click.echo("  Config loaded")
@@ -243,6 +264,38 @@ def run_all(ctx: click.Context, fixture_set: str, profile: str | None, dry_run: 
         click.echo(f"{record.loop_type}: {outcome} ({record.run_id})")
 
 
+@run.command("daily")
+@click.option("--dry-run", is_flag=True, default=True, help="Preview daily workflow (default)")
+@click.pass_context
+def run_daily(ctx: click.Context, dry_run: bool) -> None:
+    """Run daily workflow: verify, recovery-scan, today preview, summary."""
+    config_dir: Path = ctx.obj["config_dir"]
+    application = _get_app(config_dir)
+    backend = str(application.config.runtime.get("state_backend", "json")).lower()
+    if backend != "sqlite":
+        raise click.ClickException("run daily requires runtime.state_backend=sqlite")
+
+    from loop_pilot.cli_tasks import _task_services
+
+    cfg = application.config
+    task_store, _, _, _ = _task_services(cfg)
+    service = DailyRunService(cfg, application.state_store, task_store)
+    try:
+        result = service.run_daily(dry_run=dry_run)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(f"Daily run ({'dry-run' if dry_run else 'live'}): {result.today_date}")
+    for step in result.steps:
+        click.echo(f"  - {step}")
+    click.echo(f"  - planned actions: {len(result.planned)}")
+    for item in result.planned:
+        click.echo(f"    * [{item.loop_type}] {item.title} -> {item.action}")
+    click.echo(f"  - pending review: {result.pending_review_count}")
+    if result.summary:
+        click.echo(f"  - summary: {result.summary.path}")
+
+
 @app.command()
 @click.pass_context
 def status(ctx: click.Context) -> None:
@@ -309,6 +362,44 @@ def _run_single(
     click.echo(f"Run {record.run_id} completed: {outcome}")
     if record.terminal_reason:
         click.echo(f"Reason: {record.terminal_reason}")
+
+
+app.add_command(db)
+app.add_command(inbox)
+app.add_command(queue)
+app.add_command(today)
+app.add_command(summary)
+app.add_command(schedule)
+
+
+@app.command("recovery-scan")
+@click.pass_context
+def recovery_scan(ctx: click.Context) -> None:
+    """Scan for stale, interrupted, and blocked runs."""
+    config_dir: Path = ctx.obj["config_dir"]
+    application = _get_app(config_dir)
+    backend = str(application.config.runtime.get("state_backend", "json")).lower()
+
+    if backend != "sqlite":
+        click.echo("recovery-scan requires runtime.state_backend=sqlite")
+        sys.exit(1)
+
+    findings = scan_recovery(
+        application.state_store,
+        lock_dir=application.config.lock_dir,
+    )
+    if not findings:
+        click.echo("Recovery scan: OK (no issues)")
+        return
+
+    click.echo(f"Recovery scan: {len(findings)} finding(s)")
+    for item in findings:
+        outcome = item.outcome or "-"
+        click.echo(
+            f"  {item.run_id}  {item.category:20}  {item.phase:18}  "
+            f"{outcome:10}  -> {item.recommended_action}"
+        )
+        click.echo(f"    {item.reason}")
 
 
 if __name__ == "__main__":

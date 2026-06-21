@@ -75,26 +75,32 @@ var/
 
 ## 7. Artifact 命名规范
 
-运行目录固定为：
+**权威 per-run 布局**（双层输出、必备 JSON/MD 文件、0.4-c 审阅产物）见 **[47-output-interface-spec.md](47-output-interface-spec.md)**。
+
+规范 run 目录：
 
 ```text
-var/artifacts/YYYY-MM-DD/<loop_type>/<run_id>/
+var/artifacts/<loop>/<run_id>/
 ```
 
-文件使用小写 kebab-case；轮次使用两位数字；同一 Artifact 不允许通过覆盖更新，重建时增加 `attempt-XX`。
+可选按日期浏览时可在上层加 `YYYY-MM-DD/` 前缀，但不改变 run 目录内 manifest 相对路径。
 
-必备文件：
+必备文件（摘要；完整矩阵见 47）：
 
 ```text
-manifest.json
-trace.jsonl
-run-report.md
-rounds/round-01.md
-evidence/
-raw/
+artifact-manifest.json
+run_meta.json
+loop_trace.jsonl
+report.md
 ```
 
-Loop 专有名称以对应分册为准，如 `development-report.md`、`paper-development-report.md`、`daily-news-report.md`。Manifest 是目录真相来源，文件名不能替代 Artifact 类型。
+有 ToolBroker / Adapter 时分别增加 `tool-results.json`、`adapter-call-trace.jsonl`。0.4-c 审阅 run 增加 `review_required.md`、`gate_result.json`。
+
+文件使用小写；多词文件名用 **underscore**（如 `review_required.md`）。轮次使用两位数字；同一 Artifact 不允许通过覆盖更新，重建时增加 `attempt-XX`。
+
+Loop 专有名称以对应分册为准，并登记在 manifest。Manifest 是目录真相来源，文件名不能替代 Artifact 类型。
+
+**遗留：** 早期实现可能仍写 `trace.jsonl`、`review-required.md`、`manifest.json`；新 writer 遵循 47 规范名。
 
 ## 8. 保留等级
 

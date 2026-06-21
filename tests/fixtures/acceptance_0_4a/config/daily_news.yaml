@@ -1,0 +1,14 @@
+enabled: true
+categories:
+  github: {max_items: 3}
+  research: {max_items: 3}
+  politics: {max_items: 2}
+  finance: {max_items: 2}
+minimum_confidence: medium
+route_to_inbox_requires: high
+lookback_hours: 36
+candidate_expiry_days: 7
+budget:
+  max_duration_minutes: 30
+  max_kept_items: 10
+  max_model_calls: 6

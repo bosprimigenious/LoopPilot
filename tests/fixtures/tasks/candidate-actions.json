@@ -1,0 +1,18 @@
+{
+  "candidates": [
+    {
+      "target_loop": "intern",
+      "priority": "high",
+      "source_item_id": "repo-alpha",
+      "reason": "github signal routed to intern",
+      "recommended_action": "evaluate_for_intern_task"
+    },
+    {
+      "target_loop": "paper",
+      "priority": "normal",
+      "source_item_id": "paper-001",
+      "reason": "paper signal routed to paper",
+      "recommended_action": "review_claim_evidence"
+    }
+  ]
+}

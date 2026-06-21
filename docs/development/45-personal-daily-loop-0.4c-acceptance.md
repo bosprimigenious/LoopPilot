@@ -1,0 +1,163 @@
+# Personal Daily Loop 0.4-c Acceptance Checklist
+
+Version: **0.4.0c** (branch `personal-daily-loop-0.4-c`)
+
+> **Parent spec:** [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md) §3.3 (0.4-c — personal review)  
+> **Prerequisite:** [44-personal-daily-loop-0.4b-acceptance.md](44-personal-daily-loop-0.4b-acceptance.md) — inbox/queue/today green  
+> **Output interface (mandatory):** [47-output-interface-spec.md](47-output-interface-spec.md)  
+> **Chinese guide:** [../zh/12-0.4c-审阅与决策层.md](../zh/12-0.4c-审阅与决策层.md)
+
+## Scope
+
+### In scope (0.4-c)
+
+| Area | Deliverable |
+|------|-------------|
+| Review CLI | `review list`, `approve`, `reject`, `defer`, `cancel`, `resume`, `report` |
+| SQLite | `reviews` table writes on each decision |
+| Human artifacts | `review_required.md` for every review-queue run |
+| Machine artifacts | `gate_result.json` for every review-queue run |
+| Optional | `review_suggestion.json` when gate is `needs_review` or `blocked` |
+| Tests | integration tests for review flow + artifact presence |
+
+### Out of scope
+
+| Excluded | Belongs to |
+|----------|------------|
+| `summary today/week`, `schedule` | **0.4-d** |
+| Team / cloud | **1.3 preview** |
+
+## Output interface requirements (0.4-c)
+
+Per [47-output-interface-spec.md](47-output-interface-spec.md):
+
+| Artifact | Requirement |
+|----------|-------------|
+| `review_required.md` | **Mandatory** for every run returned by `review list` |
+| `gate_result.json` | **Mandatory** for every run returned by `review list` |
+| `artifact-manifest.json` | Must list both with correct `human_readable` flags |
+| `review_suggestion.json` | Required when `gate_result.json.gate` is `needs_review` or `blocked` |
+
+Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT diff Markdown prose.
+
+## Verification status
+
+**Last run:** 2026-06-21 — **NOT READY** ([log](logs/2026-06-21-0.4c-verification-run.md))
+
+| Gate | Result |
+|------|--------|
+| Readiness (`verify_0_4c_acceptance.py`) | FAIL 0/16 |
+| 0.4-b prerequisite | PASS 27/27 |
+| 0.3 regression | PASS 19/20 (ruff F541 in verify script) |
+| Full acceptance chain | Not executed — implementation missing |
+
+## Acceptance checklist
+
+| # | Item | Pass criteria | Verified |
+|---|------|---------------|----------|
+| 1 | `review list` | Shows WAITING_APPROVAL / pending review runs with artifact paths | FAIL |
+| 2 | `review_required.md` | Present and listed in manifest for each listed run | FAIL |
+| 3 | `gate_result.json` | Present with valid `gate` for each listed run | FAIL |
+| 4 | `approve` | Writes review row; updates run review_status | FAIL |
+| 5 | `reject --reason` | Requires reason; terminal BLOCKED semantics | FAIL |
+| 6 | `defer` | Sets deferred_until; hidden from default `today` | FAIL |
+| 7 | `cancel` | Releases lock; auditable | FAIL |
+| 8 | `resume` | Only from legal checkpoint (0.4-a dependency) | FAIL |
+| 9 | 0.4-b regression | inbox/queue/today still green | PASS |
+| 10 | Manifest | `human_readable: true` on MD, `false` on JSON gate/trace | FAIL |
+
+## Executable acceptance flow
+
+Prerequisites (from repo root):
+
+```bash
+python -m pip install -e ".[dev]"
+ruff check .
+pytest -q
+python scripts/verify_0_3_acceptance.py
+```
+
+Use sqlite acceptance config (`tests/fixtures/acceptance_0_4a/config`) or equivalent `loop-pilot.yaml`:
+
+```yaml
+runtime:
+  state_backend: sqlite
+  sqlite_path: var/state/loop_pilot.db
+  lock_dir: var/locks
+```
+
+### Step 0 — Readiness gate
+
+```bash
+python scripts/verify_0_4c_acceptance.py
+```
+
+Must report **READY** before Steps 1–4.
+
+### Step 1 — Generate review run
+
+```bash
+loop-pilot --config-dir tests/fixtures/acceptance_0_4a/config \
+  run intern --workspace examples/intern_demo --dry-run
+```
+
+Assert artifacts under `var/artifacts/intern/<run-id>/`:
+
+- `artifact-manifest.json`
+- `run_meta.json`
+- `report.md`
+- `gate_result.json`
+- `review_required.md`
+
+### Step 2 — Review CLI
+
+```bash
+loop-pilot review list
+loop-pilot review show <run-id>
+loop-pilot approve <run-id> --note "checked locally"
+# new run → reject
+loop-pilot reject <run-id> --reason "patch is too risky"
+loop-pilot reject <run-id>                    # MUST fail (no --reason)
+loop-pilot defer <run-id> --until 2026-06-25
+loop-pilot cancel <run-id> --reason "not needed anymore"
+loop-pilot recovery-scan                      # after cancel — not stale
+loop-pilot resume <run-id>                    # safe vs unsafe; ACTING must block
+loop-pilot report <run-id>
+```
+
+### Step 3 — SQLite audit
+
+```sql
+SELECT id, run_id, status, decision, reason, decided_at FROM review_items;
+SELECT entity_type, entity_id, event_type, created_at
+  FROM task_events ORDER BY created_at DESC LIMIT 20;
+```
+
+### Step 4 — Integration tests
+
+```bash
+pytest tests/integration/test_review_cli.py -q
+pytest tests/integration/test_review_decisions.py -q
+pytest tests/integration/test_resume_policy.py -q
+pytest tests/integration/test_review_events.py -q
+pytest tests/integration/test_review_artifacts.py -q
+pytest -q
+python scripts/verify_0_4c_acceptance.py
+```
+
+### Pass criteria (all must hold)
+
+- Run enters review queue after completion
+- `review list` / `review show` work
+- `approve` / `reject` / `defer` / `cancel` persist to SQLite + emit events
+- `reject` without `--reason` fails
+- `resume` policy blocks ACTING state
+- `report <run-id>` works
+- Every listed run has `review_required.md` + `gate_result.json`
+- **No auto-approve**
+- 0.1 / 0.2 / 0.3 / 0.4-b regression intact
+
+## Related
+
+- [46-review-layer-design.md](46-review-layer-design.md)
+- [23-human-review-protocol.md](23-human-review-protocol.md)

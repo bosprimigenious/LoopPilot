@@ -36,6 +36,19 @@ class LoopPilotConfig:
         return Path(self.runtime.get("artifact_dir", "var/artifacts"))
 
     @property
+    def sqlite_path(self) -> Path:
+        return Path(
+            self.runtime.get(
+                "sqlite_path",
+                self.state_dir / "loop_pilot.db",
+            )
+        )
+
+    @property
+    def lock_dir(self) -> Path:
+        return Path(self.runtime.get("lock_dir", self.state_dir / "locks"))
+
+    @property
     def allow_real_adapters(self) -> bool:
         return bool(self.runtime.get("allow_real_adapters", False))
 
