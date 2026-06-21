@@ -69,7 +69,7 @@ LEGAL_TRANSITIONS: dict[RunPhase, frozenset[RunPhase]] = {
     RunPhase.REPLANNING: frozenset({RunPhase.POLICY_CHECK, RunPhase.FINALIZING}),
     RunPhase.FINALIZING: frozenset({RunPhase.PERSISTING}),
     RunPhase.PERSISTING: frozenset({RunPhase.REPORTING}),
-    RunPhase.REPORTING: frozenset({RunPhase.TERMINATED}),
+    RunPhase.REPORTING: frozenset({RunPhase.TERMINATED, RunPhase.WAITING_APPROVAL}),
     RunPhase.TERMINATED: frozenset(),
 }
 

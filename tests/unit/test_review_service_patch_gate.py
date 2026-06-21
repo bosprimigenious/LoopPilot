@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -16,6 +17,12 @@ from loop_pilot.review.service import ReviewService
 from loop_pilot.runtime.orchestrator import ResumeError
 from loop_pilot.summary.collector import SummaryCollector, read_gate_result
 from loop_pilot.tasks.store import TaskStore
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def _review_service(tmp_path: Path) -> tuple[ReviewService, App]:
@@ -75,6 +82,39 @@ def _seed_patch_run(
     return run_dir
 
 
+def test_patch_run_phase_is_waiting_approval_before_approve(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-waiting"
+    _seed_patch_run(app, run_id=run_id, phase=RunPhase.REPORTING, outcome=RunOutcome.SUCCEEDED)
+
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    record = app.state_store.get_run(run_id)
+    assert record is not None
+    assert record.phase == RunPhase.WAITING_APPROVAL
+    assert record.phase != RunPhase.TERMINATED
+    assert record.outcome == RunOutcome.PARTIAL
+    assert record.review_status == "needs_review"
+
+
+def test_review_suggestion_included_in_final_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-manifest-suggestion"
+    run_dir = _seed_patch_run(app, run_id=run_id)
+
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    suggestion_path = run_dir / "review_suggestion.json"
+    assert suggestion_path.exists()
+    manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    suggestion_entry = next(
+        item for item in manifest["artifacts"] if item["path"] == "review_suggestion.json"
+    )
+    assert suggestion_entry["sha256"] == _sha256(suggestion_path)
+    suggestion = json.loads(suggestion_path.read_text(encoding="utf-8"))
+    assert suggestion["gate"] == "needs_review"
+
+
 def test_patch_run_writes_needs_review_gate_before_approval(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-001"
@@ -84,7 +124,7 @@ def test_patch_run_writes_needs_review_gate_before_approval(tmp_path: Path) -> N
 
     record = app.state_store.get_run(run_id)
     assert record is not None
-    assert record.phase == RunPhase.TERMINATED
+    assert record.phase == RunPhase.WAITING_APPROVAL
     assert record.outcome == RunOutcome.PARTIAL
     assert record.review_status == "needs_review"
     assert record.report_status == "needs_review"

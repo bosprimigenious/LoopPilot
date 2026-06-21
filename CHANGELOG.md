@@ -4,11 +4,14 @@
 
 ### Fixed (Codex PR #8 — truthful patch review acceptance)
 
-- **P0-1 patch review gate**: `patch.diff` runs finalize as `TERMINATED` / `PARTIAL` / `needs_review` (not completed) until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
+- **P0-1 patch review gate**: `patch.diff` runs finalize as `WAITING_APPROVAL` / `PARTIAL` / `needs_review` (not completed) until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
 - **P0-2 direct-finalize approve**: `approve` on `patch.diff` runs sets `approved` + `TERMINATED` + `SUCCEEDED` + `gate=pass` without `resume_requested`; `resume()` rejects approved finalized runs.
 - **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself; `terminal_artifacts` scans run dir and recomputes sha256 from disk (atomic write).
 - **P1-2 report_path priority**: prefers `report.md`, `development-report.md`, `paper-development-report.md`, `daily-news-report.md`; manifest fallback only for `kind=="report"`.
 - **P1-3 InternLoop manifest**: InternLoop no longer writes `artifact-manifest.json`; canonical finalizer is the sole writer.
+- **P2-1 patch phase**: `patch.diff` runs awaiting review stay `WAITING_APPROVAL` (not `TERMINATED`) until human approve; outcome remains `PARTIAL` / `needs_review`.
+- **P2-2 review_suggestion manifest**: `review_suggestion.json` is written before `finalize_terminal_artifacts()` so the sealed manifest includes it with a matching checksum.
+- **P2-3 patch trace truthfulness**: InternLoop appends the terminal trace event after review gating so `loop_trace.jsonl` reflects `partial` / `needs_review`, not `succeeded`.
 - **P2 deferred sync**: `upsert_pending` keeps `deferred` items until `deferred_until`; approved/rejected/cancelled never revert to pending.
 - **0.3 acceptance**: intern fixture/workspace expected outcome updated to `partial` (truthful review semantics).
 
@@ -18,7 +21,7 @@
 
 ### Stabilization
 
-- **0.4.0b1 stabilization in progress.** Codex PR #8 patch-review truthful acceptance landed on `stabilize/0.4-truthful-acceptance`; `verify_0_4c_acceptance.py` READY (30/30). Historical note: pre-0.4.0b1 docs described `approve → resume_requested`; current semantics are **direct-finalize** for `patch.diff` runs. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
+- **0.4.0b1 Truthful 0.4 baseline.** Codex PR #8 + P2 on `stabilize/0.4-truthful-acceptance`; aggregate `verify_0_4_acceptance.py` target 11/11 READY. Historical note: pre-0.4.0b1 docs described `approve → resume_requested`; current semantics are **direct-finalize** for `patch.diff` runs. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
 
 ### Documentation
 

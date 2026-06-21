@@ -23,10 +23,9 @@
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
   - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4.0b1 stabilization in progress**；Full 0.4 **NOT READY**
-  - **0.4-a/b** 部分实现；全量回归与恢复语义仍需修复
-  - **0.4-c** Review Layer ✅（`verify_0_4c_acceptance.py` 22/22）
-  - **0.4-d** summary/schedule 实现存在；Truthful 0.4 聚合验收见 [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
+  - **0.4.0b1 Truthful 0.4 baseline** on `stabilize/0.4-truthful-acceptance` — aggregate gate target 11/11 READY; PR #8 ready for merge
+  - **0.4-c** Review Layer ✅（`verify_0_4c_acceptance.py`）
+  - **0.4-d** summary/schedule ✅；Truthful 0.4 聚合验收见 [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md) §7 Next steps
   - 当前权威行动项：[50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
   - **0.5** Safe Autonomy 规格已修订（SafetyGate 优先、无 daemon）— 见 [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md)；实现 **0.5-prep 可并行**，正式 Step 1 待 Truthful 0.4 Milestone A 全绿
   - **0.5+** Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）

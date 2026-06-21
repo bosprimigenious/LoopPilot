@@ -12,6 +12,7 @@ from loop_pilot.loops.intern.loop import InternLoop
 from loop_pilot.policy.engine import PolicyEngine
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.terminal_artifacts import CANONICAL_ARTIFACTS, assert_terminal_artifacts, finalize_terminal_artifacts
+from loop_pilot.runtime.trace import read_trace
 
 
 def _sha256(path: Path) -> str:
@@ -137,8 +138,34 @@ def test_intern_patch_run_does_not_overwrite_canonical_manifest(tmp_path: Path) 
     assert gate["gate"] == "needs_review"
     assert manifest["terminal_outcome"] == "partial"
     assert manifest.get("loop_type") == "intern"
-    assert record.phase == RunPhase.TERMINATED
+    assert record.phase == RunPhase.WAITING_APPROVAL
     assert record.review_status == "needs_review"
     assert "artifact-manifest.json" not in {item["path"] for item in manifest["artifacts"]}
     report_entry = next(item for item in manifest["artifacts"] if item["path"] == "development-report.md")
     assert report_entry["sha256"] == _sha256(run_dir / "development-report.md")
+
+
+def test_patch_run_trace_reflects_needs_review_not_succeeded(tmp_path: Path) -> None:
+    artifact_dir = tmp_path / "artifacts"
+    loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
+    request = RunRequest(
+        run_id="test-intern-trace-review",
+        loop_type="intern",
+        fixture="simple_python_bug",
+    )
+    record = RunRecord(run_id=request.run_id, loop_type="intern", phase=RunPhase.CREATED)
+    record, _, _ = loop.run(request, record)
+
+    run_dir = artifact_dir / "intern" / request.run_id
+    loop_trace = read_trace(run_dir / "loop_trace.jsonl")
+    assert loop_trace
+    waiting_events = [event for event in loop_trace if event.get("event") == "waiting_review"]
+    assert waiting_events, "loop_trace must record review gating after REPORTING"
+    assert waiting_events[-1]["outcome"] == "partial"
+    assert waiting_events[-1]["gate"] == "needs_review"
+    assert not any(
+        event.get("event") == "terminated" and event.get("outcome") == "succeeded"
+        for event in loop_trace
+    )
+    assert record.phase == RunPhase.WAITING_APPROVAL
+    assert record.outcome == RunOutcome.PARTIAL

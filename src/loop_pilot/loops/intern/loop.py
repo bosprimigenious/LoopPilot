@@ -524,13 +524,27 @@ class InternLoop:
         self._transition(record, RunPhase.PERSISTING, trace)
         self._transition(record, RunPhase.REPORTING, trace)
         record.finished_at = rfc3339()
-        trace.append({"event": "terminated", "outcome": record.outcome.value if record.outcome else None})
 
         has_patch = (run_dir / "patch.diff").exists()
         patch_decided = record.review_status in {"approved", "rejected", "cancelled"}
         if has_patch and not patch_decided:
+            if record.outcome == RunOutcome.SUCCEEDED:
+                record.outcome = RunOutcome.PARTIAL
+            record.review_status = record.review_status or "needs_review"
+            record.report_status = "needs_review"
+            record.terminal_reason = record.terminal_reason or "Patch produced; waiting for human review"
+            self._transition(record, RunPhase.WAITING_APPROVAL, trace)
+            trace.append(
+                {
+                    "event": "waiting_review",
+                    "outcome": RunOutcome.PARTIAL.value,
+                    "gate": "needs_review",
+                    "run_id": record.run_id,
+                }
+            )
             record = mark_patch_run_waiting_review(artifact_dir=self.artifact_dir, record=record)
         else:
+            trace.append({"event": "terminated", "outcome": record.outcome.value if record.outcome else None})
             record.phase = RunPhase.TERMINATED
             if record.report_status in {None, "needs_review"}:
                 record.report_status = "generated"

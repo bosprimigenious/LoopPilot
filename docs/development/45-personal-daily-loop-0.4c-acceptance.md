@@ -44,14 +44,18 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 
 **Last run:** 2026-06-21 — see stabilization branch CI / `verify_0_4c_acceptance.py` (patch review gate behavior checks included).
 
-### Review gate semantics (Codex PR #8)
+### Review gate semantics (Codex PR #8 + P2)
 
 | Run state | Before approve | After approve (`patch.diff`) |
 |-----------|----------------|------------------------------|
-| phase | `WAITING_APPROVAL` | `TERMINATED` |
+| phase | `WAITING_APPROVAL` (not `TERMINATED`) | `TERMINATED` |
 | outcome | `PARTIAL` | `SUCCEEDED` |
 | gate | `needs_review` | `pass` |
-| resume | allowed from safe checkpoint | **blocked** — already finalized |
+| manifest | includes `review_suggestion.json` with matching sha256 | refreshed after approve |
+| loop_trace | `waiting_review` / `partial` / `needs_review` — no `terminated/succeeded` | updated on approve |
+| resume | blocked — use approve/reject/cancel | **blocked** — already finalized |
+
+**Artifact write order (P2-2):** `write_review_suggestion()` → `finalize_terminal_artifacts()` — suggestion must exist on disk before manifest scan.
 
 ### Deferred sync invariant (P2)
 

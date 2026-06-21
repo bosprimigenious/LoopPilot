@@ -31,18 +31,21 @@ def mark_patch_run_waiting_review(
     artifact_dir: Path,
     record: RunRecord,
     state_store: StateStore | None = None,
+    gate: str | None = None,
 ) -> RunRecord:
     """Patch-producing runs are not final success until a human approves."""
-    record.phase = RunPhase.TERMINATED
+    record.phase = RunPhase.WAITING_APPROVAL
     record.outcome = RunOutcome.PARTIAL
     record.review_status = "needs_review"
     record.report_status = "needs_review"
     record.terminal_reason = record.terminal_reason or "Patch produced; waiting for human review"
     run_dir = run_artifact_dir(artifact_dir, record.loop_type, record.run_id)
+    resolved_gate = gate or "needs_review"
+    write_review_suggestion(run_dir, record, gate=resolved_gate)
     finalize_terminal_artifacts(
         run_dir,
         record,
-        gate="needs_review",
+        gate=resolved_gate,
         review_required=True,
     )
     if state_store is not None:
@@ -74,11 +77,13 @@ class ReviewService:
                 artifact_dir=self.artifact_dir,
                 record=record,
                 state_store=self.state_store,
+                gate="needs_review",
             )
-        elif record.review_status is None:
-            record.review_status = "pending"
-        gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id) or "needs_review"
-        write_review_suggestion(run_dir, record, gate)
+        else:
+            if record.review_status is None:
+                record.review_status = "pending"
+            gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id) or "needs_review"
+            write_review_suggestion(run_dir, record, gate)
         review_path = run_dir / "review_required.md"
         if not review_path.exists():
             legacy = run_dir / "review-required.md"

@@ -33,7 +33,7 @@ class TestInternLoop:
         record, manifest, rounds = loop.run(request, record)
 
         assert record.outcome == RunOutcome.PARTIAL
-        assert record.phase == RunPhase.TERMINATED
+        assert record.phase == RunPhase.WAITING_APPROVAL
         assert record.review_status == "needs_review"
         assert len(rounds) == 2
         assert rounds[0].decision == "retryable_fail"
