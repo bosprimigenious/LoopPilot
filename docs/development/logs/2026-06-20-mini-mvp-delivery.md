@@ -8,14 +8,14 @@
 
 | # | 任务 | 状态 | 证据 |
 |---|------|------|------|
-| 1 | PaperLoop SOURCE_REQUIRED → `partial` | ✅ | `unsupported_claim` → `partial`；报告含 Source Required |
-| 2 | DailyNews 候选路由 | ✅ | `intern-candidates.md`、`paper-candidates.md`、`candidate-actions.json` |
-| 3 | `runtime.allow_real_adapters` 默认 false | ✅ | `config/loop-pilot.yaml`；`test_allow_real_adapters.py` |
-| 4 | pyproject extras 清理 | ✅ | 移除 `all = ["loop-pilot[dev]"]` 自引用 |
-| 5 | GitHub Actions CI | ✅ | `.github/workflows/ci.yml` |
-| 6 | 异常 traceback Artifact | ✅ | `error-traceback.txt` + trace 错误事件；`test_error_artifacts.py` |
-| 7 | README Mini-MVP 状态 | ✅ | 验收命令块、0.x 路线图、边界说明 |
-| 8 | 全量验证 | ✅ | 见 §3 |
+| 1 | PaperLoop SOURCE_REQUIRED → `partial` | 通过 | `unsupported_claim` → `partial`；报告含 Source Required |
+| 2 | DailyNews 候选路由 | 通过 | `intern-candidates.md`、`paper-candidates.md`、`candidate-actions.json` |
+| 3 | `runtime.allow_real_adapters` 默认 false | 通过 | `config/loop-pilot.yaml`；`test_allow_real_adapters.py` |
+| 4 | pyproject extras 清理 | 通过 | 移除 `all = ["loop-pilot[dev]"]` 自引用 |
+| 5 | GitHub Actions CI | 通过 | `.github/workflows/ci.yml` |
+| 6 | 异常 traceback Artifact | 通过 | `error-traceback.txt` + trace 错误事件；`test_error_artifacts.py` |
+| 7 | README Mini-MVP 状态 | 通过 | 验收命令块、0.x 路线图、边界说明 |
+| 8 | 全量验证 | 通过 | 见 §3 |
 
 ## 2. 主要修改文件
 

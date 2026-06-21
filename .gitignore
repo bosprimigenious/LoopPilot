@@ -61,7 +61,8 @@ tokens/
 /outputs/
 /memory/
 /source_cache/
-/var/
+/var/*
+!/var/.gitkeep
 /private/
 /local/
 /runtime/

@@ -4,14 +4,55 @@ Version: **0.3.0a1** (adapter-mvp safety alpha)
 
 > **0.3 ≠ legacy "V1".** This phase proves Mock→Real Adapter with strict safety gates. It does **not** include SQLite recovery, approval CLI, Web UI, plugins, or PyPI.
 
-**Last acceptance run:** [2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)
+**Last acceptance run:** [2026-06-21-0.3-executable-acceptance.md](logs/2026-06-21-0.3-executable-acceptance.md)（可执行 L1/L2/L3）；[2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)（静态分层）
 
 ## Prerequisites (gate before starting)
 
 - [x] **0.2 acceptance passed** — see [35-practical-mvp-0.2-acceptance.md](35-practical-mvp-0.2-acceptance.md); Layer 2 demo profile green 2026-06-21
-- [ ] Branch `adapter-mvp-0.3` created from tagged `v0.2.0a1` — **on `main`** (acceptable per run spec)
+- [x] Branch `adapter-mvp-0.3` — **on `adapter-mvp-0.3`** (2026-06-21 executable run)
 - [ ] Design docs reviewed: [37-adapter-safety-policy.md](37-adapter-safety-policy.md), [38-toolbroker-design.md](38-toolbroker-design.md) — files not present in repo
-- [x] Mini / 0.2 test baseline green on branch start — `pytest -q` → 109 passed
+- [x] Mini / 0.2 test baseline green on branch start — `pytest -q` → **109 passed** (2026-06-21)
+
+## Executable acceptance (L1 / L2 / L3) — 2026-06-21
+
+Branch: `adapter-mvp-0.3` · Runner: automated · Log: [logs/2026-06-21-0.3-executable-acceptance.md](logs/2026-06-21-0.3-executable-acceptance.md)
+
+### L1 — 0.1 + 0.2 regression — **PASS**
+
+| # | Command | Outcome | Notes |
+|---|---------|---------|-------|
+| 1.1a | `run intern --fixture simple_python_bug --dry-run` | succeeded | no crash |
+| 1.1b | `run paper --fixture unsupported_claim --dry-run` | partial | not succeeded (SOURCE REQUIRED OK) |
+| 1.1c | `run daily-news --fixture github_star_snapshots --dry-run` | succeeded | 4 items day2 |
+| 1.1d | `run all --fixture-set mini --dry-run` | composite OK | intern/daily_news succeeded, paper partial |
+| 1.1e | daily_news candidate artifacts | OK | `intern-candidates.md`, `paper-candidates.md`, `candidate-actions.json` |
+| 1.2a | `run intern --workspace examples/intern_demo --dry-run` | succeeded | |
+| 1.2b | `run paper --workspace examples/paper_demo --dry-run` | partial | |
+| 1.2c | `run daily-news --source-profile demo --dry-run` | succeeded | 2 items |
+| 1.2d | `run all --profile demo --dry-run` | composite OK | intern/daily_news succeeded, paper partial |
+
+### L2 — Adapter core — **PASS** (DeepSeek live: MANUAL)
+
+| # | Command | Outcome | Notes |
+|---|---------|---------|-------|
+| 2.1 | `adapters list` | PASS | mock enabled; real disabled |
+| 2.2 | `adapters doctor` | PASS | exit 0; real blocked by default |
+| 2.3 | `run intern ... --adapter cursor_cli --dry-run` | blocked | `allow_real_adapters=false`; no adapter-call-trace (expected) |
+| 2.4 | `run paper ... --adapter deepseek --dry-run` | blocked | outer gate; **SKIP MANUAL** without key |
+
+### L3 — Safety — **PASS** (fake_adapter: WARN)
+
+| # | Check | Result |
+|---|-------|--------|
+| 3.1 | Default gate blocks cursor_cli | PASS — blocked, auditable reason |
+| 3.2 | Default gate blocks deepseek | PASS — blocked, no Traceback |
+| 3.3 | Unknown adapter no crash | PASS — `fake_adapter` → mock fallback (WARN: should BLOCK) |
+| 3.4 | `pytest -q` | PASS — 109 passed |
+| 3.5 | `ruff check .` | PASS |
+| 3.6 | `loop-pilot doctor` | PASS |
+| 3.7 | No raw API key in artifacts/state | PASS — N/A (no key set); env names in messages only |
+
+**Automation:** `python scripts/verify_0_3_acceptance.py` → 20/20 PASS (no credentials)
 
 ## Scope
 
@@ -166,7 +207,7 @@ loop-pilot run paper --workspace examples/paper_demo --allow-write --allow-real-
 loop-pilot run daily-news --real-sources --allow-real-adapters
 ```
 
-**2026-06-21 run:** regression commands PASS; real-adapter commands MANUAL/SKIP.
+**2026-06-21 executable run:** L1/L2/L3 PASS (see log); real-adapter live commands MANUAL/SKIP; `verify_0_3_acceptance.py` 20/20.
 
 ## Acceptance criteria (definition of done)
 
@@ -174,8 +215,20 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 2. [ ] **`allow_real_adapters=true` + CLI flag + credentials**: each of Intern, Paper, DailyNews completes one documented controlled run — MANUAL
 3. [x] **`adapters list` / `adapters doctor`**: operational; mock always OK — Layer 4 PASS
 4. [ ] **ToolBroker**: all file/git/command/http from loops go through broker; bypass attempts fail tests — broker exists; loop bypass not closed
-5. [x] **Regression**: all 0.2 acceptance commands still pass with defaults unchanged — Layer 1–2 PASS
+5. [x] **Regression**: all 0.2 acceptance commands still pass with defaults unchanged — **L1 PASS** (2026-06-21 executable)
 6. [ ] **Documentation**: [39-next-steps-0.3.md](39-next-steps-0.3.md) phases marked complete — file not present
+
+## Verdict (2026-06-21 executable)
+
+| Layer | Result |
+|-------|--------|
+| L1 | **PASS** |
+| L2 | **PASS** (DeepSeek live: MANUAL) |
+| L3 | **PASS** (unknown adapter silent mock: WARN) |
+
+**§六 must-pass (safety alpha):** L1 + L2 gate + L3 **met**. Full DoD item 2 (controlled real runs) and ToolBroker loop enforcement **not met**.
+
+**One line:** Real adapters are **safely gated off by default**; system **stable and regressions green**; **0.3 safety alpha合格，完整 DoD 未达**.
 
 ## Expected outcomes (real runs, when enabled)
 
@@ -191,4 +244,6 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 - [19-adapter-specifications.md](19-adapter-specifications.md)
 - [30-adapter-and-model-router-roadmap.md](30-adapter-and-model-router-roadmap.md)
 - [38-toolbroker-design.md](38-toolbroker-design.md)
-- Run log: [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)
+- Run log: [logs/2026-06-21-0.3-executable-acceptance.md](logs/2026-06-21-0.3-executable-acceptance.md)
+- Prior run: [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)
+- Automation: [scripts/verify_0_3_acceptance.py](../../scripts/verify_0_3_acceptance.py)

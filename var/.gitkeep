@@ -1,0 +1,2 @@
+# Local runtime directory (contents gitignored).
+# Created by scripts/bootstrap_local.py: var/state, var/artifacts, var/checkpoints.

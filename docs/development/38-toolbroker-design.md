@@ -34,10 +34,10 @@ cwd_roots: [/path/to/approved/worktree]
 
 | 能力 | Adapter | ToolBroker |
 |------|---------|------------|
-| 模型推理 / CLI 编码 | ✓ | ✗ |
-| pytest / git diff | ✗ | ✓ |
-| 文件读写（worktree 内） | 经 Adapter 计划 | ✓ 执行 |
-| push / deploy | ✗ | ✗（策略拒绝） |
+| 模型推理 / CLI 编码 | 是 | 否 |
+| pytest / git diff | 否 | 是 |
+| 文件读写（worktree 内） | 经 Adapter 计划 | 是（执行） |
+| push / deploy | 否 | 否（策略拒绝） |
 
 ## 测试
 

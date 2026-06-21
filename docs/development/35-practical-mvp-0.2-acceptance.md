@@ -77,10 +77,10 @@ loop-pilot status
 
 | Command | Outcome | Actual (2026-06-21) |
 |---------|---------|---------------------|
-| intern demo | `succeeded` | ✅ succeeded |
-| paper demo | `partial` (SOURCE REQUIRED) | ✅ partial |
-| daily-news demo | `succeeded` | ✅ succeeded |
-| all --profile demo | daily_news/intern succeeded, paper partial | ✅ matched |
+| intern demo | `succeeded` | 通过 — succeeded |
+| paper demo | `partial` (SOURCE REQUIRED) | 通过 — partial |
+| daily-news demo | `succeeded` | 通过 — succeeded |
+| all --profile demo | daily_news/intern succeeded, paper partial | 通过 — matched |
 
 ## Out of scope (defer to 0.3+)
 

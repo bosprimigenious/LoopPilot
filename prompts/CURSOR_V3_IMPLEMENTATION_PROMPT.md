@@ -1,4 +1,13 @@
-# Cursor V3 Implementation Prompt
+# Cursor V3 Implementation Prompt (_legacy)
+
+> **Legacy prompt — V3 对应长期稳定运行规划，当前未实施。**  
+> 文档体系：[docs/zh/05-文档体系说明.md](../docs/zh/05-文档体系说明.md) · [docs/en-core.md](../docs/en-core.md)
+
+## 目标（中文，远期）
+
+跨日优先级、健康检查、报告质量收敛——**需 V1/V2 等价阶段完成后才适用**。
+
+---
 
 你是 Cursor Agent，在仓库 [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
 
