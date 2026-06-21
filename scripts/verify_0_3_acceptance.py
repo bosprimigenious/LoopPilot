@@ -122,12 +122,17 @@ def run_acceptance(repo: Path) -> list[StepResult]:
     proc = _run(cmd, cwd=repo)
     outcome = _outcome(proc.stdout + proc.stderr)
     blocked_reason = "allow_real_adapters=false" in (proc.stdout + proc.stderr).lower()
+    intern_dirs = sorted((artifact_dir / "intern").glob("*"), key=lambda p: p.stat().st_mtime, reverse=True) if (artifact_dir / "intern").is_dir() else []
+    trace_ok = False
+    if intern_dirs:
+        trace_path = intern_dirs[0] / "adapter-call-trace.jsonl"
+        trace_ok = trace_path.is_file()
     record(
         "L2 intern cursor_cli dry-run",
         cmd,
-        outcome == "blocked" and blocked_reason,
-        f"outcome={outcome}",
-        ["adapter-call-trace.jsonl absent when blocked at gate (expected)"],
+        outcome == "blocked" and blocked_reason and trace_ok,
+        f"outcome={outcome}, adapter_trace={trace_ok}",
+        ["blocked runs must write adapter-call-trace.jsonl with blocked_reason"],
     )
 
     cmd = _loop_pilot("run", "paper", "--workspace", "examples/paper_demo", "--adapter", "deepseek", "--dry-run")
@@ -155,13 +160,14 @@ def run_acceptance(repo: Path) -> list[StepResult]:
     cmd = _loop_pilot("run", "intern", "--adapter", "fake_adapter", "--dry-run")
     proc = _run(cmd, cwd=repo)
     outcome = _outcome(proc.stdout + proc.stderr)
-    no_crash = proc.returncode == 0 or outcome in {"blocked", "failed"}
+    no_crash = proc.returncode == 0
+    blocked = outcome == "blocked" and "unknown adapter" in (proc.stdout + proc.stderr).lower()
     record(
-        "L3 fake_adapter no crash",
+        "L3 fake_adapter blocked",
         cmd,
-        no_crash,
+        no_crash and blocked,
         f"outcome={outcome}, rc={proc.returncode}",
-        ["WARN: unknown adapter may fall back to mock instead of BLOCKED"],
+        ["unknown adapter must BLOCKED, not mock fallback"],
     )
 
     for name, cmd in [

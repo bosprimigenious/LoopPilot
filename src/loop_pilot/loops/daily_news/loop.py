@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
+from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
 from loop_pilot.adapters.errors import AdapterBlockedError
 from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
@@ -73,6 +74,7 @@ class DailyNewsLoop:
         run_dir = self.artifact_dir / "daily-news" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
         try:
@@ -84,6 +86,14 @@ class DailyNewsLoop:
                 adapter_override=adapter_override or request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=adapter_override or request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message
@@ -233,6 +243,7 @@ class DailyNewsLoop:
         run_dir = self.artifact_dir / "daily-news" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
 
@@ -246,6 +257,14 @@ class DailyNewsLoop:
                 adapter_override=adapter_override or request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=adapter_override or request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message

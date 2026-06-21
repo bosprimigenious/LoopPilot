@@ -82,6 +82,10 @@ loop-pilot status
 | daily-news demo | `succeeded` | ✅ succeeded |
 | all --profile demo | daily_news/intern succeeded, paper partial | ✅ matched |
 
+
+## CI regression
+
+GitHub Actions (`.github/workflows/ci.yml`, step **Practical MVP demo dry-run runs**) runs the demo workspace commands above, including `loop-pilot run all --profile demo --dry-run`.
 ## Out of scope (defer to 0.3+)
 
 - Real adapters / Cursor CLI live calls

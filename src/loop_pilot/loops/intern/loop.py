@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable
 
+from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
 from loop_pilot.adapters.errors import AdapterBlockedError
 from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
@@ -122,6 +123,14 @@ class InternLoop:
                 adapter_override=request.adapter_override,
             )
         except AdapterBlockedError as exc:
+            append_adapter_blocked_event(
+                adapter_trace,
+                blocked_reason=exc.reason,
+                dry_run=request.dry_run,
+                allow_real_adapters=self.router.allow_real_adapters,
+                adapter_id=request.adapter_override,
+            )
+            artifacts.append(adapter_trace_artifact_ref(run_dir, record.run_id))
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = exc.message

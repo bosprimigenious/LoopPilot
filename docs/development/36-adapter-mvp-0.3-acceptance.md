@@ -1,8 +1,10 @@
 # Adapter MVP 0.3 Acceptance Checklist
 
-Version: **0.3.0a1** (adapter-mvp safety alpha)
+Version: **0.3.0a1** (adapter-mvp polish target — reliable, auditable, mergeable)
 
 > **0.3 ≠ legacy "V1".** This phase proves Mock→Real Adapter with strict safety gates. It does **not** include SQLite recovery, approval CLI, Web UI, plugins, or PyPI.
+>
+> Polish roadmap: [43-0.3-polish-roadmap-a-to-f.md](43-0.3-polish-roadmap-a-to-f.md)
 
 **Last acceptance run:** [2026-06-21-0.3-executable-acceptance.md](logs/2026-06-21-0.3-executable-acceptance.md)（可执行 L1/L2/L3）；[2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)（静态分层）
 
@@ -37,22 +39,22 @@ Branch: `adapter-mvp-0.3` · Runner: automated · Log: [logs/2026-06-21-0.3-exec
 |---|---------|---------|-------|
 | 2.1 | `adapters list` | PASS | mock enabled; real disabled |
 | 2.2 | `adapters doctor` | PASS | exit 0; real blocked by default |
-| 2.3 | `run intern ... --adapter cursor_cli --dry-run` | blocked | `allow_real_adapters=false`; no adapter-call-trace (expected) |
+| 2.3 | `run intern ... --adapter cursor_cli --dry-run` | blocked | gate + **adapter-call-trace.jsonl** with blocked_reason |
 | 2.4 | `run paper ... --adapter deepseek --dry-run` | blocked | outer gate; **SKIP MANUAL** without key |
 
-### L3 — Safety — **PASS** (fake_adapter: WARN)
+### L3 — Safety — **PASS**
 
 | # | Check | Result |
 |---|-------|--------|
-| 3.1 | Default gate blocks cursor_cli | PASS — blocked, auditable reason |
+| 3.1 | Default gate blocks cursor_cli | PASS — blocked, auditable reason + trace |
 | 3.2 | Default gate blocks deepseek | PASS — blocked, no Traceback |
-| 3.3 | Unknown adapter no crash | PASS — `fake_adapter` → mock fallback (WARN: should BLOCK) |
+| 3.3 | Unknown adapter explicit BLOCKED | PASS — `fake_adapter` → blocked (no mock fallback) |
 | 3.4 | `pytest -q` | PASS — 109 passed |
 | 3.5 | `ruff check .` | PASS |
 | 3.6 | `loop-pilot doctor` | PASS |
 | 3.7 | No raw API key in artifacts/state | PASS — N/A (no key set); env names in messages only |
 
-**Automation:** `python scripts/verify_0_3_acceptance.py` → 20/20 PASS (no credentials)
+**Automation:** `python scripts/verify_0_3_acceptance.py` → CI + local; 20/20 PASS (no credentials)
 
 ## Scope
 
@@ -224,11 +226,11 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 |-------|--------|
 | L1 | **PASS** |
 | L2 | **PASS** (DeepSeek live: MANUAL) |
-| L3 | **PASS** (unknown adapter silent mock: WARN) |
+| L3 | **PASS** |
 
-**§六 must-pass (safety alpha):** L1 + L2 gate + L3 **met**. Full DoD item 2 (controlled real runs) and ToolBroker loop enforcement **not met**.
+**§六 must-pass (0.3.0a1 release line):** L1 + L2 gate + L3 + negative BLOCKED + CI verify + blocked trace **met**. Full DoD item 2 (controlled real runs) and ToolBroker loop enforcement → **0.3.0b1**.
 
-**One line:** Real adapters are **safely gated off by default**; system **stable and regressions green**; **0.3 safety alpha合格，完整 DoD 未达**.
+**One line:** Real adapters **safely gated off by default**; unknown adapters **explicit BLOCKED**; blocked runs **auditable via trace**; **0.3.0a1 release line complete**; controlled real runs pending MANUAL.
 
 ## Expected outcomes (real runs, when enabled)
 

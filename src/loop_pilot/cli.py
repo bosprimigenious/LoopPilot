@@ -102,8 +102,9 @@ def adapters_list(ctx: click.Context) -> None:
 
 
 @adapters.command("doctor")
+@click.option("--verbose", is_flag=True, default=False, help="Show blocked reason details per adapter")
 @click.pass_context
-def adapters_doctor(ctx: click.Context) -> None:
+def adapters_doctor(ctx: click.Context, verbose: bool) -> None:
     """Check adapter readiness (mock OK; real adapters WARN/BLOCKED)."""
     config_dir: Path = ctx.obj["config_dir"]
     cfg = load_config(config_dir)
@@ -112,6 +113,8 @@ def adapters_doctor(ctx: click.Context) -> None:
     expected_gate = not cfg.allow_real_adapters
     for item in diagnoses:
         click.echo(f"{item.adapter_id:24} {item.status:8} {item.message}")
+        if verbose and item.status in {"blocked", "warn"}:
+            click.echo(f"  blocked_reason: {item.message}")
         if item.status == "blocked" and not (
             expected_gate and "allow_real_adapters=false" in item.message
         ):
