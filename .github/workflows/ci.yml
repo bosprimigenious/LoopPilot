@@ -28,6 +28,9 @@ jobs:
       - name: Pytest
         run: pytest -q
 
+      - name: 0.3 acceptance verify
+        run: python scripts/verify_0_3_acceptance.py
+
       - name: Doctor
         run: loop-pilot doctor
 
@@ -56,3 +59,5 @@ jobs:
           loop-pilot run intern --workspace examples/intern_demo --dry-run
           loop-pilot run paper --workspace examples/paper_demo --dry-run
           loop-pilot run daily-news --source-profile demo --dry-run
+          # 0.2 profile demo regression (orchestrated run all)
+          loop-pilot run all --profile demo --dry-run

@@ -56,3 +56,35 @@ def test_validate_adapter_run_blocks_missing_api_key(tmp_path: Path, monkeypatch
     with pytest.raises(AdapterBlockedError) as exc:
         validate_adapter_run("deepseek", cfg, allow_real_adapters=True)
     assert "missing API key" in exc.value.message
+    assert exc.value.reason == "deepseek: missing API key (DEEPSEEK_API_KEY not set)"
+
+
+def test_unknown_adapter_is_blocked(tmp_path: Path) -> None:
+    router = ModelRouter({"adapters": {"mock": {"kind": "mock"}}}, allow_real_adapters=False)
+    with pytest.raises(AdapterBlockedError) as exc:
+        create_adapter(router, "coding_agent", fixture_dir=tmp_path, adapter_override="unknown_adapter")
+    assert "unknown adapter" in exc.value.message
+
+
+def test_fake_adapter_is_blocked(tmp_path: Path) -> None:
+    router = ModelRouter({"adapters": {"mock": {"kind": "mock"}}}, allow_real_adapters=True)
+    with pytest.raises(AdapterBlockedError) as exc:
+        create_adapter(router, "coding_agent", fixture_dir=tmp_path, adapter_override="fake_adapter")
+    assert "unknown adapter: fake_adapter" in exc.value.reason
+
+
+def test_real_adapter_disabled_by_default(tmp_path: Path) -> None:
+    router = ModelRouter(
+        {
+            "adapters": {
+                "cursor_cli": {
+                    "kind": "cursor_cli",
+                    "command": ["echo", "hi"],
+                },
+            },
+        },
+        allow_real_adapters=False,
+    )
+    with pytest.raises(AdapterBlockedError) as exc:
+        create_adapter(router, "coding_agent", fixture_dir=tmp_path, adapter_override="cursor_cli")
+    assert "allow_real_adapters=false" in exc.value.message.lower()

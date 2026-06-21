@@ -15,6 +15,12 @@ from loop_pilot.domain.errors import ErrorCode, LoopPilotError
 from loop_pilot.models.router import ModelRouter, RouterDecision
 
 
+def _assert_known_adapter(router: ModelRouter, adapter_id: str, role: str) -> dict[str, Any]:
+    if adapter_id not in router.adapters and adapter_id != "mock":
+        raise AdapterBlockedError(role, f"unknown adapter: {adapter_id}")
+    return router.adapter_config(adapter_id)
+
+
 def create_adapter(
     router: ModelRouter,
     role: str,
@@ -26,7 +32,7 @@ def create_adapter(
 ) -> MockAdapter | CursorCLIAdapter | OpenAICompatibleAdapter:
     """Resolve role via ModelRouter and instantiate the selected adapter."""
     if adapter_override:
-        adapter_config = router.adapter_config(adapter_override)
+        adapter_config = _assert_known_adapter(router, adapter_override, role)
         kind = adapter_kind(adapter_config)
         if is_real_adapter_kind(kind) and not router.allow_real_adapters:
             raise AdapterBlockedError(role, f"adapter {adapter_override} blocked by allow_real_adapters=false")
@@ -101,7 +107,7 @@ def build_adapter(
             config,
             artifact_dir or Path("var/artifacts"),
         )
-    return MockAdapter(fixture_dir)
+    raise AdapterBlockedError("adapter", f"unsupported adapter kind {kind!r} for {adapter_id}")
 
 
 def resolve_or_block(router: ModelRouter, role: str, *, data_class: str = "PROJECT") -> RouterDecision:

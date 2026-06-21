@@ -2,7 +2,16 @@
 
 ## [0.3.0a1] - 2026-06-21
 
-### Adapter MVP
+### 0.3.0a1 polish (release line)
+
+- **Safety**: `fake_adapter` / unknown `--adapter` → explicit **BLOCKED** (no silent mock fallback)
+- **Audit**: blocked adapter runs write `adapter-call-trace.jsonl` with `blocked_reason`, `dry_run`, `allow_real_adapters`; referenced in `artifact-manifest.json`
+- **CI**: `python scripts/verify_0_3_acceptance.py` in GitHub Actions
+- **CLI**: `adapters doctor --verbose` for blocked reason details
+- **Tests**: `test_unknown_adapter_is_blocked`, `test_fake_adapter_is_blocked`, blocked trace + manifest integration tests
+- **Docs**: [43-0.3-polish-roadmap-a-to-f.md](docs/development/43-0.3-polish-roadmap-a-to-f.md), live adapter MANUAL template
+
+### Adapter MVP (initial alpha)
 
 - **Adapter 层**: `CursorCLIAdapter`, `OpenAICompatibleAdapter`, `AdapterRequest`, `AdapterHealth`, `AdapterBlockedError`
 - **ModelRouter**: role-based selection; real adapters blocked when `allow_real_adapters=false`
