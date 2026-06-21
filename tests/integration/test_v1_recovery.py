@@ -162,9 +162,12 @@ def test_acting_interrupt_can_resume_from_exact_round(tmp_path: Path, monkeypatc
     config_dir = _sqlite_config(tmp_path)
     application = App.from_config_dir(config_dir)
     original_apply = intern_mod.InternLoop._apply_fix
-    interrupted = {"once": False}
+    interrupted = {"once": False, "apply_calls": 0}
 
     def explode_once(self, work_dir):  # noqa: ANN001
+        interrupted["apply_calls"] += 1
+        if interrupted["apply_calls"] < 2:
+            return original_apply(self, work_dir)
         if not interrupted["once"]:
             interrupted["once"] = True
             raise InterruptedError("simulated ACTING interruption")

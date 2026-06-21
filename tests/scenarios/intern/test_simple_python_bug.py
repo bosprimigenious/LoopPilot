@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -86,7 +87,7 @@ class TestInternLoop:
 
         assert "1 passed" in report or "exit_code=0" in report
         assert broker_calls, "pytest must route through ToolBroker"
-        assert broker_calls[0][0] == "pytest"
+        assert broker_calls[0][:3] == [sys.executable, "-m", "pytest"]
 
     def test_non_dry_run_generates_real_git_diff(self, artifact_dir: Path) -> None:
         loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))

@@ -98,12 +98,12 @@ def _readiness_checks(repo: Path) -> tuple[list[StepResult], bool]:
     if migrations.is_file():
         text = migrations.read_text(encoding="utf-8")
         has_review = "review_items" in text
-        has_v3 = "CURRENT_SCHEMA_VERSION = 3" in text or "_migrate_v3" in text
+        has_v4 = "CURRENT_SCHEMA_VERSION = 4" in text or "_migrate_v4" in text
         record(
-            "migration v3 review_items",
+            "migration v4 review_items",
             "grep migrations.py",
-            has_review and has_v3,
-            "v3 with review_items" if has_review and has_v3 else "missing v3 or review_items",
+            has_review and has_v4,
+            "v4 with review_items" if has_review and has_v4 else "missing v4 or review_items",
         )
     else:
         record("migrations.py", "exists", False, "missing")
@@ -127,7 +127,7 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
             "NOT READY — implement 0.4-c before full acceptance",
             [
                 "Add src/loop_pilot/review/ and cli_review.py; wire into cli.py",
-                "Migration v3: review_items + queue_items extensions",
+                "Migration v4: review_items + queue indexes",
                 "Implement ReviewAgent (suggestion only) and human decision CLI",
                 "Add tests and run commands in docs/development/45-personal-daily-loop-0.4c-acceptance.md",
             ],

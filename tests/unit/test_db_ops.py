@@ -154,6 +154,26 @@ def test_db_cli_requires_sqlite_backend(tmp_path: Path, monkeypatch: pytest.Monk
     assert "state_backend=sqlite" in result.output
 
 
+def test_migrate_dry_run_does_not_create_database(tmp_path: Path) -> None:
+    db_path = tmp_path / "missing" / "loop_pilot.db"
+    assert not db_path.exists()
+    pending = migrate_database(db_path, dry_run=True)
+    assert pending == list(range(1, CURRENT_SCHEMA_VERSION + 1))
+    assert not db_path.exists()
+    assert not db_path.parent.exists() or not any(db_path.parent.iterdir())
+
+
+def test_migrate_dry_run_leaves_existing_db_unchanged(tmp_path: Path) -> None:
+    db_path = tmp_path / "loop_pilot.db"
+    migrate_database(db_path, dry_run=False)
+    before = db_path.stat()
+    pending = migrate_database(db_path, dry_run=True)
+    after = db_path.stat()
+    assert pending == []
+    assert before.st_size == after.st_size
+    assert int(before.st_mtime) == int(after.st_mtime)
+
+
 def test_db_cli_migrate_and_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_dir = _sqlite_config_dir(tmp_path)
     runner = CliRunner()

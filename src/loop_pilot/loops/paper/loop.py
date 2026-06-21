@@ -34,6 +34,7 @@ from loop_pilot.reporting.human_review import (
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
+from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
 from loop_pilot.runtime.trace import TraceWriter
 from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.workspaces import WorkspaceSpec
@@ -481,4 +482,5 @@ class PaperLoop:
             terminal_outcome=record.outcome.value if record.outcome else None,
         )
         (run_dir / "artifact-manifest.json").write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
+        finalize_terminal_artifacts(run_dir, record)
         return record, manifest, rounds

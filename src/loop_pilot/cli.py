@@ -13,6 +13,7 @@ from loop_pilot.adapters.factory import list_adapters
 from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
 from loop_pilot.cli_db import db
+from loop_pilot.cli_review import approve, cancel, defer, reject, report, resume, review
 from loop_pilot.cli_schedule import schedule
 from loop_pilot.cli_summary import summary
 from loop_pilot.cli_tasks import inbox, queue, today
@@ -365,6 +366,13 @@ def _run_single(
 
 
 app.add_command(db)
+app.add_command(review)
+app.add_command(approve)
+app.add_command(reject)
+app.add_command(defer)
+app.add_command(cancel)
+app.add_command(resume)
+app.add_command(report)
 app.add_command(inbox)
 app.add_command(queue)
 app.add_command(today)

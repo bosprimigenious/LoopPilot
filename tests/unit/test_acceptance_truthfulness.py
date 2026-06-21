@@ -30,6 +30,7 @@ def _load_script(name: str) -> ModuleType:
         "verify_0_4b_acceptance.py",
         "verify_0_4c_acceptance.py",
         "verify_0_4d_acceptance.py",
+        "verify_0_4_acceptance.py",
     ],
 )
 def test_ready_requires_every_recorded_check_to_pass(script_name: str) -> None:
@@ -48,6 +49,7 @@ def test_ready_requires_every_recorded_check_to_pass(script_name: str) -> None:
         "verify_0_4b_acceptance.py",
         "verify_0_4c_acceptance.py",
         "verify_0_4d_acceptance.py",
+        "verify_0_4_acceptance.py",
     ],
 )
 def test_runtime_failure_prints_not_ready_and_returns_nonzero(
