@@ -4,7 +4,7 @@
 
 ### Fixed (Codex PR #8 — patch review gate on feat/0.5-safe-autonomy)
 
-- **P0-1 patch review gate**: `patch.diff` + `SUCCEEDED` runs enter `PARTIAL` / `needs_review` via `mark_patch_run_waiting_review()` and InternLoop `_finalize()`; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
+- **P0-1 patch review gate**: `patch.diff` runs finalize as `TERMINATED` / `PARTIAL` / `needs_review` until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
 - **P0-2 direct-finalize approve**: `approve` on `patch.diff` runs sets `approved` + `TERMINATED` + `SUCCEEDED` + `gate=pass` without `resume_requested`; `resume()` rejects approved finalized runs.
 - **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself (avoids stale self-checksum).
 - **P1-2 report_path priority**: prefers canonical report paths before manifest fallback; `kind=="report"` filter on manifest entries.

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from loop_pilot.domain.models import RunRecord
+from loop_pilot.domain.states import RunOutcome
 
 CANONICAL_ARTIFACTS = (
     "run_meta.json",
@@ -24,6 +25,15 @@ LOOP_REPORT_NAMES = {
     "paper": "paper-development-report.md",
     "daily_news": "daily-news-report.md",
 }
+
+
+_PATCH_DECIDED = frozenset({"approved", "rejected", "cancelled"})
+
+
+def _patch_awaiting_review(run_dir: Path, record: RunRecord) -> bool:
+    if not (run_dir / "patch.diff").exists():
+        return False
+    return (record.review_status or "") not in _PATCH_DECIDED
 
 
 def _sha256(path: Path) -> str:
@@ -54,7 +64,14 @@ def finalize_terminal_artifacts(
     review_required: bool = False,
 ) -> dict[str, Any]:
     run_dir.mkdir(parents=True, exist_ok=True)
-    resolved_gate = gate or _gate_for_record(record)
+    if _patch_awaiting_review(run_dir, record):
+        record.outcome = RunOutcome.PARTIAL
+        record.review_status = "needs_review"
+        record.report_status = "needs_review"
+        resolved_gate = "needs_review"
+        review_required = True
+    else:
+        resolved_gate = gate or _gate_for_record(record)
 
     run_meta = {
         "run_id": record.run_id,
@@ -146,7 +163,7 @@ def finalize_terminal_artifacts(
             )
             seen.add(str(adapter_trace_path))
 
-    for name in sorted({*CANONICAL_ARTIFACTS, "review_required.md"}):
+    for name in sorted({*CANONICAL_ARTIFACTS, "review_required.md", "patch.diff", *LOOP_REPORT_NAMES.values()}):
         if name == "artifact-manifest.json":
             continue
         path = run_dir / name
