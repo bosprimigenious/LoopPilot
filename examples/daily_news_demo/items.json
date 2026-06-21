@@ -1,0 +1,37 @@
+{
+  "items": [
+    {
+      "source_item_id": "demo-repo-001",
+      "name": "loop-pilot-demo",
+      "title": "LoopPilot demo repository update",
+      "url": "https://github.com/example/loop-pilot-demo",
+      "tier": "B",
+      "confidence": "high",
+      "category": "github",
+      "stars": 42,
+      "published_at": "2026-06-20T08:00:00+00:00",
+      "event_at": "2026-06-20T08:00:00+00:00"
+    },
+    {
+      "source_item_id": "demo-paper-001",
+      "name": "benchmark-controversy",
+      "title": "Benchmark revision sparks debate",
+      "url": "https://arxiv.org/abs/example-benchmark",
+      "tier": "B",
+      "confidence": "high",
+      "category": "benchmark",
+      "published_at": "2026-06-20T11:00:00+00:00",
+      "event_at": "2026-06-20T11:00:00+00:00"
+    },
+    {
+      "source_item_id": "demo-low-001",
+      "name": "low-signal",
+      "title": "Low confidence noise item",
+      "url": "https://example.invalid/low",
+      "tier": "C",
+      "confidence": "low",
+      "category": "github",
+      "stars": 1
+    }
+  ]
+}

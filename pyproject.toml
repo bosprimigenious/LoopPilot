@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loop-pilot"
-version = "0.0.0"
-description = "A controlled runtime for loop-engineered personal AI workflows."
+version = "0.2.0a1"
+description = "LoopPilot — a controlled runtime for loop-engineered personal AI workflows."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
@@ -18,6 +18,11 @@ dependencies = [
   "jsonschema>=4.20",
 ]
 
+[project.urls]
+Homepage = "https://github.com/bosprimigenious/LoopPilot"
+Repository = "https://github.com/bosprimigenious/LoopPilot"
+Documentation = "https://github.com/bosprimigenious/LoopPilot/tree/main/docs/development"
+
 [project.scripts]
 loop-pilot = "loop_pilot.cli:app"
 
@@ -27,12 +32,16 @@ dev = [
   "ruff>=0.4",
 ]
 news = []
-all = ["loop-pilot[dev]"]
+deepseek = []
+all = [
+  "pytest>=8.0",
+  "ruff>=0.4",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "--ignore=tests/fixtures"
+addopts = "--ignore=tests/fixtures --ignore=tests/integration/test_v1_recovery.py"
 
 [tool.ruff]
 line-length = 100

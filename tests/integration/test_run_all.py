@@ -40,7 +40,7 @@ class TestRunAll:
         outcomes = {r.loop_type: r.outcome.value if r.outcome else None for r in results}
         assert outcomes["daily_news"] == "succeeded"
         assert outcomes["intern"] == "failed"
-        assert outcomes["paper"] == "succeeded"
+        assert outcomes["paper"] == "partial"
 
     def test_run_all_order(self, orchestrator: Orchestrator) -> None:
         results = orchestrator.run_all(fixture_set="mini", dry_run=True)

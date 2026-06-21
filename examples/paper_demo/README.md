@@ -1,3 +1,5 @@
-# PaperLoop demo scaffold
+# Paper Demo Workspace
 
-Cursor should build a synthetic document containing one unsupported claim and a small verified citation fixture.
+Controlled demo draft for LoopPilot 0.2 Practical MVP.
+
+Contains an unsupported performance claim requiring human review.

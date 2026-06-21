@@ -82,6 +82,34 @@ class TestDailyNewsLoop:
         assert content.startswith("---")
         assert "artifact_manifest:" in content
 
+    def test_candidate_routing_splits_intern_and_paper(self, artifact_dir: Path) -> None:
+        loop = DailyNewsLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
+        request = RunRequest(
+            run_id="test-news-routing",
+            loop_type="daily_news",
+            fixture="github_star_snapshots",
+        )
+        record = RunRecord(run_id=request.run_id, loop_type="daily_news", phase=RunPhase.CREATED)
+        record, _, _ = loop.run(request, record, snapshot_day="day2")
+
+        actions_path = artifact_dir / "daily-news" / request.run_id / "candidate-actions.json"
+        assert actions_path.exists()
+        actions = json.loads(actions_path.read_text(encoding="utf-8"))["candidates"]
+        targets = {item["target_loop"] for item in actions}
+        assert "intern" in targets
+        assert "paper" in targets
+
+        intern_path = artifact_dir / "daily-news" / request.run_id / "intern-candidates.md"
+        paper_path = artifact_dir / "daily-news" / request.run_id / "paper-candidates.md"
+        assert intern_path.exists()
+        assert paper_path.exists()
+        assert "Paper Inbox Candidates" in paper_path.read_text(encoding="utf-8")
+
+        report = artifact_dir / "daily-news" / request.run_id / "daily-news-report.md"
+        content = report.read_text(encoding="utf-8")
+        assert "Intern Candidates" in content
+        assert "Paper Candidates" in content
+
     def test_missing_fixture_blocks_without_success(self, artifact_dir: Path) -> None:
         loop = DailyNewsLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
         request = RunRequest(

@@ -1,11 +1,25 @@
+workspaces:
+  intern_demo:
+    root: examples/intern_demo
+    allowed_paths: [src/**, tests/**]
+    forbidden_paths: [.env*, secrets/**]
+    allow_write: false
+  paper_demo:
+    root: examples/paper_demo
+    allowed_paths: [draft.md, references.bib, notes/**]
+    forbidden_paths: [experiments/raw/**]
+    allow_write: false
+
 runtime:
   timezone: Asia/Shanghai
+  state_backend: json
   state_dir: var/state
   artifact_dir: var/artifacts
   checkpoint_dir: var/checkpoints
   execution_mode: sequential
   dry_run: false
   max_concurrent_runs: 1
+  allow_real_adapters: false
 
 reporting:
   format: markdown

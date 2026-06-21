@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import shutil
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from loop_pilot.adapters.mock_adapter import MockAdapter
+from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -19,17 +20,40 @@ from loop_pilot.domain.models import (
     rfc3339,
 )
 from loop_pilot.domain.states import EvaluationVerdict, RunOutcome, RunPhase
-from loop_pilot.loops.fixture_validation import validate_intern_fixture
-from loop_pilot.loops.intern.workspace import cleanup_workspace, git_diff_summary, prepare_git_worktree
+from loop_pilot.loops.fixture_validation import validate_intern_fixture, validate_intern_workspace
+from loop_pilot.loops.intern.workspace import (
+    cleanup_workspace,
+    create_approved_worktree,
+    git_diff_summary,
+    prepare_git_worktree,
+)
+from loop_pilot.models.router import ModelRouter
 from loop_pilot.policy.engine import PolicyEngine
+from loop_pilot.reporting.human_review import (
+    recommended_for_outcome,
+    write_next_actions,
+    write_review_required,
+)
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
 from loop_pilot.runtime.trace import TraceWriter
+from loop_pilot.workspaces import WorkspaceSpec
 
 
 class InternLoop:
-    FIXTURE_ROOT = Path("tests/fixtures/intern")
+    FIXTURE_ROOT = Path(__file__).resolve().parents[4] / "tests" / "fixtures" / "intern"
+
+    @classmethod
+    def _resolve_fixture_root(cls) -> Path:
+        for parent in Path(__file__).resolve().parents:
+            candidate = parent / "tests" / "fixtures" / "intern"
+            if candidate.is_dir():
+                return candidate
+        cwd_candidate = Path("tests/fixtures/intern")
+        if cwd_candidate.is_dir():
+            return cwd_candidate
+        return cls.FIXTURE_ROOT
 
     def __init__(
         self,
@@ -37,70 +61,130 @@ class InternLoop:
         policy: PolicyEngine,
         renderer: ReportRenderer,
         budget_manager: BudgetManager | None = None,
+        router: ModelRouter | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
         self.renderer = renderer
         self.budget_manager = budget_manager or BudgetManager(BudgetPolicy(max_model_calls=8))
+        self.router = router or ModelRouter({"roles": {}, "adapters": {"mock": {"kind": "mock"}}})
         self.state_machine = StateMachine()
 
-    def run(self, request: RunRequest, record: RunRecord) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+    def run(
+        self,
+        request: RunRequest,
+        record: RunRecord,
+        *,
+        phase_hook: Callable[[RunRecord], None] | None = None,
+        resume_from: dict[str, Any] | None = None,
+        workspace_spec: WorkspaceSpec | None = None,
+    ) -> tuple[RunRecord, ArtifactManifest, list[RoundRecord]]:
+        self._phase_hook = phase_hook
         record.dry_run = request.dry_run
         record.fixture = request.fixture
+        workspace_root: Path | None = None
+        expected_dir: Path | None = None
         fixture_name = request.fixture or "simple_python_bug"
-        fixture_dir = self.FIXTURE_ROOT / fixture_name
+
+        if workspace_spec is not None:
+            workspace_root = workspace_spec.root
+            fixture_dir = workspace_root
+            record.fixture = workspace_spec.workspace_id
+            validation = validate_intern_workspace(workspace_root)
+            allowed_paths = workspace_spec.allowed_paths
+            forbidden_paths = workspace_spec.forbidden_paths
+            plan_target = "src/calculator.py"
+            expected_dir = workspace_root / "expected"
+        else:
+            fixture_dir = self._resolve_fixture_root() / fixture_name
+            validation = validate_intern_fixture(fixture_dir)
+            allowed_paths = ["src/**", "tests/**"]
+            forbidden_paths = [".env*", "secrets/**"]
+            plan_target = "src/calculator.py"
+            if fixture_name == "unsafe_path_change":
+                plan_target = ".env.local"
+
         run_dir = self.artifact_dir / "intern" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
 
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
-        adapter = MockAdapter(fixture_dir)
+        try:
+            adapter = create_adapter(
+                self.router,
+                "coding_agent",
+                fixture_dir=fixture_dir,
+                artifact_dir=self.artifact_dir,
+            )
+        except AdapterBlockedError as exc:
+            self._enter_observing(record, trace)
+            record.outcome = RunOutcome.BLOCKED
+            record.terminal_reason = exc.message
+            return self._finalize(record, trace, run_dir, artifacts, rounds)
 
-        validation = validate_intern_fixture(fixture_dir)
         if not validation.ok:
             self._enter_observing(record, trace)
             record.outcome = RunOutcome.BLOCKED
             record.terminal_reason = validation.blocked_reason
             return self._finalize(record, trace, run_dir, artifacts, rounds)
 
-        self._enter_observing(record, trace)
-        self._transition(record, RunPhase.SELECTING, trace)
-        self._transition(record, RunPhase.PLANNING, trace)
+        resume_phase = RunPhase(resume_from["phase"]) if resume_from else None
+        resume_payload = resume_from.get("payload", {}) if resume_from else {}
+        start_round = int(resume_payload.get("current_round", 1)) or 1
+        skip_to_acting = resume_phase in {RunPhase.WAITING_APPROVAL, RunPhase.ACTING, RunPhase.EVALUATING}
+        if resume_payload.get("event") == "interrupted" and resume_payload.get("resume_allowed"):
+            resume_phase = RunPhase.ACTING
+            skip_to_acting = True
+        if resume_phase == RunPhase.EVALUATING and resume_payload.get("event") == "interrupted":
+            resume_phase = RunPhase.ACTING
+            skip_to_acting = True
 
-        allowed_paths = ["src/**", "tests/**"]
-        forbidden_paths = [".env*", "secrets/**"]
-        plan_target = "src/calculator.py"
-        if fixture_name == "unsafe_path_change":
-            plan_target = ".env.local"
+        if skip_to_acting:
+            if resume_phase == RunPhase.WAITING_APPROVAL:
+                self._transition(record, RunPhase.ACTING, trace)
+            start_round = max(start_round, 1)
+        else:
+            self._enter_observing(record, trace)
+            self._transition(record, RunPhase.SELECTING, trace)
+            self._transition(record, RunPhase.PLANNING, trace)
 
-        self._transition(record, RunPhase.POLICY_CHECK, trace)
-        decision = self.policy.check_write(plan_target, allowed_paths, forbidden_paths, request.dry_run)
-        if not decision.allowed:
-            record.terminal_reason = f"{decision.rule_id}: {decision.message}"
-            return self._finalize_blocked(record, trace, run_dir, record.terminal_reason, artifacts, rounds)
+        if not skip_to_acting:
+            self._transition(record, RunPhase.POLICY_CHECK, trace)
+            decision = self.policy.check_write(plan_target, allowed_paths, forbidden_paths, request.dry_run)
+            if not decision.allowed:
+                record.terminal_reason = f"{decision.rule_id}: {decision.message}"
+                return self._finalize_blocked(record, trace, run_dir, record.terminal_reason, artifacts, rounds)
 
         work_dir: Path | None = None
         temp_root: Path | None = None
         try:
-            work_dir, temp_root = self._prepare_workspace(fixture_dir, request.dry_run)
+            work_dir, temp_root = self._prepare_workspace(
+                fixture_dir, request.dry_run, workspace_spec=workspace_spec
+            )
             tests_passed = False
             max_rounds = record.budgets.max_rounds
 
-            for round_num in range(1, max_rounds + 1):
+            for round_num in range(start_round, max_rounds + 1):
                 self.budget_manager.consume_round(record)
                 round_started = rfc3339()
+                record.current_round = round_num
 
                 try:
-                    self._transition(record, RunPhase.ACTING, trace)
+                    if record.phase != RunPhase.ACTING:
+                        self._transition(record, RunPhase.ACTING, trace)
+                    elif self._phase_hook is not None:
+                        self._phase_hook(record)
                     adapter.execute({"role": "coding", "round": round_num})
                     self.budget_manager.consume_model_call(record)
 
-                    if round_num >= 2 and not request.dry_run and work_dir:
+                    if round_num >= 2 and self._should_apply_controlled_fix(request, work_dir):
                         self._apply_fix(work_dir)
 
                     self._transition(record, RunPhase.EVALUATING, trace)
-                    test_report = self._run_pytest(work_dir, request.dry_run, fixture_dir, round_num)
+                    test_report = self._run_pytest(
+                        work_dir, request.dry_run, fixture_dir, round_num, expected_dir=expected_dir
+                    )
                 except (InterruptedError, TimeoutError, OSError) as exc:
                     record.outcome = RunOutcome.FAILED
                     record.terminal_reason = f"ACTING interrupted: {exc}"
@@ -109,7 +193,11 @@ class InternLoop:
                 test_artifact = self._save_text(run_dir, f"test-report-round-{round_num:02d}.md", test_report, "test_runner")
                 artifacts.append(test_artifact)
 
-                evaluation = self._evaluate_tests(test_report, round_num)
+                evaluation = self._evaluate_tests(
+                    test_report,
+                    round_num,
+                    can_retry=self.budget_manager.can_retry(record),
+                )
                 round_record = RoundRecord(
                     round_id=round_num,
                     state_before=RunPhase.ACTING.value,
@@ -135,6 +223,14 @@ class InternLoop:
                     self._transition(record, RunPhase.REFLECTING, trace)
                     self._transition(record, RunPhase.REPLANNING, trace)
                     self._transition(record, RunPhase.POLICY_CHECK, trace)
+                    if self._should_apply_controlled_fix(request, work_dir):
+                        try:
+                            self._apply_fix(work_dir)
+                        except (InterruptedError, TimeoutError, OSError) as exc:
+                            record.outcome = RunOutcome.FAILED
+                            record.terminal_reason = f"ACTING interrupted: {exc}"
+                            trace.append({"event": "interrupted", "round": round_num, "error": str(exc)})
+                            return self._finalize(record, trace, run_dir, artifacts, rounds)
                     continue
 
                 record.outcome = RunOutcome.FAILED
@@ -172,35 +268,121 @@ class InternLoop:
                 )
             )
 
+            review_action = recommended_for_outcome(record.outcome)
+            artifacts.append(
+                write_review_required(
+                    run_dir,
+                    record,
+                    recommended=review_action,
+                    rationale=record.terminal_reason or "Review development report and test artifacts.",
+                    checklist=[
+                        "Verify pytest evidence matches expected fix",
+                        "Confirm no forbidden paths were touched",
+                        "Approve merge or request another iteration",
+                    ],
+                )
+            )
+            next_steps = (
+                ["Merge fix after human approval"]
+                if tests_passed
+                else ["Inspect failing tests", "Apply fix manually or rerun without --review-only"]
+            )
+            artifacts.append(write_next_actions(run_dir, record, next_steps))
+
             return self._finalize(record, trace, run_dir, artifacts, rounds)
 
         finally:
             cleanup_workspace(temp_root)
 
-    def _prepare_workspace(self, fixture_dir: Path, dry_run: bool) -> tuple[Path, Path | None]:
+    def _prepare_workspace(
+        self,
+        fixture_dir: Path,
+        dry_run: bool,
+        *,
+        workspace_spec: WorkspaceSpec | None = None,
+        intern_config: dict[str, Any] | None = None,
+    ) -> tuple[Path, Path | None]:
+        if workspace_spec is not None:
+            root = workspace_spec.root
+            if dry_run:
+                return root, None
+            if (root / ".git").exists():
+                worktree_root = self.artifact_dir / "intern-worktrees" / workspace_spec.workspace_id
+                worktree = create_approved_worktree(
+                    root.resolve(),
+                    worktree_root,
+                    branch="HEAD",
+                    worktree_name=f"run-{workspace_spec.workspace_id}",
+                )
+                return worktree, worktree_root
+            return prepare_git_worktree(root, dry_run)
+
+        intern_config = intern_config or {}
+        workspace = Path(str(intern_config.get("workspace", "")))
+        if (
+            not dry_run
+            and intern_config.get("use_worktree")
+            and workspace.exists()
+            and (workspace / ".git").exists()
+        ):
+            worktree_root = self.artifact_dir / "intern-worktrees" / fixture_dir.name
+            worktree = create_approved_worktree(
+                workspace.resolve(),
+                worktree_root,
+                branch=str(intern_config.get("default_branch", "HEAD")),
+                worktree_name=f"run-{fixture_dir.name}",
+            )
+            return worktree, worktree_root
         return prepare_git_worktree(fixture_dir / "input", dry_run)
+
+    def _should_apply_controlled_fix(self, request: RunRequest, work_dir: Path | None) -> bool:
+        return bool(work_dir) and not request.dry_run and not request.review_only
 
     def _apply_fix(self, work_dir: Path) -> None:
         target = work_dir / "src" / "calculator.py"
         if not target.exists():
             return
         content = target.read_text(encoding="utf-8")
-        if "return a - b" in content and "def add" in content:
-            target.write_text(content.replace("return a - b", "return a + b", 1), encoding="utf-8")
+        if "def add" not in content:
+            return
+        add_block, separator, remainder = content.partition("def subtract")
+        if "return a - b" not in add_block:
+            return
+        patched = add_block.replace("return a - b", "return a + b", 1)
+        if separator:
+            patched += separator + remainder
+        target.write_text(patched, encoding="utf-8")
+        self._clear_pycache(work_dir)
 
-    def _run_pytest(self, work_dir: Path | None, dry_run: bool, fixture_dir: Path, round_num: int) -> str:
+    def _clear_pycache(self, work_dir: Path) -> None:
+        for cache_dir in work_dir.rglob("__pycache__"):
+            shutil.rmtree(cache_dir, ignore_errors=True)
+
+    def _run_pytest(
+        self,
+        work_dir: Path | None,
+        dry_run: bool,
+        fixture_dir: Path,
+        round_num: int,
+        *,
+        expected_dir: Path | None = None,
+    ) -> str:
         if dry_run:
             if round_num == 1:
                 return "exit_code=1\n\nstdout:\n1 failed\n\nstderr:\nAssertionError"
-            expected = fixture_dir / "expected" / "test-report-round-02.md"
+            expected_root = expected_dir or fixture_dir / "expected"
+            expected = expected_root / f"test-report-round-{round_num:02d}.md"
             if expected.exists():
                 return expected.read_text(encoding="utf-8")
             return "DRY_RUN: pytest simulated PASS"
         if work_dir is None:
             return "exit_code=1\n\nstdout:\nno workspace\n"
 
+        if round_num >= 2:
+            self._clear_pycache(work_dir)
+
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q"],
+            [sys.executable, "-B", "-m", "pytest", "-q"],
             cwd=work_dir,
             capture_output=True,
             text=True,
@@ -208,12 +390,20 @@ class InternLoop:
         )
         return f"exit_code={result.returncode}\n\nstdout:\n{result.stdout}\n\nstderr:\n{result.stderr}"
 
-    def _evaluate_tests(self, test_report: str, round_num: int) -> EvaluationResult:
-        passed = "passed" in test_report.lower() and "failed" not in test_report.lower()
-        passed = passed or "exit_code=0" in test_report or "1 passed" in test_report
+    def _evaluate_tests(
+        self,
+        test_report: str,
+        round_num: int,
+        *,
+        can_retry: bool,
+    ) -> EvaluationResult:
+        passed = "exit_code=0" in test_report or "1 passed" in test_report
+        if not passed:
+            lowered = test_report.lower()
+            passed = "passed" in lowered and "failed" not in lowered
         if passed:
             verdict = EvaluationVerdict.PASS.value
-        elif round_num < 2:
+        elif can_retry:
             verdict = EvaluationVerdict.RETRYABLE_FAIL.value
         else:
             verdict = EvaluationVerdict.FATAL.value
@@ -259,6 +449,11 @@ class InternLoop:
         self.state_machine.validate_transition(record.phase, phase)
         record.phase = phase
         trace.append({"event": "state_transition", "phase": phase.value, "run_id": record.run_id})
+        if phase == RunPhase.ACTING:
+            record.current_round = max(record.current_round, 1)
+        hook = getattr(self, "_phase_hook", None)
+        if hook is not None:
+            hook(record)
 
     def _finalize(
         self,

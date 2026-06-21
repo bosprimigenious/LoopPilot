@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "source_item_id": "paper-benchmark-001",
+      "name": "New benchmark leaderboard controversy",
+      "title": "Benchmark dataset revision sparks debate",
+      "url": "https://arxiv.org/abs/example-benchmark",
+      "tier": "B",
+      "confidence": "high",
+      "category": "benchmark",
+      "published_at": "2026-06-20T11:00:00+00:00",
+      "event_at": "2026-06-20T11:00:00+00:00"
+    }
+  ]
+}

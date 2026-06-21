@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "structured_output": {
+    "action": "apply_minimal_fix",
+    "target": "src/calculator.py"
+  }
+}

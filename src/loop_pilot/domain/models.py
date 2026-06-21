@@ -67,6 +67,9 @@ class RunRequest:
     parent_run_id: str | None = None
     requested_by: str = "owner"
     fixture: str | None = None
+    workspace: str | None = None
+    source_profile: str | None = None
+    review_only: bool = False
     dry_run: bool = False
 
     def to_dict(self) -> dict[str, Any]:

@@ -17,6 +17,7 @@ from loop_pilot.domain.errors import ErrorCode, LoopPilotError
 class LoopPilotConfig:
     runtime: dict[str, Any] = field(default_factory=dict)
     reporting: dict[str, Any] = field(default_factory=dict)
+    workspaces: dict[str, Any] = field(default_factory=dict)
     intern: dict[str, Any] = field(default_factory=dict)
     paper: dict[str, Any] = field(default_factory=dict)
     daily_news: dict[str, Any] = field(default_factory=dict)
@@ -34,12 +35,28 @@ class LoopPilotConfig:
         return Path(self.runtime.get("artifact_dir", "var/artifacts"))
 
     @property
+    def allow_real_adapters(self) -> bool:
+        return bool(self.runtime.get("allow_real_adapters", False))
+
+    @property
     def dry_run(self) -> bool:
         return bool(self.runtime.get("dry_run", False))
+
+    def get_source_profile(self, profile: str) -> dict[str, Any]:
+        profiles = self.sources.get("profiles", {})
+        if profile not in profiles:
+            raise LoopPilotError(
+                code=ErrorCode.CONFIG_INVALID,
+                component="config.sources",
+                message=f"Unknown source profile: {profile}",
+            )
+        cfg = profiles[profile]
+        return cfg if isinstance(cfg, dict) else {}
 
     def snapshot_hash(self) -> str:
         payload = {
             "runtime": self.runtime,
+            "workspaces": self.workspaces,
             "intern": self.intern,
             "paper": self.paper,
             "daily_news": self.daily_news,
@@ -83,6 +100,7 @@ def load_config(config_dir: Path | None = None) -> LoopPilotConfig:
     return LoopPilotConfig(
         runtime=runtime,
         reporting=reporting,
+        workspaces=main.get("workspaces", {}),
         intern=_load_yaml(config_dir / "intern.yaml"),
         paper=_load_yaml(config_dir / "paper.yaml"),
         daily_news=_load_yaml(config_dir / "daily_news.yaml"),
@@ -97,12 +115,14 @@ def default_config_dict() -> dict[str, Any]:
     return {
         "runtime": {
             "timezone": "Asia/Shanghai",
+            "state_backend": "json",
             "state_dir": "var/state",
             "artifact_dir": "var/artifacts",
             "checkpoint_dir": "var/checkpoints",
             "execution_mode": "sequential",
             "dry_run": False,
             "max_concurrent_runs": 1,
+            "allow_real_adapters": False,
         },
         "reporting": {
             "format": "markdown",
