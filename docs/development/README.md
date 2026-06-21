@@ -84,6 +84,10 @@
 42. [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) — **0.3→0.4 行动顺序**
 43. [43-personal-daily-loop-0.4a-acceptance.md](43-personal-daily-loop-0.4a-acceptance.md) — **0.4-a 验收**
 44. [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) — **1.x 个人→协作权威规格**
+45. [44-personal-daily-loop-0.4b-acceptance.md](44-personal-daily-loop-0.4b-acceptance.md) — **0.4-b 验收**
+46. [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) — **0.4-c 验收**
+47. [46-review-layer-design.md](46-review-layer-design.md) — **0.4-c 审阅层设计**
+48. [47-output-interface-spec.md](47-output-interface-spec.md) — **输出接口：人 MD / 机器 JSON**
 
 ## 中文认知层对应关系
 
@@ -104,6 +108,9 @@
 | [04-如何跑验收.md](../zh/04-如何跑验收.md) | [32](32-mini-mvp-acceptance.md) / [35](35-practical-mvp-0.2-acceptance.md) / [36](36-adapter-mvp-0.3-acceptance.md) | 验收命令 |
 | [10-中英文文档管理.md](../zh/10-中英文文档管理.md) | [logs/2026-06-21-zh-en-doc-management.md](logs/2026-06-21-zh-en-doc-management.md) | 文档策略 |
 | [05-文档体系说明.md](../zh/05-文档体系说明.md) | [logs/2026-06-21-doc-system-bilingual-upgrade.md](logs/2026-06-21-doc-system-bilingual-upgrade.md) | 三层架构决策 |
+| [12-0.4c-审阅与决策层.md](../zh/12-0.4c-审阅与决策层.md) | [45-personal-daily-loop-0.4c-acceptance.md](45-personal-daily-loop-0.4c-acceptance.md) | 0.4-c 验收 |
+| [12-0.4c-审阅与决策层.md](../zh/12-0.4c-审阅与决策层.md) | [46-review-layer-design.md](46-review-layer-design.md) | 审阅层设计 |
+| [13-输出接口-人看MD机器看JSON.md](../zh/13-输出接口-人看MD机器看JSON.md) | [47-output-interface-spec.md](47-output-interface-spec.md) | 输出接口规格 |
 
 ### 决策日志（中文）
 
@@ -113,6 +120,7 @@
 - [logs/2026-06-21-1x-roadmap-personal-stable.md](logs/2026-06-21-1x-roadmap-personal-stable.md) — 1.x 四段式决策
 - [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md) — 0.3 验收跑记录
 - [logs/2026-06-21-0.4a-delivery.md](logs/2026-06-21-0.4a-delivery.md) — 0.4-a 交付
+- [logs/2026-06-21-output-interface-md-json.md](logs/2026-06-21-output-interface-md-json.md) — 输出接口 MD/JSON 决策
 - [logs/2026-06-20-mini-mvp-delivery.md](logs/2026-06-20-mini-mvp-delivery.md) — 0.1 交付
 - [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) — 0.5 规划
 - [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md) — 0.9 RC 规划
