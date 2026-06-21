@@ -28,9 +28,9 @@ LoopPilot uses a **0.x release track** (not simple "V1" naming):
 
 | Version | Name | Focus |
 |---------|------|-------|
-| **0.1** | mini | Three dry-run Loops, MockAdapter, CI |
-| **0.2** | practical-mvp | Controlled demo workspaces, dry-run/report (current) |
-| 0.3 | adapter-mvp | Mock→Real Adapter, ToolBroker |
+| **0.1** | mini | Three dry-run Loops, MockAdapter, CI — **completed** |
+| **0.2** | practical-mvp | Controlled demo workspaces, dry-run/report — **0.2.0a1 candidate, acceptance passed** |
+| **0.3** | adapter-mvp | Mock→Real Adapter, ToolBroker — **planned** (see docs 36–39) |
 | 0.4 | recovery-and-automation | SQLite, recovery, approval, scheduling |
 | 0.5 | public-beta | PyPI, init demo, open-source onboarding |
 | 0.6 | plugin-ecosystem | Local plugins; custom Loop/Skill/Connector |
@@ -40,6 +40,12 @@ LoopPilot uses a **0.x release track** (not simple "V1" naming):
 | 1.0 | stable | Formal semver stability promise after 0.9 RC |
 
 See [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) for full milestones.
+
+## Release status
+
+- **0.1 Mini-MVP**: completed (`v0.1.0-mini` semantics; see [32-mini-mvp-acceptance.md](docs/development/32-mini-mvp-acceptance.md))
+- **0.2 Practical MVP**: implemented as **`0.2.0a1`** — local acceptance passed 2026-06-21 (tag `v0.2.0a1`)
+- **0.3 Adapter MVP**: specification only — [36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md)
 
 ## Practical MVP (0.2)
 
@@ -146,7 +152,8 @@ ruff check .
 - [Development plan](DEVELOPMENT_PLAN.md)
 - [Complete development documentation](docs/development/README.md)
 - [0.x version roadmap (0.1→1.0)](docs/development/34-version-roadmap-0x.md)
-- [Next steps: finish 0.1, then 0.2](docs/development/33-next-steps-0.2.md)
+- [Next steps: 0.2 completed; 0.3 adapter MVP](docs/development/39-next-steps-0.3.md)
+- [0.3 adapter acceptance & design (36–38)](docs/development/36-adapter-mvp-0.3-acceptance.md)
 - [Mini run path](docs/development/25-mini-run-path.md)
 - [Practical MVP 0.2 acceptance](docs/development/35-practical-mvp-0.2-acceptance.md)
 - [Mini-MVP delivery log](docs/development/logs/2026-06-20-mini-mvp-delivery.md)
