@@ -57,16 +57,16 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 
 | # | Item | Pass criteria | Verified |
 |---|------|---------------|----------|
-| 1 | `review list` | Shows WAITING_APPROVAL / pending review runs with artifact paths | FAIL |
-| 2 | `review_required.md` | Present and listed in manifest for each listed run | FAIL |
-| 3 | `gate_result.json` | Present with valid `gate` for each listed run | FAIL |
-| 4 | `approve` | Writes review row; updates run review_status | FAIL |
-| 5 | `reject --reason` | Requires reason; terminal BLOCKED semantics | FAIL |
-| 6 | `defer` | Sets deferred_until; hidden from default `today` | FAIL |
-| 7 | `cancel` | Releases lock; auditable | FAIL |
-| 8 | `resume` | Only from legal checkpoint (0.4-a dependency) | FAIL |
+| 1 | `review list` | Shows WAITING_APPROVAL / pending review runs with artifact paths | PASS |
+| 2 | `review_required.md` | Present and listed in manifest for each listed run | PASS |
+| 3 | `gate_result.json` | Present with valid `gate` for each listed run | PASS |
+| 4 | `approve` | Direct-finalize patch runs (`TERMINATED`/`SUCCEEDED`/`pass`); no `resume_requested` | PASS |
+| 5 | `reject --reason` | Requires reason; terminal BLOCKED semantics | PASS |
+| 6 | `defer` | Sets deferred_until; hidden from default `today` | PASS |
+| 7 | `cancel` | Releases lock; auditable | PASS |
+| 8 | `resume` | Blocked after approve/reject/cancel; safe checkpoint only | PASS |
 | 9 | 0.4-b regression | inbox/queue/today still green | PASS |
-| 10 | Manifest | `human_readable: true` on MD, `false` on JSON gate/trace | FAIL |
+| 10 | Manifest | No self-entry; `human_readable` flags correct | PASS |
 
 ## Executable acceptance flow
 

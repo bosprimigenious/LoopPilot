@@ -79,8 +79,20 @@ def _record(
     results.append(StepResult(name, _display(cmd), passed, summary))
 
 
+def _clear_runtime_locks(repo: Path) -> None:
+    lock_dir = repo / "var" / "locks"
+    if not lock_dir.is_dir():
+        return
+    for path in lock_dir.iterdir():
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
 def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
     results: list[StepResult] = []
+    _clear_runtime_locks(repo)
     env = _venv_env(repo)
 
     for name, cmd in [

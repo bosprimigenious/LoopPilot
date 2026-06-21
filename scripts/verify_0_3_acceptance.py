@@ -64,8 +64,20 @@ def _check_daily_news_candidates(artifact_dir: Path, run_id_hint: str | None = N
     return False, "no daily-news run with all three candidate files"
 
 
+def _clear_runtime_locks(repo: Path) -> None:
+    lock_dir = repo / "var" / "locks"
+    if not lock_dir.is_dir():
+        return
+    for path in lock_dir.iterdir():
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
 def run_acceptance(repo: Path) -> list[StepResult]:
     results: list[StepResult] = []
+    _clear_runtime_locks(repo)
     artifact_dir = repo / "var" / "artifacts"
 
     def record(name: str, cmd: list[str], passed: bool, summary: str, notes: list[str] | None = None) -> None:

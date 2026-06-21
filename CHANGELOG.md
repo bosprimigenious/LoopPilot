@@ -2,21 +2,22 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #8 — truthful patch review acceptance)
+
+- **P0-1 patch review gate**: `patch.diff` + `SUCCEEDED` runs enter `WAITING_APPROVAL` / `PARTIAL` / `needs_review` via `mark_patch_run_waiting_review()`; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
+- **P0-2 direct-finalize approve**: `approve` on `patch.diff` runs sets `approved` + `TERMINATED` + `SUCCEEDED` + `gate=pass` without `resume_requested`; `resume()` rejects approved finalized runs.
+- **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself (avoids stale self-checksum).
+- **P1-2 report_path priority**: prefers `report.md`, `development-report.md`, `paper-development-report.md`, `daily-news-report.md`; manifest fallback only for `kind=="report"`.
+- **InternLoop**: patch-producing successful runs finalize to review gate in-loop; manifest `terminal_outcome` updated to `partial`.
+- **0.3 acceptance**: intern fixture/workspace expected outcome updated to `partial` (truthful review semantics).
+
 ### Added
 
-- **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, verify 22/22
-
-### Fixed (Codex PR #8 — truthful review gate)
-
-- **P0-1** Patch runs (`patch.diff`) enter `WAITING_APPROVAL` / `PARTIAL` / `needs_review` before human approval; `gate_result.json` is `needs_review`, not `pass`.
-- **P0-2** `approve` on patch runs directly finalizes (`TERMINATED` + `SUCCEEDED` + `gate=pass`); no `resume_requested` deadlock.
-- **P1-1** `artifact-manifest.json` excludes itself from the artifacts checksum list (no stale self-checksum).
-- **P1-2** `report_path` prefers canonical report filenames; manifest fallback accepts only `kind=report`.
-- Weekly summary `Completed` excludes `PARTIAL` / `WAITING_APPROVAL` / `needs_review` runs.
+- **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, patch-review behavior tests
 
 ### Stabilization
 
-- **0.4.0b1 stabilization in progress.** 0.4-c review layer delivered; Truthful 0.4 Milestone A aggregate gate may still have open items. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
+- **0.4.0b1 stabilization in progress.** Codex PR #8 patch-review truthful acceptance landed on `stabilize/0.4-truthful-acceptance`; `verify_0_4c_acceptance.py` READY (30/30). Historical note: pre-0.4.0b1 docs described `approve → resume_requested`; current semantics are **direct-finalize** for `patch.diff` runs. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
 
 ### Documentation
 
