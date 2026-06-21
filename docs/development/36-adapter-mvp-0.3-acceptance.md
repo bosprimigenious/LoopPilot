@@ -10,7 +10,7 @@ Version: **0.3.0a1** (adapter-mvp safety alpha)
 
 - [x] **0.2 acceptance passed** — see [35-practical-mvp-0.2-acceptance.md](35-practical-mvp-0.2-acceptance.md); Layer 2 demo profile green 2026-06-21
 - [x] Branch `adapter-mvp-0.3` — **on `adapter-mvp-0.3`** (2026-06-21 executable run)
-- [ ] Design docs reviewed: [37-adapter-safety-policy.md](37-adapter-safety-policy.md), [38-toolbroker-design.md](38-toolbroker-design.md) — files not present in repo
+- [x] Design docs reviewed: [37-adapter-safety-policy.md](37-adapter-safety-policy.md), [38-toolbroker-design.md](38-toolbroker-design.md) 
 - [x] Mini / 0.2 test baseline green on branch start — `pytest -q` → **109 passed** (2026-06-21)
 
 ## Executable acceptance (L1 / L2 / L3) — 2026-06-21
@@ -216,7 +216,7 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 3. [x] **`adapters list` / `adapters doctor`**: operational; mock always OK — Layer 4 PASS
 4. [ ] **ToolBroker**: all file/git/command/http from loops go through broker; bypass attempts fail tests — broker exists; loop bypass not closed
 5. [x] **Regression**: all 0.2 acceptance commands still pass with defaults unchanged — **L1 PASS** (2026-06-21 executable)
-6. [ ] **Documentation**: [39-next-steps-0.3.md](39-next-steps-0.3.md) phases marked complete — file not present
+6. [ ] **Documentation**: [39-next-steps-0.3.md](39-next-steps-0.3.md) phases marked complete
 
 ## Verdict (2026-06-21 executable)
 
@@ -243,6 +243,7 @@ loop-pilot run daily-news --real-sources --allow-real-adapters
 - [34-version-roadmap-0x.md §4](34-version-roadmap-0x.md#4-03-real-adapter-mvp030-adapter-mvp)
 - [19-adapter-specifications.md](19-adapter-specifications.md)
 - [30-adapter-and-model-router-roadmap.md](30-adapter-and-model-router-roadmap.md)
+- [37-adapter-safety-policy.md](37-adapter-safety-policy.md)
 - [38-toolbroker-design.md](38-toolbroker-design.md)
 - Run log: [logs/2026-06-21-0.3-executable-acceptance.md](logs/2026-06-21-0.3-executable-acceptance.md)
 - Prior run: [logs/2026-06-21-0.3-acceptance-run.md](logs/2026-06-21-0.3-acceptance-run.md)

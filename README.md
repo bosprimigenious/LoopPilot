@@ -82,7 +82,11 @@ loop-pilot run intern --workspace examples/intern_demo --adapter cursor_cli --dr
 | 日常中文理解 | [docs/zh/README.md](docs/zh/README.md) |
 | 英文接口规格（AI/CI） | [docs/en-core.md](docs/en-core.md) |
 | 开发文档索引 | [docs/development/README.md](docs/development/README.md) |
+| 0.x 版本路线图 | [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) |
+| 0.2 验收 | [docs/development/35-practical-mvp-0.2-acceptance.md](docs/development/35-practical-mvp-0.2-acceptance.md) |
 | 0.3 验收清单 | [docs/development/36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md) |
+| 0.3 安全 / ToolBroker | [37-adapter-safety-policy.md](docs/development/37-adapter-safety-policy.md) · [38-toolbroker-design.md](docs/development/38-toolbroker-design.md) |
+| 开发计划 | [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) |
 
 ## 安全
 

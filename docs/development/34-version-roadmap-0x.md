@@ -368,14 +368,24 @@ pytest -q
 
 | 文档 | 关系 |
 |------|------|
+| [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md) | 0.1 验收记录 |
+| [35-practical-mvp-0.2-acceptance.md](35-practical-mvp-0.2-acceptance.md) | 0.2 验收记录（2026-06-21） |
+| [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md) | **0.3 验收清单** |
+| [37-adapter-safety-policy.md](37-adapter-safety-policy.md) | 0.3 Adapter 安全策略 |
+| [38-toolbroker-design.md](38-toolbroker-design.md) | 0.3 ToolBroker 设计 |
+| [39-next-steps-0.3.md](39-next-steps-0.3.md) | **0.3 开发 Phase 1–8** |
 | [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md) | **0.4 权威规格** |
 | [41-next-steps-after-0.3.md](41-next-steps-after-0.3.md) | 0.3→0.4 行动顺序 |
-| [33-version-roadmap.md](33-version-roadmap.md) | semver 索引（含历史 0.6–0.8 详细规格） |
-| [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md) | Legacy V1/V2/V3 任务分解 |
-| [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md) | 0.3 验收 |
 | [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md) | **1.x 权威规格**（1.0–1.3） |
+| [33-version-roadmap.md](33-version-roadmap.md) | semver 索引（含历史 0.6–0.8 详细规格） |
+| [33-next-steps-0.2.md](33-next-steps-0.2.md) | 0.2 行动项（已完成） |
+| [31-v1-v2-v3-implementation-roadmap.md](31-v1-v2-v3-implementation-roadmap.md) | Legacy V1/V2/V3 任务分解 |
+| [30-adapter-and-model-router-roadmap.md](30-adapter-and-model-router-roadmap.md) | 0.3 Adapter/Router 技术细节 |
+| [25-mini-run-path.md](25-mini-run-path.md) | 0.1→0.3 最小路径 |
+| [09-versions.md](09-versions.md) | Legacy 能力描述；冲突以本文为准 |
 | [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md) | 0.x pivot 决策 |
 | [logs/2026-06-21-1x-roadmap-personal-stable.md](logs/2026-06-21-1x-roadmap-personal-stable.md) | 1.x 决策 |
+| [logs/2026-06-20-0.5-public-beta-spec.md](logs/2026-06-20-0.5-public-beta-spec.md) | 0.5 规划决策日志 |
 
 ## 16. Legacy 映射
 
