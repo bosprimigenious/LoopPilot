@@ -73,7 +73,7 @@ def run_acceptance(repo: Path) -> list[StepResult]:
 
     # L1.1 Mini
     mini_cmds: list[tuple[str, list[str], str | set[str]]] = [
-        ("L1.1 intern fixture", _loop_pilot("run", "intern", "--fixture", "simple_python_bug", "--dry-run"), "succeeded"),
+        ("L1.1 intern fixture", _loop_pilot("run", "intern", "--fixture", "simple_python_bug", "--dry-run"), "partial"),
         ("L1.1 paper fixture", _loop_pilot("run", "paper", "--fixture", "unsupported_claim", "--dry-run"), "partial"),
         ("L1.1 daily-news fixture", _loop_pilot("run", "daily-news", "--fixture", "github_star_snapshots", "--dry-run"), "succeeded"),
         ("L1.1 run all mini", _loop_pilot("run", "all", "--fixture-set", "mini", "--dry-run"), {"succeeded", "partial", "composite"}),
@@ -97,10 +97,10 @@ def run_acceptance(repo: Path) -> list[StepResult]:
 
     # L1.2 0.2 workspace
     workspace_cmds: list[tuple[str, list[str], str]] = [
-        ("L1.2 intern workspace", _loop_pilot("run", "intern", "--workspace", "examples/intern_demo", "--dry-run"), "succeeded"),
+        ("L1.2 intern workspace", _loop_pilot("run", "intern", "--workspace", "examples/intern_demo", "--dry-run"), "partial"),
         ("L1.2 paper workspace", _loop_pilot("run", "paper", "--workspace", "examples/paper_demo", "--dry-run"), "partial"),
         ("L1.2 daily-news demo", _loop_pilot("run", "daily-news", "--source-profile", "demo", "--dry-run"), "succeeded"),
-        ("L1.2 run all demo", _loop_pilot("run", "all", "--profile", "demo", "--dry-run"), "succeeded"),
+        ("L1.2 run all demo", _loop_pilot("run", "all", "--profile", "demo", "--dry-run"), {"succeeded", "partial", "composite"}),
     ]
     for name, cmd, expected in workspace_cmds:
         proc = _run(cmd, cwd=repo)

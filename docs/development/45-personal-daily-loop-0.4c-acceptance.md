@@ -42,14 +42,16 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 
 ## Verification status
 
-**Last run:** 2026-06-21 — **NOT READY** ([log](logs/2026-06-21-0.4c-verification-run.md))
+**Last run:** 2026-06-21 — see stabilization branch CI / `verify_0_4c_acceptance.py` (patch review gate behavior checks included).
 
-| Gate | Result |
-|------|--------|
-| Readiness (`verify_0_4c_acceptance.py`) | FAIL 0/16 |
-| 0.4-b prerequisite | PASS 27/27 |
-| 0.3 regression | PASS 19/20 (ruff F541 in verify script) |
-| Full acceptance chain | Not executed — implementation missing |
+### Review gate semantics (Codex PR #8)
+
+| Run state | Before approve | After approve (`patch.diff`) |
+|-----------|----------------|------------------------------|
+| phase | `WAITING_APPROVAL` | `TERMINATED` |
+| outcome | `PARTIAL` | `SUCCEEDED` |
+| gate | `needs_review` | `pass` |
+| resume | allowed from safe checkpoint | **blocked** — already finalized |
 
 ## Acceptance checklist
 

@@ -6,6 +6,14 @@
 
 - **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, verify 22/22
 
+### Fixed (Codex PR #8 — truthful review gate)
+
+- **P0-1** Patch runs (`patch.diff`) enter `WAITING_APPROVAL` / `PARTIAL` / `needs_review` before human approval; `gate_result.json` is `needs_review`, not `pass`.
+- **P0-2** `approve` on patch runs directly finalizes (`TERMINATED` + `SUCCEEDED` + `gate=pass`); no `resume_requested` deadlock.
+- **P1-1** `artifact-manifest.json` excludes itself from the artifacts checksum list (no stale self-checksum).
+- **P1-2** `report_path` prefers canonical report filenames; manifest fallback accepts only `kind=report`.
+- Weekly summary `Completed` excludes `PARTIAL` / `WAITING_APPROVAL` / `needs_review` runs.
+
 ### Stabilization
 
 - **0.4.0b1 stabilization in progress.** 0.4-c review layer delivered; Truthful 0.4 Milestone A aggregate gate may still have open items. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
