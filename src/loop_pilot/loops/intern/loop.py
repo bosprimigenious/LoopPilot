@@ -41,7 +41,7 @@ from loop_pilot.workspaces import WorkspaceSpec
 
 
 class InternLoop:
-    FIXTURE_ROOT = Path("tests/fixtures/intern")
+    FIXTURE_ROOT = Path(__file__).resolve().parents[4] / "tests" / "fixtures" / "intern"
 
     def __init__(
         self,
@@ -166,12 +166,7 @@ class InternLoop:
                     adapter.execute({"role": "coding", "round": round_num})
                     self.budget_manager.consume_model_call(record)
 
-                    if (
-                        round_num >= 2
-                        and not request.dry_run
-                        and not request.review_only
-                        and work_dir
-                    ):
+                    if round_num >= 2 and self._should_apply_controlled_fix(request, work_dir):
                         self._apply_fix(work_dir)
 
                     self._transition(record, RunPhase.EVALUATING, trace)
@@ -186,7 +181,11 @@ class InternLoop:
                 test_artifact = self._save_text(run_dir, f"test-report-round-{round_num:02d}.md", test_report, "test_runner")
                 artifacts.append(test_artifact)
 
-                evaluation = self._evaluate_tests(test_report, round_num)
+                evaluation = self._evaluate_tests(
+                    test_report,
+                    round_num,
+                    can_retry=self.budget_manager.can_retry(record),
+                )
                 round_record = RoundRecord(
                     round_id=round_num,
                     state_before=RunPhase.ACTING.value,
@@ -212,6 +211,14 @@ class InternLoop:
                     self._transition(record, RunPhase.REFLECTING, trace)
                     self._transition(record, RunPhase.REPLANNING, trace)
                     self._transition(record, RunPhase.POLICY_CHECK, trace)
+                    if self._should_apply_controlled_fix(request, work_dir):
+                        try:
+                            self._apply_fix(work_dir)
+                        except (InterruptedError, TimeoutError, OSError) as exc:
+                            record.outcome = RunOutcome.FAILED
+                            record.terminal_reason = f"ACTING interrupted: {exc}"
+                            trace.append({"event": "interrupted", "round": round_num, "error": str(exc)})
+                            return self._finalize(record, trace, run_dir, artifacts, rounds)
                     continue
 
                 record.outcome = RunOutcome.FAILED
@@ -316,13 +323,23 @@ class InternLoop:
             return worktree, worktree_root
         return prepare_git_worktree(fixture_dir / "input", dry_run)
 
+    def _should_apply_controlled_fix(self, request: RunRequest, work_dir: Path | None) -> bool:
+        return bool(work_dir) and not request.dry_run and not request.review_only
+
     def _apply_fix(self, work_dir: Path) -> None:
         target = work_dir / "src" / "calculator.py"
         if not target.exists():
             return
         content = target.read_text(encoding="utf-8")
-        if "return a - b" in content and "def add" in content:
-            target.write_text(content.replace("return a - b", "return a + b", 1), encoding="utf-8")
+        if "def add" not in content:
+            return
+        add_block, separator, remainder = content.partition("def subtract")
+        if "return a - b" not in add_block:
+            return
+        patched = add_block.replace("return a - b", "return a + b", 1)
+        if separator:
+            patched += separator + remainder
+        target.write_text(patched, encoding="utf-8")
 
     def _run_pytest(
         self,
@@ -353,12 +370,20 @@ class InternLoop:
         )
         return f"exit_code={result.returncode}\n\nstdout:\n{result.stdout}\n\nstderr:\n{result.stderr}"
 
-    def _evaluate_tests(self, test_report: str, round_num: int) -> EvaluationResult:
-        passed = "passed" in test_report.lower() and "failed" not in test_report.lower()
-        passed = passed or "exit_code=0" in test_report or "1 passed" in test_report
+    def _evaluate_tests(
+        self,
+        test_report: str,
+        round_num: int,
+        *,
+        can_retry: bool,
+    ) -> EvaluationResult:
+        passed = "exit_code=0" in test_report or "1 passed" in test_report
+        if not passed:
+            lowered = test_report.lower()
+            passed = "passed" in lowered and "failed" not in lowered
         if passed:
             verdict = EvaluationVerdict.PASS.value
-        elif round_num < 2:
+        elif can_retry:
             verdict = EvaluationVerdict.RETRYABLE_FAIL.value
         else:
             verdict = EvaluationVerdict.FATAL.value
