@@ -184,14 +184,33 @@ loop-pilot run daily --unattended --safe
 
 ## 8. 0.5-prep (parallel work, allowed now)
 
+**Status (2026-06-21):** 0.5-prep scaffolding delivered on `feat/0.5-safe-autonomy`. This is **0.5-prep only**, not full 0.5 implementation.
+
+Default config: `safety.stage: prep` (fail-closed). Set `safety.stage: ready` only after Truthful 0.4 Milestone A + readiness gate.
+
 The following may proceed **in parallel with 0.4-c** on a separate branch, but must **not** ship real unattended runs or default real schedule install:
 
 | Prep item | Allowed | Not allowed yet |
 |-----------|---------|-----------------|
-| SafetyGate type stubs / schema alignment | ✅ | wiring into live run path |
-| Schedule install dry implementation skeleton | ✅ | `--yes` default or live OS write |
-| `schedule status` / audit log schema | ✅ | — |
+| SafetyGate v1 + readiness gate | ✅ | Level 3+ in prep |
+| Schedule install dry-run / preview | ✅ | `--yes` OS write in prep |
+| `schedule status` / audit log schema | ✅ | cron/systemd reporting `installed: true` |
+| InstallStatus PREVIEWED/BLOCKED/INSTALLED | ✅ | — |
+| `verify_0_5_prep.py` | ✅ | `verify_0_5_acceptance.py` READY |
 | Unattended run log schema | ✅ | real `--unattended` execution |
+
+### Blocked paths in 0.5-prep (must BLOCK with clear message)
+
+| Command | Prep behavior |
+|---------|---------------|
+| `schedule install --yes` | SafetyGate `PREP_STAGE_BLOCKED`; no `schtasks /Create` |
+| `schedule uninstall --yes` | SafetyGate `PREP_STAGE_BLOCKED`; no `schtasks /Delete` |
+| `run daily --unattended --safe` | SafetyGate `PREP_STAGE_BLOCKED` |
+| `schedule install --dry-run` | ✅ WITHOUT OS write |
+
+Verify: `python scripts/verify_0_5_prep.py` → `0.5-prep: PASS` / `0.5-ready: NOT READY`
+
+Log: [logs/2026-06-21-0.5-prep-codex-fixes.md](logs/2026-06-21-0.5-prep-codex-fixes.md)
 
 ---
 

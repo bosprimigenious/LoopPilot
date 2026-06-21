@@ -4,8 +4,9 @@
 
 ### Added
 
+- **0.5-prep fail-closed safety** (Codex review): `readiness.py`, prep-stage BLOCKED for schedule install/uninstall and unattended daily; `InstallStatus` PREVIEWED/BLOCKED/INSTALLED; deferred review preserved on sync; `verify_0_5_prep.py`
 - **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, verify 22/22
-- **0.5-a SafetyGate v1**: `src/loop_pilot/safety/`; gated `schedule install --yes`; `schedule status`; `safety doctor`
+- **0.5-a SafetyGate v1**: `src/loop_pilot/safety/`; gated `schedule install --yes` (ready stage only); `schedule status`; `safety doctor`
 
 ### Stabilization
 
@@ -13,6 +14,9 @@
 
 ### Documentation
 
+- **0.5 Safe Autonomy (0.5-prep only)**: fail-closed prep scaffolding on `feat/0.5-safe-autonomy` — not full 0.5 implementation
+  - [logs/2026-06-21-0.5-prep-codex-fixes.md](docs/development/logs/2026-06-21-0.5-prep-codex-fixes.md) — Codex review fixes
+  - [verify_0_5_prep.py](scripts/verify_0_5_prep.py) — `0.5-prep: PASS` / `0.5-ready: NOT READY`
 - **0.5 Safe Autonomy (revised plan)**: SafetyGate first, no daemon — spec drafted; 0.5-prep allowed in parallel
   - [50-personal-daily-loop-0.5-spec.md](docs/development/50-personal-daily-loop-0.5-spec.md) — full spec (Steps 0–4, 0.5-a/b/c/d)
   - [52-0.5-revised-plan-rationale.md](docs/development/52-0.5-revised-plan-rationale.md) — why SafetyGate first, why 0.4-c blocker, why no daemon
