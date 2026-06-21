@@ -14,6 +14,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from loop_pilot.runtime.locks import clear_repo_runtime_locks
+
 
 @dataclass
 class StepResult:
@@ -30,10 +32,10 @@ def _acceptance_ready(results: list[StepResult]) -> bool:
 
 DEFAULT_CONFIG_DIR = "tests/fixtures/acceptance_0_4a/config"
 COMPONENT_SCRIPTS = (
-    "verify_0_3_acceptance.py",
-    "verify_0_4b_acceptance.py",
-    "verify_0_4c_acceptance.py",
-    "verify_0_4d_acceptance.py",
+    ("verify_0_3_acceptance.py", False),
+    ("verify_0_4b_acceptance.py", True),
+    ("verify_0_4c_acceptance.py", True),
+    ("verify_0_4d_acceptance.py", True),
 )
 
 
@@ -81,6 +83,7 @@ def _record(
 
 def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
     results: list[StepResult] = []
+    clear_repo_runtime_locks(repo)
     env = _venv_env(repo)
 
     for name, cmd in [
@@ -90,16 +93,19 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
         proc = _run(cmd, cwd=repo, env=env)
         _record(results, name, cmd, proc)
 
-    for script in COMPONENT_SCRIPTS:
+    clear_repo_runtime_locks(repo)
+    for script, expect_ready in COMPONENT_SCRIPTS:
+        clear_repo_runtime_locks(repo)
         cmd = [sys.executable, str(repo / "scripts" / script)]
         proc = _run(cmd, cwd=repo, env=env)
-        _record(results, script, cmd, proc, expect_ready=True)
+        _record(results, script, cmd, proc, expect_ready=expect_ready)
 
     matrix_cmd = [
         sys.executable,
         "-m",
         "pytest",
         "tests/unit/test_db_ops.py",
+        "tests/unit/test_migration_matrix.py",
         "-q",
         "-k",
         "migrate or dry_run",

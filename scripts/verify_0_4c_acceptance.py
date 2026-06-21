@@ -40,6 +40,15 @@ REQUIRED_CLI = ("review", "approve", "reject", "defer", "cancel", "resume")
 REQUIRED_TESTS = [
     "tests/unit/test_review_store.py",
     "tests/integration/test_review_cli.py",
+    "tests/unit/test_review_service_patch_gate.py",
+]
+BEHAVIOR_TESTS = [
+    "tests/unit/test_review_service_patch_gate.py::test_patch_run_enters_review_gate_before_success",
+    "tests/unit/test_review_service_patch_gate.py::test_approve_patch_run_finalizes_without_resume_deadlock",
+    "tests/unit/test_review_service_patch_gate.py::test_rejected_patch_run_cannot_resume",
+    "tests/unit/test_review_service_patch_gate.py::test_cancelled_patch_run_cannot_resume",
+    "tests/unit/test_terminal_artifacts.py::test_manifest_does_not_include_stale_self_checksum",
+    "tests/unit/test_summary_collector.py::test_report_path_prefers_actual_report_over_markdown_logs",
 ]
 
 
@@ -153,6 +162,12 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
         cmd = [sys.executable, "-m", "pytest", test_path, "-q"]
         proc = _run(cmd, cwd=repo)
         record(f"pytest {test_path}", cmd, proc.returncode == 0, proc.stdout.strip().splitlines()[-1] if proc.stdout else f"rc={proc.returncode}")
+
+    for test_target in BEHAVIOR_TESTS:
+        cmd = [sys.executable, "-m", "pytest", test_target, "-q"]
+        proc = _run(cmd, cwd=repo)
+        label = test_target.rsplit("/", 1)[-1]
+        record(f"behavior {label}", cmd, proc.returncode == 0, proc.stdout.strip().splitlines()[-1] if proc.stdout else f"rc={proc.returncode}")
 
     cmd = [sys.executable, "-m", "loop_pilot.cli", "approve", "--help"]
     proc = _run(cmd, cwd=repo)

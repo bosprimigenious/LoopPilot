@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -9,7 +10,7 @@ from zoneinfo import ZoneInfo
 from loop_pilot.domain.models import RunRecord
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.storage.sqlite import SQLiteStateStore
-from loop_pilot.summary.collector import SummaryCollector
+from loop_pilot.summary.collector import SummaryCollector, report_path
 from loop_pilot.summary.renderer import render_daily_summary, render_weekly_summary
 from loop_pilot.tasks.inbox_service import InboxService
 from loop_pilot.tasks.queue_service import QueueService
@@ -87,3 +88,25 @@ def test_collect_weekly_builds_stats(tmp_path: Path) -> None:
 
     assert "Weekly Summary" in text
     assert data.week == week_label
+
+
+def test_report_path_prefers_actual_report_over_markdown_logs(tmp_path: Path) -> None:
+    artifact_dir = tmp_path / "artifacts"
+    run_dir = artifact_dir / "intern" / "run-report-001"
+    run_dir.mkdir(parents=True)
+    (run_dir / "development-report.md").write_text("# Development report\n", encoding="utf-8")
+    (run_dir / "diff-summary.md").write_text("# Diff summary\n", encoding="utf-8")
+    manifest = {
+        "run_id": "run-report-001",
+        "loop_type": "intern",
+        "artifacts": [
+            {"path": "diff-summary.md", "sha256": "abc", "human_readable": True, "kind": "log"},
+            {"path": "development-report.md", "sha256": "def", "human_readable": True, "kind": "report"},
+        ],
+    }
+    (run_dir / "artifact-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    resolved = report_path(artifact_dir, "intern", "run-report-001")
+    assert resolved is not None
+    assert resolved.endswith("development-report.md")
+    assert not resolved.endswith("diff-summary.md")

@@ -11,7 +11,7 @@ from loop_pilot.cli import app
 @pytest.mark.parametrize(
     "args,expected_outcome",
     [
-        (["run", "intern", "--workspace", "examples/intern_demo", "--dry-run"], "succeeded"),
+        (["run", "intern", "--workspace", "examples/intern_demo", "--dry-run"], "partial"),
         (["run", "paper", "--workspace", "examples/paper_demo", "--dry-run"], "partial"),
         (["run", "daily-news", "--source-profile", "demo", "--dry-run"], "succeeded"),
         (["run", "all", "--profile", "demo", "--dry-run"], "succeeded"),
@@ -23,7 +23,7 @@ def test_practical_mvp_cli_commands(args: list[str], expected_outcome: str) -> N
     assert result.exit_code == 0, result.output
     if args[1] == "all":
         assert "daily_news: succeeded" in result.output
-        assert "intern: succeeded" in result.output
+        assert "intern: partial" in result.output
         assert "paper: partial" in result.output
     else:
         assert f"completed: {expected_outcome}" in result.output
