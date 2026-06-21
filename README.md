@@ -1,173 +1,95 @@
 # LoopPilot
 
-> Part of the Loop Engineering Ecosystem.
+> Loop Engineering 生态的运行时层 — 受控 AI 工作闭环，可审计产物，默认安全。
 
-LoopPilot is the runtime layer. It runs controlled AI work loops, manages state, calls adapters, and produces auditable artifacts.
+**30 秒理解：** 每天三条约 30 分钟的 Loop（开发 / 论文 / 高价值资讯），由统一 Runtime 编排；默认 MockAdapter + dry-run，真实模型需显式开启。
 
-For rubric-based evaluation of LoopPilot outputs, see [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner).
+English spec: see [docs/en-core.md](docs/en-core.md)
 
-LoopPilot is a controlled runtime for three personal AI work loops:
+## 三条循环
 
-- **InternLoop**: resolve one real development problem with verification.
-- **PaperLoop**: advance one evidence-backed research or writing gap.
-- **DailyNewsLoop**: select high-value engineering and research signals from offline snapshots.
+| Loop | 做什么 |
+|------|--------|
+| **InternLoop** | 解决一个真实开发问题，测试验证后出报告 |
+| **PaperLoop** | 推进一个论文缺口，证据可查后出报告 |
+| **DailyNewsLoop** | 从离线快照筛少量高价值信号，写入 Inbox |
 
-## Canonical names
+## 当前版本（0.x · 个人优先）
 
-- Product/project: `LoopPilot`
-- GitHub repository: [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot)
-- Distribution name: `loop-pilot`
-- CLI command: `loop-pilot`
-- Python import and source package: `loop_pilot`
+> LoopPilot = **个人开发助手 + 论文推进器 + 信息筛选器 + 每日任务 OS** — 0.x 让**一个人每天真的能用**；1.x：**1.0 稳定 → 1.1 智能 → 1.2 协作 → 1.3 团队 preview**。
 
-The unseparated lowercase form `looppilot` is not used for commands, imports, or source paths.
+| 版本 | 状态 |
+|------|------|
+| **0.1** Mini-MVP | ✅ 已完成 — fixture dry-run |
+| **0.2** Practical MVP | ✅ 已验收 `v0.2.0a1` — demo workspace |
+| **0.3** Adapter MVP | 🔄 进行中 `v0.3.0a1` — Mock→Real Adapter |
+| **0.4** Personal Daily Loop | 📋 下一 — inbox/queue/today、review、summary |
+| 0.5–0.9 | 个人 Beta → RC |
+| **1.x** | 1.0 个人稳定 → 1.1 智能 → 1.2 受控协作 → 1.3 团队 preview |
 
-## Version roadmap (0.x)
+详情：[docs/zh/03-版本路线图.md](docs/zh/03-版本路线图.md) · [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md)
 
-LoopPilot uses a **0.x release track** (not simple "V1" naming):
-
-| Version | Name | Focus |
-|---------|------|-------|
-| **0.1** | mini | Three dry-run Loops, MockAdapter, CI — **completed** |
-| **0.2** | practical-mvp | Controlled demo workspaces, dry-run/report — **0.2.0a1 candidate, acceptance passed** |
-| **0.3** | adapter-mvp | Mock→Real Adapter, ToolBroker — **planned** (see docs 36–39) |
-| 0.4 | recovery-and-automation | SQLite, recovery, approval, scheduling |
-| 0.5 | public-beta | PyPI, init demo, open-source onboarding |
-| 0.6 | plugin-ecosystem | Local plugins; custom Loop/Skill/Connector |
-| 0.7 | evaluation-benchmark | Benchmarks, model comparison, Eval reports |
-| 0.8 | team-cloud-preview | Project workspaces, roles, Dashboard preview |
-| 0.9 | release-candidate | API/config/DB freeze, security audit, doc freeze — **no new features** |
-| 1.0 | stable | Formal semver stability promise after 0.9 RC |
-
-See [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) for full milestones.
-
-## Release status
-
-- **0.1 Mini-MVP**: completed (`v0.1.0-mini` semantics; see [32-mini-mvp-acceptance.md](docs/development/32-mini-mvp-acceptance.md))
-- **0.2 Practical MVP**: implemented as **`0.2.0a1`** — local acceptance passed 2026-06-21 (tag `v0.2.0a1`)
-- **0.3 Adapter MVP**: specification only — [36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md)
-
-## Practical MVP (0.2)
-
-0.2 moves from pure fixtures to **controlled demo workspaces** under `examples/`, still defaulting to **MockAdapter + dry-run**. Human review is Markdown-only (`review-required.md`, `next-actions.md`) — no approve/reject CLI yet.
-
-Demo commands:
-
-```bash
-loop-pilot run intern --workspace examples/intern_demo --dry-run
-loop-pilot run paper --workspace examples/paper_demo --dry-run
-loop-pilot run daily-news --source-profile demo --dry-run
-loop-pilot run all --profile demo --dry-run
-```
-
-Acceptance checklist: [docs/development/35-practical-mvp-0.2-acceptance.md](docs/development/35-practical-mvp-0.2-acceptance.md)
-
-0.1 `--fixture` commands remain supported for regression.
-
-## Mini-MVP status (0.1)
-
-Mini-MVP is an **architecture scaffold** with deterministic offline scenarios. It proves orchestration, state transitions, Policy Gate, Artifact Manifest, JSONL trace, and Markdown reports without connecting to real external systems.
-
-0.1 defaults:
-
-- `runtime.allow_real_adapters: false` — only `MockAdapter` is permitted unless explicitly enabled
-- `runtime.state_backend: json` — local JSON snapshot store (no SQLite recovery in 0.1)
-- No real Cursor CLI, Codex, DeepSeek API, private workspaces, or live crawlers
-- No `resume`, `approve`, `reject`, or `cancel` CLI commands (deferred to **0.4**)
-
-Later stages: 0.2 adds real workspaces; 0.3 adds real adapters; 0.4 adds SQLite recovery and scheduling.
-
-## Acceptance commands
-
-Run these from the repository root after install:
-
-```bash
-python -m pip install -e ".[dev]"
-loop-pilot doctor
-pytest -q
-loop-pilot run intern --fixture simple_python_bug --dry-run
-loop-pilot run paper --fixture unsupported_claim --dry-run
-loop-pilot run daily-news --fixture github_star_snapshots --dry-run
-loop-pilot run all --fixture-set mini --dry-run
-loop-pilot run intern --workspace examples/intern_demo --dry-run
-loop-pilot run paper --workspace examples/paper_demo --dry-run
-loop-pilot run daily-news --source-profile demo --dry-run
-loop-pilot run all --profile demo --dry-run
-loop-pilot status
-```
-
-Optional bootstrap for first-time setup:
-
-```bash
-python scripts/bootstrap_local.py
-```
-
-## Quick start
+## 快速开始
 
 ```bash
 pip install -e ".[dev]"
-python scripts/bootstrap_local.py
+python scripts/bootstrap_local.py   # 可选，首次
 loop-pilot doctor
+pytest -q
 ```
 
-## V1/MVP commands (SQLite backend)
-
-When `runtime.state_backend: sqlite` is configured:
+跑 demo workspace（0.2）：
 
 ```bash
-loop-pilot resume <run-id>
-loop-pilot approve <run-id>
-loop-pilot reject <run-id> --reason "..."
-loop-pilot cancel <run-id>
-loop-pilot report <run-id>
-python scripts/migrate_state.py --dry-run
-python scripts/backup_state.py --dry-run
-python scripts/install_scheduler.py --dry-run
-python scripts/run_regression.py --dry-run
+loop-pilot run intern --workspace examples/intern_demo --dry-run
+loop-pilot run paper --workspace examples/paper_demo --dry-run
+loop-pilot run daily-news --source-profile demo --dry-run
+loop-pilot run all --profile demo --dry-run
 ```
 
-Mini JSON backend rejects V1 recovery commands by design.
-
-## Mini commands
+跑 fixture 回归（0.1）：
 
 ```bash
-loop-pilot doctor
 loop-pilot run intern --fixture simple_python_bug --dry-run
 loop-pilot run paper --fixture unsupported_claim --dry-run
 loop-pilot run daily-news --fixture github_star_snapshots --dry-run
 loop-pilot run all --fixture-set mini --dry-run
-loop-pilot status
-loop-pilot inspect <run-id>
 ```
 
-## Run tests
+0.3 Adapter 探测（默认被拦截）：
 
 ```bash
-pytest -q
-ruff check .
+loop-pilot adapters list
+loop-pilot adapters doctor
+loop-pilot run intern --workspace examples/intern_demo --adapter cursor_cli --dry-run
+# expect: blocked（allow_real_adapters=false）
 ```
 
-## Documentation
+## 命名规范
 
-- [Development plan](DEVELOPMENT_PLAN.md)
-- [Complete development documentation](docs/development/README.md)
-- [0.x version roadmap (0.1→1.0)](docs/development/34-version-roadmap-0x.md)
-- [Next steps: 0.2 completed; 0.3 adapter MVP](docs/development/39-next-steps-0.3.md)
-- [0.3 adapter acceptance & design (36–38)](docs/development/36-adapter-mvp-0.3-acceptance.md)
-- [Mini run path](docs/development/25-mini-run-path.md)
-- [Practical MVP 0.2 acceptance](docs/development/35-practical-mvp-0.2-acceptance.md)
-- [Mini-MVP delivery log](docs/development/logs/2026-06-20-mini-mvp-delivery.md)
-- [Cursor Mini implementation prompt](prompts/CURSOR_MINI_IMPLEMENTATION_PROMPT.md)
+| 用途 | 名称 |
+|------|------|
+| 产品 / 项目 | `LoopPilot` |
+| CLI / PyPI | `loop-pilot` |
+| Python 包 | `loop_pilot` |
 
-## Deferred (0.3+)
+不使用未分隔的小写 `looppilot`。
 
-- **0.3**: real model/CLI adapters (`allow_real_adapters` gated)
-- **0.4**: `resume`, `approve`, `reject`, `cancel`, SQLite recovery, OS scheduling
-- **0.5**: PyPI publishing, init demo, open-source docs
-- **0.6–0.8**: plugins, eval benchmarks, team preview (documented only)
-- **0.9**: stability freeze / RC — testing and docs, not features
-- **1.0**: stable release after 0.9 RC
+## 文档入口
 
-## Safety
+| 读什么 | 去哪 |
+|--------|------|
+| 日常中文理解 | [docs/zh/README.md](docs/zh/README.md) |
+| 英文接口规格（AI/CI） | [docs/en-core.md](docs/en-core.md) |
+| 开发文档索引 | [docs/development/README.md](docs/development/README.md) |
+| 0.x 版本路线图 | [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) |
+| 0.2 验收 | [docs/development/35-practical-mvp-0.2-acceptance.md](docs/development/35-practical-mvp-0.2-acceptance.md) |
+| 0.3 验收清单 | [docs/development/36-adapter-mvp-0.3-acceptance.md](docs/development/36-adapter-mvp-0.3-acceptance.md) |
+| 0.3 安全 / ToolBroker | [37-adapter-safety-policy.md](docs/development/37-adapter-safety-policy.md) · [38-toolbroker-design.md](docs/development/38-toolbroker-design.md) |
+| 开发计划 | [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) |
 
-Read [SECURITY.md](SECURITY.md) before adding Adapters, Tools, or credentials.
+## 安全
+
+接入 Adapter、Tool 或凭据前，请阅读 [SECURITY.md](SECURITY.md) 与 [docs/development/37-adapter-safety-policy.md](docs/development/37-adapter-safety-policy.md)。
+
+评估 LoopPilot 输出质量可使用外部工具 [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner)。

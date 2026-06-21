@@ -49,7 +49,7 @@ class TestRunAll:
     def test_startup_failure_is_persisted_for_status_and_inspect(
         self, orchestrator: Orchestrator, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        def fail_before_loop(loop_type: str):  # noqa: ARG001
+        def fail_before_loop(loop_type: str, *, router=None):  # noqa: ARG001, ANN001
             raise RuntimeError("startup adapter failure")
 
         monkeypatch.setattr(orchestrator, "_get_loop", fail_before_loop)

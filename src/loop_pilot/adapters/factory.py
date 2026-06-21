@@ -1,28 +1,18 @@
-"""Unified adapter registry and factory for V1 routing."""
+"""Unified adapter registry and factory for 0.3 routing."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
-from loop_pilot.adapters.api_model import APIModelAdapter, APIModelConfig
-from loop_pilot.adapters.coding_cli import CodingCLIAdapter
+from loop_pilot.adapters.cursor_cli import CursorCLIAdapter
+from loop_pilot.adapters.errors import AdapterBlockedError
 from loop_pilot.adapters.mock_adapter import MockAdapter
-from loop_pilot.adapters.registry import adapter_kind, assert_real_adapters_allowed
+from loop_pilot.adapters.openai_compatible import OpenAICompatibleAdapter, OpenAICompatibleConfig
+from loop_pilot.adapters.preflight import validate_adapter_run
+from loop_pilot.adapters.registry import adapter_kind, assert_real_adapters_allowed, is_real_adapter_kind
 from loop_pilot.domain.errors import ErrorCode, LoopPilotError
 from loop_pilot.models.router import ModelRouter, RouterDecision
-
-
-class AdapterBlockedError(LoopPilotError):
-    def __init__(self, role: str, reason: str) -> None:
-        super().__init__(
-            code=ErrorCode.POLICY_DENIED,
-            component="adapter_factory",
-            message=f"Role {role} blocked: {reason}",
-            retryable=False,
-        )
-        self.role = role
-        self.reason = reason
 
 
 def create_adapter(
@@ -32,10 +22,30 @@ def create_adapter(
     fixture_dir: Path | None = None,
     artifact_dir: Path | None = None,
     data_class: str = "PROJECT",
-) -> MockAdapter | CodingCLIAdapter | APIModelAdapter:
+    adapter_override: str | None = None,
+) -> MockAdapter | CursorCLIAdapter | OpenAICompatibleAdapter:
     """Resolve role via ModelRouter and instantiate the selected adapter."""
+    if adapter_override:
+        adapter_config = router.adapter_config(adapter_override)
+        kind = adapter_kind(adapter_config)
+        if is_real_adapter_kind(kind) and not router.allow_real_adapters:
+            raise AdapterBlockedError(role, f"adapter {adapter_override} blocked by allow_real_adapters=false")
+        validate_adapter_run(
+            adapter_override,
+            adapter_config,
+            allow_real_adapters=router.allow_real_adapters,
+        )
+        return build_adapter(
+            adapter_override,
+            adapter_config,
+            fixture_dir=fixture_dir,
+            artifact_dir=artifact_dir,
+            allow_real_adapters=router.allow_real_adapters,
+        )
+
     if not router.allow_real_adapters:
         return MockAdapter(fixture_dir)
+
     decision = router.resolve_role(role, data_class=data_class)
     if decision.blocked or decision.adapter_id is None:
         raise AdapterBlockedError(role, decision.reason or "no capable adapter")
@@ -55,12 +65,12 @@ def build_adapter(
     fixture_dir: Path | None = None,
     artifact_dir: Path | None = None,
     allow_real_adapters: bool = False,
-) -> MockAdapter | CodingCLIAdapter | APIModelAdapter:
+) -> MockAdapter | CursorCLIAdapter | OpenAICompatibleAdapter:
     kind = adapter_kind(adapter_config)
     if kind == "mock" or adapter_id == "mock":
         return MockAdapter(fixture_dir)
     assert_real_adapters_allowed(kind, allow_real_adapters)
-    if kind == "cli":
+    if kind in {"cli", "cursor_cli"}:
         command = adapter_config.get("command")
         if not isinstance(command, list) or not command:
             raise LoopPilotError(
@@ -69,21 +79,24 @@ def build_adapter(
                 message=f"CLI adapter {adapter_id} missing command array",
             )
         worktree = fixture_dir or Path(".")
-        return CodingCLIAdapter(
+        timeout = float(adapter_config.get("timeout_seconds", 900))
+        return CursorCLIAdapter(
             adapter_id=adapter_id,
             command=command,
             approved_worktree=worktree,
             artifact_dir=artifact_dir or Path("var/artifacts"),
+            timeout_seconds=timeout,
             env_allowlist=list(adapter_config.get("env_allowlist", [])),
         )
-    if kind == "api":
-        config = APIModelConfig(
+    if kind in {"api", "openai_compatible"}:
+        config = OpenAICompatibleConfig(
             provider=str(adapter_config.get("provider", "openai_compatible")),
             endpoint=str(adapter_config.get("endpoint", "")),
             model=str(adapter_config.get("model", "")),
-            auth_env=str(adapter_config.get("auth_env", "")),
+            auth_env=adapter_config.get("auth_env"),
+            timeout_seconds=int(adapter_config.get("timeout_seconds", 60)),
         )
-        return APIModelAdapter.from_config(
+        return OpenAICompatibleAdapter.from_config(
             adapter_id,
             config,
             artifact_dir or Path("var/artifacts"),
@@ -94,3 +107,19 @@ def build_adapter(
 def resolve_or_block(router: ModelRouter, role: str, *, data_class: str = "PROJECT") -> RouterDecision:
     """Return routing decision; callers treat blocked=True as run-level BLOCKED."""
     return router.resolve_role(role, data_class=data_class)
+
+
+def list_adapters(models_config: dict[str, Any]) -> list[dict[str, Any]]:
+    adapters = models_config.get("adapters", {})
+    entries: list[dict[str, Any]] = []
+    for adapter_id, cfg in adapters.items():
+        kind = adapter_kind(cfg if isinstance(cfg, dict) else {})
+        entries.append(
+            {
+                "id": adapter_id,
+                "kind": kind,
+                "real": is_real_adapter_kind(kind),
+                "timeout_seconds": (cfg or {}).get("timeout_seconds"),
+            }
+        )
+    return entries

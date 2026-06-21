@@ -1,6 +1,8 @@
 # 33 版本路线图（0.1 — 1.0）
 
-本文是 LoopPilot **权威版本编号与阶段边界**。所有新文档、Prompt、Issue 和 PR 描述应优先使用本文的 semver 标签（`0.1.0-mini`、`0.2.0-practical-mvp` 等），而不是历史称呼「V1」「V2」。
+> **个人优先 pivot（2026-06-21）**：阶段边界与 0.4 四子阶段以 **[34-version-roadmap-0x.md](34-version-roadmap-0x.md)** 为权威；**0.4 规格** → [40-personal-daily-loop-0.4-spec.md](40-personal-daily-loop-0.4-spec.md)。本文保留 semver 标签与 **0.6–0.8 历史详细规格**；其中 **0.8 team-cloud 已后移至 1.1+**，0.5 public beta 口径已调整为 **0.5 Personal Beta + 0.8 Optional Public**。决策日志 → [logs/2026-06-21-personal-first-roadmap-pivot.md](logs/2026-06-21-personal-first-roadmap-pivot.md)。
+
+本文是 LoopPilot **semver 标签与阶段边界索引**。所有新文档、Prompt、Issue 和 PR 描述应优先使用本文的 semver 标签（`0.1.0-mini`、`0.2.0-practical-mvp` 等），而不是历史称呼「V1」「V2」。
 
 > **关键澄清：0.3 ≠ V1。**  
 > 旧文档中的「V1/MVP」混合了 Adapter 接入、真实工作区、SQLite 恢复和 OS 调度。新编号将其拆分为 **0.2（实用配置）→ 0.3（真实 Adapter）→ 0.4（恢复与自动化）→ 0.5（公开测试）→ 0.6（插件生态）→ 0.7（评测基准）→ 0.8（团队协作）→ 0.9（RC）→ 1.0（稳定 API）**。  
@@ -8,9 +10,13 @@
 
 ## 当前工程焦点
 
-**0.1.0-mini（Mini-MVP，Phase A）** 是当前唯一应推进的实现阶段。0.2–1.0 均为**文档规划**；在完成 Phase A 验收清单前，不得把 0.3+ 能力接入每日主运行链，也不得把未验收代码标称为更高版本。
+- **0.1** ✅ 已完成
+- **0.2** ✅ 已验收 `v0.2.0a1`
+- **0.3** 🔄 进行中 `v0.3.0a1`（Adapter MVP）
+- **0.4** 📋 下一 — Personal Recovery & Daily Loop
+- **1.1+** Team / Cloud（**不进 0.x**）
 
-验收细节见 [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md)。
+验收细节见 [32-mini-mvp-acceptance.md](32-mini-mvp-acceptance.md)、[36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md)。
 
 ---
 
@@ -250,18 +256,18 @@ loop-pilot status
 
 | 命令 | 必须 | 说明 |
 |---|---|---|
-| `loop-pilot resume <run-id>` | ✅ | 从最新合法 checkpoint 恢复；非法则明确错误 |
-| `loop-pilot approve <run-id>` | ✅ | `WAITING_APPROVAL` → 允许继续 |
-| `loop-pilot reject <run-id> --reason "..."` | ✅ | 终止为 BLOCKED，可审计 |
-| `loop-pilot cancel <run-id> [--reason]` | ✅ | 用户取消，释放锁 |
-| `loop-pilot report <run-id>` | ✅ | 摘要 + 是否可 resume |
+| `loop-pilot resume <run-id>` | 通过 | 从最新合法 checkpoint 恢复；非法则明确错误 |
+| `loop-pilot approve <run-id>` | 通过 | `WAITING_APPROVAL` → 允许继续 |
+| `loop-pilot reject <run-id> --reason "..."` | 通过 | 终止为 BLOCKED，可审计 |
+| `loop-pilot cancel <run-id> [--reason]` | 通过 | 用户取消，释放锁 |
+| `loop-pilot report <run-id>` | 通过 | 摘要 + 是否可 resume |
 | `loop-pilot pending` | 可选 | 列出待审批 run |
 | `loop-pilot history [--limit N]` | 可选 | 近期 run 与 outcome |
 | `loop-pilot recovery-scan` | 可选 | 扫描中断/遗留 run |
-| `loop-pilot schedule print` | ✅ | 打印调度配置（不写系统） |
-| `loop-pilot schedule install --dry-run` | ✅ | 预览安装命令/脚本 |
+| `loop-pilot schedule print` | 通过 | 打印调度配置（不写系统） |
+| `loop-pilot schedule install --dry-run` | 通过 | 预览安装命令/脚本 |
 | `loop-pilot schedule install --yes` | 后期 | 实际注册任务（单一 OS 入口） |
-| `loop-pilot summary today` | ✅ | 生成/刷新当日 `daily-summary.md` |
+| `loop-pilot summary today` | 通过 | 生成/刷新当日 `daily-summary.md` |
 
 所有 0.4 命令要求 `runtime.state_backend=sqlite`（或等价配置）；0.1 JSON 后端下应拒绝并提示版本边界。
 

@@ -151,3 +151,4 @@ Adapter **不得**内嵌任意 shell 执行绕过 Broker；CodingCLIAdapter 仅�
 - [19-adapter-specifications.md](19-adapter-specifications.md)
 - [38-toolbroker-design.md](38-toolbroker-design.md)
 - [36-adapter-mvp-0.3-acceptance.md](36-adapter-mvp-0.3-acceptance.md)
+- [34-version-roadmap-0x.md](34-version-roadmap-0x.md)

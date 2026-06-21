@@ -63,6 +63,32 @@ class HealthStatus:
         return {"status": self.status, "adapter_id": self.adapter_id, "message": self.message}
 
 
+AdapterHealth = HealthStatus
+
+
+@dataclass
+class AdapterRequest:
+    role: str = "default"
+    messages: list[dict[str, Any]] = field(default_factory=list)
+    cwd: str | None = None
+    dry_run: bool = False
+    target_path: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "role": self.role,
+            "messages": self.messages,
+            "dry_run": self.dry_run,
+            "metadata": self.metadata,
+        }
+        if self.cwd is not None:
+            payload["cwd"] = self.cwd
+        if self.target_path is not None:
+            payload["target_path"] = self.target_path
+        return payload
+
+
 @dataclass
 class AdapterResult:
     status: str

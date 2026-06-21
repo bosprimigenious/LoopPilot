@@ -23,7 +23,7 @@ Mini 不交付：真实 API/CLI、SQLite 真续跑、`resume`/`approve`/`reject`
 ## 推荐实施顺序
 
 ```
-0.1 Mini-MVP ✅
+0.1 Mini-MVP（已完成）
     ↓
 0.2 Practical MVP — workspace 配置、dry-run 报告、Inbox 结构
     ↓

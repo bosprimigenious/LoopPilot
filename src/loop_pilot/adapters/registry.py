@@ -6,7 +6,7 @@ from typing import Any
 
 from loop_pilot.domain.errors import ErrorCode, LoopPilotError
 
-REAL_ADAPTER_KINDS = frozenset({"cli", "api"})
+REAL_ADAPTER_KINDS = frozenset({"cli", "api", "cursor_cli", "openai_compatible"})
 
 
 def adapter_kind(adapter_config: dict[str, Any]) -> str:

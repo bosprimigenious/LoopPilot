@@ -19,3 +19,22 @@ profiles:
         path: examples/daily_news_demo/items.json
         tier: B
         enabled: true
+
+  live-small:
+    minimum_confidence: medium
+    sources:
+      - id: github_fixture
+        kind: github
+        path: tests/fixtures/daily_news/github_star_snapshots/input/snapshots/github_day2.json
+        tier: B
+        enabled: true
+      - id: arxiv_fixture
+        kind: arxiv
+        path: tests/fixtures/daily_news/github_star_snapshots/input/paper_signal.json
+        tier: B
+        enabled: true
+      - id: rss_fixture
+        kind: rss
+        path: tests/fixtures/daily_news/github_star_snapshots/input/snapshots/github_day1.json
+        tier: C
+        enabled: true

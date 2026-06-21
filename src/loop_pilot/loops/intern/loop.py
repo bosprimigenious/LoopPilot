@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import shutil
 from pathlib import Path
 from typing import Any, Callable
 
-from loop_pilot.adapters.factory import AdapterBlockedError, create_adapter
+from loop_pilot.adapters.errors import AdapterBlockedError
+from loop_pilot.adapters.factory import create_adapter
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -107,6 +109,7 @@ class InternLoop:
         run_dir = self.artifact_dir / "intern" / record.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         trace = TraceWriter(run_dir / "trace.jsonl")
+        adapter_trace = TraceWriter(run_dir / "adapter-call-trace.jsonl")
 
         rounds: list[RoundRecord] = []
         artifacts: list[ArtifactReference] = []
@@ -116,6 +119,7 @@ class InternLoop:
                 "coding_agent",
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
+                adapter_override=request.adapter_override,
             )
         except AdapterBlockedError as exc:
             self._enter_observing(record, trace)
@@ -175,8 +179,16 @@ class InternLoop:
                         self._transition(record, RunPhase.ACTING, trace)
                     elif self._phase_hook is not None:
                         self._phase_hook(record)
-                    adapter.execute({"role": "coding", "round": round_num})
+                    adapter_result = adapter.execute({"role": "coding", "round": round_num, "dry_run": request.dry_run})
                     self.budget_manager.consume_model_call(record)
+                    adapter_trace.append(
+                        {
+                            "event": "adapter_call",
+                            "round": round_num,
+                            "status": adapter_result.status,
+                            "duration_ms": adapter_result.duration_ms,
+                        }
+                    )
 
                     if round_num >= 2 and self._should_apply_controlled_fix(request, work_dir):
                         self._apply_fix(work_dir)
@@ -246,6 +258,16 @@ class InternLoop:
             diff_summary = self._build_diff_summary(work_dir, request.dry_run)
             diff_artifact = self._save_text(run_dir, "diff-summary.md", diff_summary, "worker")
             artifacts.append(diff_artifact)
+            patch_artifact = self._save_text(run_dir, "patch.diff", diff_summary, "worker")
+            artifacts.append(patch_artifact)
+
+            tool_results = {
+                "pytest_rounds": len(rounds),
+                "adapter_calls": round_num,
+                "dry_run": request.dry_run,
+            }
+            tool_artifact = self._save_json(run_dir, "tool-results.json", tool_results, "tool_broker")
+            artifacts.append(tool_artifact)
 
             manifest_rel = f"intern/{record.run_id}/artifact-manifest.json"
             report_body = {
@@ -425,6 +447,20 @@ class InternLoop:
         if dry_run or work_dir is None:
             return "Dry-run: would patch src/calculator.py (a - b -> a + b)"
         return git_diff_summary(work_dir)
+
+    def _save_json(self, run_dir: Path, name: str, data: object, created_by: str) -> ArtifactReference:
+        path = run_dir / name
+        content = json.dumps(data, indent=2)
+        path.write_text(content, encoding="utf-8")
+        return ArtifactReference(
+            artifact_id=f"{run_dir.name}-{name}",
+            kind="log",
+            path=str(path),
+            media_type="application/json",
+            sha256=content_hash({"content": content}),
+            size_bytes=len(content.encode()),
+            created_by=created_by,
+        )
 
     def _save_text(self, run_dir: Path, name: str, content: str, created_by: str) -> ArtifactReference:
         path = run_dir / name

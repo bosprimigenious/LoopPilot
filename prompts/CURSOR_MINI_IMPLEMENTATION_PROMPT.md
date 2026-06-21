@@ -1,10 +1,17 @@
-# Cursor Prompt — Implement LoopPilot Mini
+# Cursor Prompt — Implement LoopPilot Mini (0.1)
 
-Copy everything below into Cursor Agent after opening the LoopPilot repository.
+> **文档体系（Layer 3）：** 中文 = 目标/边界；English = Task / Constraints / Acceptance。  
+> 认知层：[docs/zh/README.md](../docs/zh/README.md) · 英文规格：[docs/en-core.md](../docs/en-core.md)
+
+## 目标（中文）
+
+实现 **0.1 Mini-MVP**：三条 Loop 在离线 fixture 下 dry-run 跑通；MockAdapter 为唯一可用 Adapter；证明编排、状态机、Policy Gate、产物与 Markdown 报告链路。不实现真实 Adapter、SQLite 恢复、审批 CLI、PyPI。
+
+Copy everything below §--- into Cursor Agent.
 
 ---
 
-You are implementing the **Mini version of LoopPilot** in this repository.
+You are implementing the **Mini version of LoopPilot (0.1)** in this repository.
 
 ## 1. Non-negotiable scope
 

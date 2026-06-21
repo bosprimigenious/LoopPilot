@@ -1,4 +1,13 @@
-# Cursor V2 Implementation Prompt
+# Cursor V2 Implementation Prompt (_legacy)
+
+> **Legacy prompt — V2 对应 0.6+ 文档规划，当前未实施。**  
+> 文档体系：[docs/zh/05-文档体系说明.md](../docs/zh/05-文档体系说明.md) · [docs/en-core.md](../docs/en-core.md)
+
+## 目标（中文，远期）
+
+扩大 Connector、引用核验、GitHub 快照与多模型统计——**需 0.4/0.5 完成后才适用**。
+
+---
 
 你是 Cursor Agent，在仓库 [bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot) 中继续实现 LoopPilot。请使用中文沟通，代码和文档保持现有风格，符合 lint/format 要求。
 
