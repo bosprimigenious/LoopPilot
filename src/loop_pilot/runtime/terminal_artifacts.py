@@ -121,7 +121,7 @@ def finalize_terminal_artifacts(
             prior = existing.get("artifacts", [])
             if isinstance(prior, list):
                 for item in prior:
-                    if isinstance(item, dict):
+                    if isinstance(item, dict) and item.get("path") != "artifact-manifest.json":
                         artifacts.append(dict(item))
         except json.JSONDecodeError:
             pass
@@ -147,6 +147,8 @@ def finalize_terminal_artifacts(
             seen.add(str(adapter_trace_path))
 
     for name in sorted({*CANONICAL_ARTIFACTS, "review_required.md"}):
+        if name == "artifact-manifest.json":
+            continue
         path = run_dir / name
         if not path.exists():
             continue
