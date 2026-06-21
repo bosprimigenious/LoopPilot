@@ -23,10 +23,11 @@
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
   - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4-a** 已交付（2026-06-21，分支 `personal-daily-loop-0.4-a`）— SQLite + db/recovery CLI
-  - **0.4-b** inbox/queue/today（WIP / 验收中）
-  - **0.4-c** 规格已就绪（2026-06-21）— Review Layer；实现待起
-  - **0.4-d** 规格已就绪（2026-06-21）— summary/schedule/daily dry-run；实现可并行
+  - **0.4.0b1 stabilization in progress**；Full 0.4 **NOT READY**
+  - **0.4-a/b** 部分实现；全量回归与恢复语义仍需修复
+  - **0.4-c** Review Layer 未实现，当前验收 0/16
+  - **0.4-d** summary/schedule 实现存在，但不得在 0.4-c、全量测试、迁移和审计缺口未解决时声明 Full 0.4 READY
+  - 当前权威行动项：[50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
   - **0.5+** 文档规划；Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
@@ -95,6 +96,7 @@
 48. [48-personal-daily-loop-0.4d-acceptance.md](48-personal-daily-loop-0.4d-acceptance.md) — **0.4-d 验收（planned）**
 49. [49-daily-summary-engine-design.md](49-daily-summary-engine-design.md) — **0.4-d Summary Engine 架构**
 50. [47-output-interface-spec.md](47-output-interface-spec.md) — **输出接口：人 MD / 机器 JSON**
+51. [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md) — **0.4 稳定化、诚实验收与 Ideas 验收**
 
 ## 中文认知层对应关系
 

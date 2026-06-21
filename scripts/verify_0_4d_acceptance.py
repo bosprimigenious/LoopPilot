@@ -25,6 +25,10 @@ class StepResult:
     notes: list[str] = field(default_factory=list)
 
 
+def _acceptance_ready(results: list[StepResult]) -> bool:
+    return bool(results) and all(result.passed for result in results)
+
+
 DEFAULT_CONFIG_DIR = "tests/fixtures/acceptance_0_4a/config"
 REQUIRED_MODULES = [
     "src/loop_pilot/summary/__init__.py",
@@ -44,6 +48,11 @@ REQUIRED_TESTS = [
     "tests/integration/test_daily_summary_cli.py",
     "tests/unit/test_summary_collector.py",
 ]
+PREREQUISITE_SCRIPTS = (
+    ("0.3", "verify_0_3_acceptance.py"),
+    ("0.4-b", "verify_0_4b_acceptance.py"),
+    ("0.4-c", "verify_0_4c_acceptance.py"),
+)
 DAILY_SECTIONS = (
     "## 1. 今日最重要结论",
     "## 2. Today",
@@ -160,6 +169,23 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
 
     record("0.4-d readiness gate", [sys.executable, "-c", "readiness"], True, "all prerequisites present")
 
+    prerequisites_passed = True
+    for version, script_name in PREREQUISITE_SCRIPTS:
+        cmd = [sys.executable, str(repo / "scripts" / script_name), "--cwd", str(repo)]
+        proc = _run(cmd, cwd=repo)
+        ok = proc.returncode == 0
+        prerequisites_passed = prerequisites_passed and ok
+        output = (proc.stdout + proc.stderr).strip().splitlines()
+        record(
+            f"prerequisite {version} acceptance",
+            cmd,
+            ok,
+            output[0] if output else f"rc={proc.returncode}",
+        )
+
+    if not prerequisites_passed:
+        return results
+
     for name, args in [
         ("0.4-a db migrate", ("db", "migrate")),
         ("0.4-a db verify", ("db", "verify")),
@@ -245,7 +271,7 @@ def main() -> int:
     results = run_acceptance(repo, config_dir=args.config_dir)
     passed = sum(1 for r in results if r.passed)
     total = len(results)
-    ready = all(r.passed for r in results if r.name.startswith(("module", "CLI", "migration", "test tests")))
+    ready = _acceptance_ready(results)
 
     if args.json:
         payload = {

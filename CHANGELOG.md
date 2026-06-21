@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Stabilization
+
+- **0.4.0b1 stabilization in progress; Full 0.4 is NOT READY.** The 0.4-d summary/schedule implementation exists, but release acceptance is blocked by regression failures, the incomplete 0.4-c review layer, migration v3 conflict, recovery defects, and failure-path audit gaps. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
+
 ### Documentation
 
 - **0.4-d spec (planned)**: Daily Summary + Schedule Preview + Daily Dry-Run — usable daily dashboard, not feature demo
