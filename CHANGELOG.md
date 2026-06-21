@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0b1] - 2026-06-21
+
+### ToolBroker full Loop integration (0.3.0b1)
+
+- **InternLoop**: `_run_pytest` / `_apply_fix` route through ToolBroker (no direct subprocess/workspace writes)
+- **PaperLoop**: working-copy read/write via ToolBroker; `tool-results.json` audit trail
+- **DailyNewsLoop**: connector `fetch_source` via ToolBroker `http_get` audit
+- **Audit**: `tool-results.json` includes broker `audit` array (`event`, `tool`, `status`, `duration_ms`, `policy`)
+- **Tests**: `test_toolbroker_loop_enforcement`, `test_tool_results_audit`, `test_controlled_live_run_evidence`
+- **Docs**: b1 delivery log; MANUAL template with config.local instructions; [2026-06-21-0.3-b1-delivery.md](docs/development/logs/2026-06-21-0.3-b1-delivery.md)
+
+### Unchanged / deferred
+
+- Live DeepSeek/Cursor runs remain MANUAL (template + mock evidence)
+- SQLite, resume, approve/reject, inbox/queue → **0.4-a+**
+
 ## [0.3.0a1] - 2026-06-21
 
 ### 0.3.0a1 polish (release line)

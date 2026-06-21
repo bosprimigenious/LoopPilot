@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
 import pytest
 
@@ -66,27 +65,28 @@ class TestInternLoop:
         _, _, rounds = loop.run(request, record)
         assert rounds[0].decision != "pass"
 
-    def test_pytest_uses_current_python_executable(
+    def test_pytest_routes_through_tool_broker(
         self, artifact_dir: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        broker_calls: list[list[str]] = []
         loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
-        captured: dict[str, object] = {}
 
-        def fake_run(command, **kwargs):  # noqa: ANN001
-            captured["command"] = command
+        original = loop.tool_broker.run_command
 
-            class Result:
-                returncode = 0
-                stdout = "1 passed\n"
-                stderr = ""
+        def spy_run_command(command: list[str], **kwargs):  # noqa: ANN001
+            broker_calls.append(list(command))
+            return original(command, **kwargs)
 
-            return Result()
+        monkeypatch.setattr(loop.tool_broker, "run_command", spy_run_command)
 
-        monkeypatch.setattr("subprocess.run", fake_run)
-        report = loop._run_pytest(Path("."), dry_run=False, fixture_dir=Path("."), round_num=2)
+        work_dir = artifact_dir / "pytest-work"
+        work_dir.mkdir()
+        (work_dir / "test_ok.py").write_text("def test_x(): assert True\n", encoding="utf-8")
+        report = loop._run_pytest(work_dir, dry_run=False, fixture_dir=Path("."), round_num=1)
 
-        assert "1 passed" in report
-        assert captured["command"][0] == sys.executable
+        assert "1 passed" in report or "exit_code=0" in report
+        assert broker_calls, "pytest must route through ToolBroker"
+        assert broker_calls[0][0] == "pytest"
 
     def test_non_dry_run_generates_real_git_diff(self, artifact_dir: Path) -> None:
         loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))

@@ -24,6 +24,7 @@ from loop_pilot.runtime.locks import FileLockStore
 from loop_pilot.runtime.recovery import RecoveryPlan, build_recovery_plan
 from loop_pilot.runtime.run_ids import new_run_id
 from loop_pilot.storage.base import StateStore
+from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.workspaces import resolve_workspace
 
 _SECRET_PATTERNS = (
@@ -299,21 +300,38 @@ class Orchestrator:
         loop_type: str,
         *,
         router: ModelRouter | None = None,
+        tool_broker: ToolBroker | None = None,
     ) -> InternLoop | PaperLoop | DailyNewsLoop:
         policy = self._budget_policy(loop_type)
         budget_mgr = BudgetManager(policy)
         active_router = router or self.router
+        broker = tool_broker or ToolBroker(self.config.runtime.get("tool_broker", {}))
         if loop_type == "intern":
             return InternLoop(
-                self.artifact_dir, self.policy, self.renderer, budget_mgr, router=active_router
+                self.artifact_dir,
+                self.policy,
+                self.renderer,
+                budget_mgr,
+                router=active_router,
+                tool_broker=broker,
             )
         if loop_type == "paper":
             return PaperLoop(
-                self.artifact_dir, self.policy, self.renderer, budget_mgr, router=active_router
+                self.artifact_dir,
+                self.policy,
+                self.renderer,
+                budget_mgr,
+                router=active_router,
+                tool_broker=broker,
             )
         if loop_type == "daily_news":
             return DailyNewsLoop(
-                self.artifact_dir, self.policy, self.renderer, budget_mgr, router=active_router
+                self.artifact_dir,
+                self.policy,
+                self.renderer,
+                budget_mgr,
+                router=active_router,
+                tool_broker=broker,
             )
         raise ValueError(f"Unknown loop type: {loop_type}")
 

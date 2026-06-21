@@ -38,3 +38,12 @@ def test_tool_broker_allows_pytest_in_worktree(tmp_path: Path) -> None:
     (tmp_path / "test_ok.py").write_text("def test_x(): assert True\n", encoding="utf-8")
     result = broker.run_command(["pytest", "-q", "test_ok.py"], cwd=tmp_path, timeout=30)
     assert result.exit_code == 0
+
+
+def test_tool_broker_allows_workspace_relative_patterns(tmp_path: Path) -> None:
+    broker = ToolBroker()
+    target = tmp_path / "worktree" / "src" / "calculator.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("def add(a, b):\n    return a - b\n", encoding="utf-8")
+    content = broker.read_file(target, allowed=["src/**"], forbidden=[".env*"])
+    assert "return a - b" in content

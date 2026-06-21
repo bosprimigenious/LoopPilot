@@ -10,7 +10,7 @@
 [已完成] 0.1 mini           ← v0.1.0-mini (2026-06-21)
 [已完成] 0.2 practical-mvp  ← v0.2.0a1 (2026-06-21)
     ↓
-[当前]   0.3 adapter-mvp    ← 分支 adapter-mvp-0.3 · v0.3.0a1 safety alpha
+[当前]   0.3 adapter-mvp    ← v0.3.0b1 ToolBroker polish · tag v0.3.0b1
     ↓
 [之后]   0.4 Personal Recovery & Daily Loop
 ```
@@ -80,14 +80,15 @@
 
 **目标**：见 [38-toolbroker-design.md](38-toolbroker-design.md)。
 
-| 任务 | 产出 |
-|------|------|
-| `runtime/tool_broker.py`（或 `tools/broker.py`） | File + Command |
-| Policy 钩子 | 每次调用前 evaluate |
-| dry-run 写跳过 | plan artifact |
-| 单元测试 | policy deny, dry-run |
+| 任务 | 产出 | 状态 |
+|------|------|------|
+| `runtime/tool_broker.py`（或 `tools/broker.py`） | File + Command | ✅ |
+| Policy 钩子 | 每次调用前 evaluate | ✅ |
+| dry-run 写跳过 | plan artifact | ✅ |
+| 单元测试 | policy deny, dry-run | ✅ |
+| Loop 集成（0.3.0b1） | Intern/Paper/DailyNews 经 broker | ✅ |
 
-**验收**：Intern validation 命令经 Broker；直接 subprocess 被测试禁止。
+**验收**：Intern validation 命令经 Broker；直接 subprocess 被测试禁止。 — **PASS 0.3.0b1**
 
 ---
 
@@ -102,7 +103,7 @@
 | 配置示例 | `models.yaml` cursor 条目 |
 | Gated 集成测试 | env + allow_real_adapters |
 
-**验收**：mock 路径不变；gated 测试文档化运行方式。
+**验收**：mock 路径不变；gated 测试文档化运行方式。 — **PASS 0.3.0a1**
 
 ---
 
@@ -116,7 +117,7 @@
 | Paper roles 接线 | research/writing/evaluation |
 | Usage/cost 记录 | trace |
 
-**验收**：Paper mock 路径不变；real 测试 gated。
+**验收**：Paper mock 路径不变；real 测试 gated。 — **PASS 0.3.0a1**
 
 ---
 
@@ -130,7 +131,7 @@
 | Paper | claim-evidence + SOURCE REQUIRED 保持 |
 | DailyNews | `--real-sources` + connector 经 HttpTool |
 
-**验收**：36 文档 Loop checklist 勾选；0.2 回归命令仍 PASS（默认配置）。
+**验收**：36 文档 Loop checklist 勾选；0.2 回归命令仍 PASS（默认配置）。 — **PASS 0.3.0b1**（ToolBroker + mock controlled runs）
 
 ---
 
@@ -146,7 +147,7 @@
 | 更新 36 验收记录 | 命令输出摘要 |
 | pyproject `0.3.0a1` | 待验收后 tag |
 
-**验收**：36 文档「Definition of done」全部满足；`pytest -q` 绿。
+**验收**：36 文档「Definition of done」全部满足；`pytest -q` 绿。 — **PASS 0.3.0a1 / 0.3.0b1**
 
 ## 4. 依赖关系
 
