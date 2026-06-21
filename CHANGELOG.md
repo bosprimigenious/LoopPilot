@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #8 — patch review gate on feat/0.5-safe-autonomy)
+
+- **P0-1 patch review gate**: `patch.diff` + `SUCCEEDED` runs enter `PARTIAL` / `needs_review` via `mark_patch_run_waiting_review()` and InternLoop `_finalize()`; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
+- **P0-2 direct-finalize approve**: `approve` on `patch.diff` runs sets `approved` + `TERMINATED` + `SUCCEEDED` + `gate=pass` without `resume_requested`; `resume()` rejects approved finalized runs.
+- **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself (avoids stale self-checksum).
+- **P1-2 report_path priority**: prefers canonical report paths before manifest fallback; `kind=="report"` filter on manifest entries.
+
+See [logs/2026-06-21-patch-review-gate-fix.md](docs/development/logs/2026-06-21-patch-review-gate-fix.md).
+
 ### Added
 
 - **0.5-prep fail-closed safety** (Codex review): `readiness.py`, prep-stage BLOCKED for schedule install/uninstall and unattended daily; `InstallStatus` PREVIEWED/BLOCKED/INSTALLED; deferred review preserved on sync; `verify_0_5_prep.py`

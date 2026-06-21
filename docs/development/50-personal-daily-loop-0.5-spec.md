@@ -251,6 +251,7 @@ Manual: on Windows, compare `schedule install --dry-run` vs `--yes`; confirm ins
 
 ## 12. References
 
+- [logs/2026-06-21-patch-review-gate-fix.md](logs/2026-06-21-patch-review-gate-fix.md) — Codex PR #8 patch review gate (prerequisite for truthful 0.4 / 0.5-prep)
 - [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md) — why SafetyGate first, 0.4-c blocker, no daemon
 - [53-0.5-acceptance.md](53-0.5-acceptance.md) — acceptance for 0.5-a/b/c/d
 - [logs/2026-06-21-0.5-plan-revision.md](logs/2026-06-21-0.5-plan-revision.md) — decision log
