@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import os
 import time
 from contextlib import contextmanager
@@ -9,6 +10,31 @@ from pathlib import Path
 from typing import Generator
 
 from loop_pilot.domain.errors import ErrorCode, LoopPilotError
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        handle = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def clear_stale_locks(lock_dir: Path) -> None:
+    """Remove lock files left behind by dead processes."""
+    if not lock_dir.is_dir():
+        return
+    store = FileLockStore(lock_dir, timeout_seconds=0.1)
+    for lock_path in lock_dir.glob("*.lock"):
+        store._clear_stale_lock(lock_path)
 
 
 class FileLockStore:
@@ -25,18 +51,42 @@ class FileLockStore:
         safe = key.replace(":", "_").replace("/", "_").replace("\\", "_")
         return self.lock_dir / f"{safe}.lock"
 
+    def _encode_payload(self, holder: str) -> bytes:
+        return f"{os.getpid()}:{holder}".encode("utf-8")
+
+    def _lock_is_stale(self, path: Path) -> bool:
+        try:
+            raw = path.read_text(encoding="utf-8").strip()
+        except OSError:
+            return False
+        if not raw:
+            return True
+        pid_part, _, _ = raw.partition(":")
+        if pid_part.isdigit():
+            return not _pid_alive(int(pid_part))
+        return True
+
+    def _clear_stale_lock(self, path: Path) -> None:
+        if path.exists() and self._lock_is_stale(path):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
     @contextmanager
     def acquire(self, key: str, holder: str) -> Generator[None, None, None]:
         path = self._lock_path(key)
         deadline = time.monotonic() + self.timeout_seconds
         fd: int | None = None
         while time.monotonic() < deadline:
+            self._clear_stale_lock(path)
             try:
                 fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                os.write(fd, holder.encode("utf-8"))
+                os.write(fd, self._encode_payload(holder))
                 self._held_paths.append(path)
                 break
             except FileExistsError:
+                self._clear_stale_lock(path)
                 time.sleep(self.poll_seconds)
         else:
             raise LoopPilotError(
@@ -50,10 +100,13 @@ class FileLockStore:
         finally:
             if fd is not None:
                 os.close(fd)
+                fd = None
             if path.exists():
                 path.unlink(missing_ok=True)
             if path in self._held_paths:
                 self._held_paths.remove(path)
 
     def is_held(self, key: str) -> bool:
-        return self._lock_path(key).exists()
+        path = self._lock_path(key)
+        self._clear_stale_lock(path)
+        return path.exists()
