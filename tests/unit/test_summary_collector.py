@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from loop_pilot.domain.models import RunRecord
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.review.store import ReviewStore
 from loop_pilot.storage.sqlite import SQLiteStateStore
 from loop_pilot.summary.collector import SummaryCollector, report_path
 from loop_pilot.summary.renderer import render_daily_summary, render_weekly_summary
@@ -110,3 +111,130 @@ def test_report_path_prefers_final_report_over_diff_summary(tmp_path: Path) -> N
     assert resolved is not None
     assert resolved.endswith("development-report.md")
     assert not resolved.endswith("diff-summary.md")
+
+
+def _seed_review_run(
+    state: SQLiteStateStore,
+    *,
+    run_id: str,
+    today: str,
+    review_status: str = "needs_review",
+    outcome: RunOutcome = RunOutcome.PARTIAL,
+) -> RunRecord:
+    record = RunRecord(
+        run_id=run_id,
+        loop_type="intern",
+        phase=RunPhase.TERMINATED,
+        outcome=outcome,
+        review_status=review_status,
+        started_at=f"{today}T10:00:00+00:00",
+        finished_at=f"{today}T10:30:00+00:00",
+    )
+    state.save_run(record)
+    return record
+
+
+def test_deferred_review_item_hidden_from_summary_until_due(tmp_path: Path) -> None:
+    db_path = tmp_path / "loop_pilot.db"
+    artifact_dir = tmp_path / "artifacts"
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+
+    state = SQLiteStateStore(db_path)
+    tasks = TaskStore(db_path)
+    review_store = ReviewStore(db_path)
+    today = datetime.now(ZoneInfo("UTC")).date().isoformat()
+    run_id = "run-deferred-future"
+    _seed_review_run(state, run_id=run_id, today=today)
+    review_store.upsert_pending(run_id=run_id, loop_type="intern", artifact_path=str(artifact_dir))
+    review_store.record_decision(
+        run_id,
+        decision="defer",
+        status="deferred",
+        reason="later",
+        deferred_until="2099-01-01",
+    )
+
+    collector = SummaryCollector(
+        state_store=state,
+        task_store=tasks,
+        artifact_dir=artifact_dir,
+        lock_dir=lock_dir,
+        timezone="UTC",
+        review_store=review_store,
+    )
+    data = collector.collect_daily(today)
+
+    assert not any(row.run_id == run_id for row in data.needs_review)
+
+
+def test_deferred_review_item_reappears_after_due(tmp_path: Path) -> None:
+    db_path = tmp_path / "loop_pilot.db"
+    artifact_dir = tmp_path / "artifacts"
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+
+    state = SQLiteStateStore(db_path)
+    tasks = TaskStore(db_path)
+    review_store = ReviewStore(db_path)
+    today = datetime.now(ZoneInfo("UTC")).date().isoformat()
+    due_date = (datetime.now(ZoneInfo("UTC")).date() - timedelta(days=1)).isoformat()
+    run_id = "run-deferred-due"
+    _seed_review_run(state, run_id=run_id, today=today)
+    review_store.upsert_pending(run_id=run_id, loop_type="intern", artifact_path=str(artifact_dir))
+    review_store.record_decision(
+        run_id,
+        decision="defer",
+        status="deferred",
+        reason="was deferred",
+        deferred_until=due_date,
+    )
+
+    collector = SummaryCollector(
+        state_store=state,
+        task_store=tasks,
+        artifact_dir=artifact_dir,
+        lock_dir=lock_dir,
+        timezone="UTC",
+        review_store=review_store,
+    )
+    data = collector.collect_daily(today)
+
+    assert any(row.run_id == run_id for row in data.needs_review)
+
+
+def test_summary_needs_review_matches_review_list_for_deferred(tmp_path: Path) -> None:
+    db_path = tmp_path / "loop_pilot.db"
+    artifact_dir = tmp_path / "artifacts"
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+
+    state = SQLiteStateStore(db_path)
+    tasks = TaskStore(db_path)
+    review_store = ReviewStore(db_path)
+    today = datetime.now(ZoneInfo("UTC")).date().isoformat()
+    run_id = "run-deferred-align"
+    _seed_review_run(state, run_id=run_id, today=today)
+    review_store.upsert_pending(run_id=run_id, loop_type="intern", artifact_path=str(artifact_dir))
+    review_store.record_decision(
+        run_id,
+        decision="defer",
+        status="deferred",
+        reason="align",
+        deferred_until="2099-06-01",
+    )
+
+    collector = SummaryCollector(
+        state_store=state,
+        task_store=tasks,
+        artifact_dir=artifact_dir,
+        lock_dir=lock_dir,
+        timezone="UTC",
+        review_store=review_store,
+    )
+    data = collector.collect_daily(today)
+    pending_ids = {item.run_id for item in review_store.list_pending()}
+
+    summary_ids = {row.run_id for row in data.needs_review}
+    assert run_id not in summary_ids
+    assert run_id not in pending_ids

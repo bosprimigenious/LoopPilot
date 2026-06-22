@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from loop_pilot.domain.models import RunRecord
+from loop_pilot.domain.models import RunRecord, rfc3339
 from loop_pilot.util.timezone import zone_info
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.review.store import ReviewStore
 from loop_pilot.runtime.recovery_scan import scan_recovery
 from loop_pilot.storage.base import StateStore
 from loop_pilot.summary.models import (
@@ -98,12 +99,14 @@ class SummaryCollector:
         artifact_dir: Path,
         lock_dir: Path,
         timezone: str = "Asia/Shanghai",
+        review_store: ReviewStore | None = None,
     ) -> None:
         self.state_store = state_store
         self.task_store = task_store
         self.artifact_dir = artifact_dir
         self.lock_dir = lock_dir
         self.timezone = timezone
+        self.review_store = review_store or ReviewStore(task_store.db_path)
         self.today_service = TodayService(task_store, timezone=timezone)
 
     def resolve_date(self, date_str: str | None) -> str:
@@ -252,6 +255,13 @@ class SummaryCollector:
         return rows
 
     def _needs_review(self, record: RunRecord) -> bool:
+        if not self._run_signals_review(record):
+            return False
+        if self._is_deferred_until_future(record.run_id):
+            return False
+        return True
+
+    def _run_signals_review(self, record: RunRecord) -> bool:
         if record.phase == RunPhase.WAITING_APPROVAL:
             return True
         if record.review_status in {"pending", "needs_review", "needs_revision", "resume_requested"}:
@@ -260,6 +270,18 @@ class SummaryCollector:
             return True
         gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id)
         return gate in {"needs_review", "blocked"}
+
+    def _deferred_until(self, run_id: str) -> str | None:
+        item = self.review_store.get_by_run_id(run_id)
+        if item is None or item.status != "deferred":
+            return None
+        return item.deferred_until
+
+    def _is_deferred_until_future(self, run_id: str) -> bool:
+        deferred_until = self._deferred_until(run_id)
+        if deferred_until is None:
+            return False
+        return deferred_until > rfc3339()[:10]
 
     def _counts_as_completed(self, row: RunSummaryRow) -> bool:
         if row.outcome != RunOutcome.SUCCEEDED.value:
