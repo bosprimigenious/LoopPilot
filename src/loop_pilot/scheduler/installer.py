@@ -12,7 +12,7 @@ from loop_pilot.config import LoopPilotConfig
 from loop_pilot.safety.readiness import is_prep_stage, prep_block_message
 from loop_pilot.scheduler.install_status import InstallStatus
 from loop_pilot.scheduler.printer import print_schedule, schedule_preview_markdown
-from loop_pilot.scheduler.profiles import ScheduleProfile, DEFAULT_PROFILE
+from loop_pilot.scheduler.profiles import ScheduleProfile, DEFAULT_PROFILE, ready_stage_command
 
 
 @dataclass
@@ -93,7 +93,7 @@ def install_schedule(
 
     profile = profile or DEFAULT_PROFILE
     config_dir = config_dir or Path("config")
-    command = f"loop-pilot --config-dir {config_dir.resolve()} run daily --unattended --safe"
+    command = ready_stage_command(config_dir)
     profile = ScheduleProfile(time=profile.time, command=command, task_name=profile.task_name)
     preview = preview_install(target, cwd=cwd, profile=profile)
     output_dir = cwd / "var" / "artifacts" / "schedule"

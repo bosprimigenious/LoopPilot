@@ -88,6 +88,27 @@ def test_cron_marker_only_not_installed(tmp_path: Path, monkeypatch: pytest.Monk
     assert payload["install_status"] == InstallStatus.PREVIEWED.value
 
 
+def test_installed_scheduler_command_includes_no_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    config_dir = _config_dir(tmp_path, stage="ready", allow_install=True)
+    cfg = LoopPilotConfig(
+        safety={"stage": "ready"},
+        schedule={"allow_install": True},
+        config_dir=config_dir,
+    )
+    result = install_schedule(
+        yes=True,
+        target="cron",
+        cwd=tmp_path,
+        config_dir=config_dir,
+        config=cfg,
+    )
+    assert "--no-dry-run" in result.command
+    assert "run daily --unattended --safe --no-dry-run" in result.command
+    payload = json.loads((tmp_path / "var/artifacts/schedule/installed.json").read_text(encoding="utf-8"))
+    assert "--no-dry-run" in payload["command"]
+
+
 def test_unattended_daily_blocked_in_prep(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     config_dir = _config_dir(tmp_path, stage="prep")

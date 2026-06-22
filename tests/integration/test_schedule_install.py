@@ -96,4 +96,4 @@ def test_install_ready_stage_cron_writes_preview_marker(tmp_path: Path, monkeypa
     assert result.exit_code == 0, result.output
     payload = json.loads((tmp_path / "var/artifacts/schedule/installed.json").read_text(encoding="utf-8"))
     assert payload["install_status"] == InstallStatus.PREVIEWED.value
-    assert "run daily --unattended --safe" in payload["command"]
+    assert "run daily --unattended --safe --no-dry-run" in payload["command"]
