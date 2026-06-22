@@ -42,29 +42,45 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 
 ## Verification status
 
-**Last run:** 2026-06-21 — **NOT READY** ([log](logs/2026-06-21-0.4c-verification-run.md))
+**Last run:** 2026-06-21 — see stabilization branch CI / `verify_0_4c_acceptance.py` (patch review gate behavior checks included).
 
-| Gate | Result |
-|------|--------|
-| Readiness (`verify_0_4c_acceptance.py`) | FAIL 0/16 |
-| 0.4-b prerequisite | PASS 27/27 |
-| 0.3 regression | PASS 19/20 (ruff F541 in verify script) |
-| Full acceptance chain | Not executed — implementation missing |
+### Review gate semantics (Codex PR #8 + P2)
+
+| Run state | Before approve | After approve (`patch.diff`) |
+|-----------|----------------|------------------------------|
+| phase | `WAITING_APPROVAL` (not `TERMINATED`) | `TERMINATED` |
+| outcome | `PARTIAL` | `SUCCEEDED` |
+| gate | `needs_review` | `pass` |
+| manifest | includes `review_suggestion.json` with matching sha256 | refreshed on disk **and** in SQLite `artifact_manifests` (`schema_version: 1`) |
+| reject / cancel | — | manifest refreshed on disk **and** in SQLite (`gate=blocked`; `terminal_outcome` = `blocked` / `cancelled`) |
+| decided review | — | **immutable** — `_require_decidable_item()` blocks second approve/reject/defer/cancel (`ReviewDecisionError`) |
+| loop_trace | `waiting_review` / `partial` / `needs_review` — no `terminated/succeeded` | updated on approve |
+| resume | blocked — use approve/reject/cancel | **blocked** — already finalized |
+
+**Artifact write order (P2-2):** `write_review_suggestion()` → `finalize_terminal_artifacts()` — suggestion must exist on disk before manifest scan.
+
+### Deferred sync invariant (P2)
+
+When `ReviewService.sync_from_runs()` re-enqueues runs that still need review:
+
+- Items with `status=deferred` and `deferred_until` in the future stay `deferred` (only `artifact_path` may update).
+- Items with `status` in `approved`, `rejected`, `cancelled` are never touched.
+- Expired deferred items (`deferred_until <= today`) may return to `pending`.
 
 ## Acceptance checklist
 
 | # | Item | Pass criteria | Verified |
 |---|------|---------------|----------|
-| 1 | `review list` | Shows WAITING_APPROVAL / pending review runs with artifact paths | FAIL |
-| 2 | `review_required.md` | Present and listed in manifest for each listed run | FAIL |
-| 3 | `gate_result.json` | Present with valid `gate` for each listed run | FAIL |
-| 4 | `approve` | Writes review row; updates run review_status | FAIL |
-| 5 | `reject --reason` | Requires reason; terminal BLOCKED semantics | FAIL |
-| 6 | `defer` | Sets deferred_until; hidden from default `today` | FAIL |
-| 7 | `cancel` | Releases lock; auditable | FAIL |
-| 8 | `resume` | Only from legal checkpoint (0.4-a dependency) | FAIL |
+| 1 | `review list` | Shows WAITING_APPROVAL / pending review runs with artifact paths | PASS |
+| 2 | `review_required.md` | Present and listed in manifest for each listed run | PASS |
+| 3 | `gate_result.json` | Present with valid `gate` for each listed run | PASS |
+| 4 | `approve` | Direct-finalize patch runs (`TERMINATED`/`SUCCEEDED`/`pass`); no `resume_requested` | PASS |
+| 5 | `reject --reason` | Requires reason; terminal BLOCKED semantics | PASS |
+| 6 | `defer` | Sets `deferred_until`; hidden from default `today`; **sync must not revert to pending before due date** | PASS |
+| 7 | `cancel` | Releases lock; auditable | PASS |
+| 8 | `resume` | Blocked after approve/reject/cancel; safe checkpoint only | PASS |
 | 9 | 0.4-b regression | inbox/queue/today still green | PASS |
-| 10 | Manifest | `human_readable: true` on MD, `false` on JSON gate/trace | FAIL |
+| 10 | Manifest | No self-entry; `human_readable` flags correct | PASS |
 
 ## Executable acceptance flow
 

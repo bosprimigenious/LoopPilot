@@ -1,5 +1,7 @@
 # Mini-MVP 实施与验证日志
 
+> **历史交付记录，不代表当前分支通过回归。** 截至 2026-06-21，0.4.0b1 正在稳定化，Full 0.4 为 **NOT READY**；当前状态与补救门禁见 [docs/development/50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md)。
+
 日期：2026-06-21
 
 ## 实施摘要

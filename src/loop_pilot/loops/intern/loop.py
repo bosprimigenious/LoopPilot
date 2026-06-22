@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from pathlib import Path
 from typing import Any, Callable
 
 from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
 from loop_pilot.adapters.errors import AdapterBlockedError
 from loop_pilot.adapters.factory import create_adapter
+from loop_pilot.config import LoopPilotConfig
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -30,6 +32,7 @@ from loop_pilot.loops.intern.workspace import (
 )
 from loop_pilot.models.router import ModelRouter
 from loop_pilot.policy.engine import PolicyEngine
+from loop_pilot.review.service import mark_patch_run_waiting_review
 from loop_pilot.reporting.human_review import (
     recommended_for_outcome,
     write_next_actions,
@@ -38,6 +41,7 @@ from loop_pilot.reporting.human_review import (
 from loop_pilot.reporting.renderer import ReportRenderer
 from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.state_machine import StateMachine
+from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
 from loop_pilot.runtime.trace import TraceWriter
 from loop_pilot.tools.broker import ToolBroker
 from loop_pilot.tools.policy import ToolPolicy
@@ -66,6 +70,7 @@ class InternLoop:
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
         tool_broker: ToolBroker | None = None,
+        config: LoopPilotConfig | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
@@ -75,6 +80,7 @@ class InternLoop:
         self.tool_broker = tool_broker or ToolBroker(
             ToolPolicy(allowed_commands=["pytest", "python", "git"])
         )
+        self.config = config
         self.state_machine = StateMachine()
 
     def run(
@@ -122,6 +128,7 @@ class InternLoop:
             adapter = create_adapter(
                 self.router,
                 "coding_agent",
+                config=self.config,
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
                 adapter_override=request.adapter_override,
@@ -211,6 +218,7 @@ class InternLoop:
                         work_dir, request.dry_run, fixture_dir, round_num, expected_dir=expected_dir
                     )
                 except (InterruptedError, TimeoutError, OSError) as exc:
+                    record.current_round = round_num
                     record.outcome = RunOutcome.FAILED
                     record.terminal_reason = f"ACTING interrupted: {exc}"
                     trace.append({"event": "interrupted", "round": round_num, "error": str(exc)})
@@ -421,7 +429,9 @@ class InternLoop:
         if round_num >= 2:
             self._clear_pycache(work_dir)
 
-        cmd_result = self.tool_broker.run_command(["pytest", "-q"], cwd=work_dir, timeout=60)
+        cmd_result = self.tool_broker.run_command(
+            [sys.executable, "-m", "pytest", "-q"], cwd=work_dir, timeout=60
+        )
         exit_code = cmd_result.exit_code if cmd_result.exit_code is not None else 1
         return (
             f"exit_code={exit_code}\n\nstdout:\n{cmd_result.stdout}\n\nstderr:\n{cmd_result.stderr}"
@@ -517,20 +527,38 @@ class InternLoop:
         self._transition(record, RunPhase.FINALIZING, trace)
         self._transition(record, RunPhase.PERSISTING, trace)
         self._transition(record, RunPhase.REPORTING, trace)
-        record.phase = RunPhase.TERMINATED
         record.finished_at = rfc3339()
-        record.report_status = "generated"
-        trace.append({"event": "terminated", "outcome": record.outcome.value if record.outcome else None})
 
+        has_patch = (run_dir / "patch.diff").exists()
+        patch_decided = record.review_status in {"approved", "rejected", "cancelled"}
+        if has_patch and not patch_decided:
+            if record.outcome == RunOutcome.SUCCEEDED:
+                record.outcome = RunOutcome.PARTIAL
+            record.review_status = record.review_status or "needs_review"
+            record.report_status = "needs_review"
+            record.terminal_reason = record.terminal_reason or "Patch produced; waiting for human review"
+            self._transition(record, RunPhase.WAITING_APPROVAL, trace)
+            trace.append(
+                {
+                    "event": "waiting_review",
+                    "outcome": RunOutcome.PARTIAL.value,
+                    "gate": "needs_review",
+                    "run_id": record.run_id,
+                }
+            )
+            record = mark_patch_run_waiting_review(artifact_dir=self.artifact_dir, record=record)
+        else:
+            trace.append({"event": "terminated", "outcome": record.outcome.value if record.outcome else None})
+            record.phase = RunPhase.TERMINATED
+            if record.report_status in {None, "needs_review"}:
+                record.report_status = "generated"
+            finalize_terminal_artifacts(run_dir, record)
+
+        manifest_payload = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
         manifest = ArtifactManifest(
             run_id=record.run_id,
             artifacts=artifacts,
-            terminal_outcome=record.outcome.value if record.outcome else None,
-        )
-        manifest_path = run_dir / "artifact-manifest.json"
-        manifest_path.write_text(
-            __import__("json").dumps(manifest.to_dict(), indent=2),
-            encoding="utf-8",
+            terminal_outcome=manifest_payload.get("terminal_outcome"),
         )
         return record, manifest, rounds
 

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from loop_pilot.config import LoopPilotConfig
+from loop_pilot.review.store import ReviewStore
 from loop_pilot.storage.base import StateStore
 from loop_pilot.summary.collector import SummaryCollector
 from loop_pilot.summary.models import SummaryRecord
@@ -37,6 +38,7 @@ class SummaryService:
             artifact_dir=cfg.artifact_dir,
             lock_dir=cfg.lock_dir,
             timezone=timezone,
+            review_store=ReviewStore(cfg.sqlite_path),
         )
         self.summary_store = SummaryStore(cfg.sqlite_path)
 

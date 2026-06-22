@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import fnmatch
 import time
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -236,6 +237,11 @@ class ToolBroker:
             return True
         if name.startswith("python") and "python" in allowed_lower:
             return True
+        try:
+            if Path(head).resolve() == Path(sys.executable).resolve() and "python" in allowed_lower:
+                return True
+        except OSError:
+            pass
         return False
 
     def _validate_cwd(self, cwd: Path) -> None:

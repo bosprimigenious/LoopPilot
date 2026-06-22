@@ -2,7 +2,56 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #8 — truthful patch review acceptance)
+
+- **P0-1 patch review gate**: `patch.diff` runs finalize as `WAITING_APPROVAL` / `PARTIAL` / `needs_review` (not completed) until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.
+- **P0-2 direct-finalize approve**: `approve` on `patch.diff` runs sets `approved` + `TERMINATED` + `SUCCEEDED` + `gate=pass` without `resume_requested`; `resume()` rejects approved finalized runs.
+- **P1-1 manifest self-exclusion**: `artifact-manifest.json` no longer lists itself; `terminal_artifacts` scans run dir and recomputes sha256 from disk (atomic write).
+- **P1-2 report_path priority**: prefers `report.md`, `development-report.md`, `paper-development-report.md`, `daily-news-report.md`; manifest fallback only for `kind=="report"`.
+- **P1-3 InternLoop manifest**: InternLoop no longer writes `artifact-manifest.json`; canonical finalizer is the sole writer.
+- **P2-1 patch phase**: `patch.diff` runs awaiting review stay `WAITING_APPROVAL` (not `TERMINATED`) until human approve; outcome remains `PARTIAL` / `needs_review`.
+- **P2-2 review_suggestion manifest**: `review_suggestion.json` is written before `finalize_terminal_artifacts()` so the sealed manifest includes it with a matching checksum.
+- **P2-3 patch trace truthfulness**: InternLoop appends the terminal trace event after review gating so `loop_trace.jsonl` reflects `partial` / `needs_review`, not `succeeded`.
+- **P2-4 approve DB manifest sync**: `ReviewService.approve()` on patch runs now persists the refreshed `artifact-manifest.json` payload to SQLite `artifact_manifests` via `save_artifact_manifest()` so disk and DB share one truth after `gate=pass`.
+- **P2-6 decided review immutability**: `approve` / `reject` / `defer` / `cancel` call `_require_decidable_item()` — only `pending` or `deferred` items accept a decision; already `approved` / `rejected` / `cancelled` items raise `ReviewDecisionError`.
+- **P2-7 reject/cancel DB manifest sync**: `reject` and `cancel` on patch runs now persist the refreshed `artifact-manifest.json` (`gate=blocked`) to SQLite `artifact_manifests`, symmetric with approve.
+- **P2-5 canonical manifest schema**: `finalize_terminal_artifacts()` emits `schema_version: "1"`; `schemas/artifact-manifest.json` requires `schema_version`, `run_id`, `loop_type`, `terminal_outcome`, `artifacts` with `additionalProperties=false`; `validate_artifact_manifest()` passes on generated and post-approve manifests.
+- **P2 deferred sync**: `upsert_pending` keeps `deferred` items until `deferred_until`; approved/rejected/cancelled never revert to pending.
+- **0.3 acceptance**: intern fixture/workspace expected outcome updated to `partial` (truthful review semantics).
+
+### Fixed (from merged main / PR #7 — 0.5-prep)
+
+- **P2 review CLI subcommands**: `review approve|reject|defer|cancel|resume` registered under the `review` group; root commands kept as backward-compatible aliases.
+- **P2 summary decided-review**: `SummaryCollector` excludes runs whose `review_items` status is `rejected`, `cancelled`, or `approved` from daily/weekly `needs_review`.
+- **P2 scheduler install command**: ready-stage `schedule install --yes` embeds `--no-dry-run` so installed daily runs execute for real.
+- **P1 adapter execution path**: `SafetyGate.check("adapter.invoke")` before real adapter instantiation when wired from Orchestrator.
+- **P2 locks PermissionError**: `_pid_alive` treats `PermissionError` from `os.kill` as live PID (fail-closed stale removal).
+- **P2 file locks fail-closed**: unknown/legacy lock payloads are not treated as stale; only unlink when dead PID is confirmed.
+- **`verify_0_4_acceptance.py` bootstrap**: insert `src` into `sys.path` before `loop_pilot` imports (source checkout without install).
+
+### Added
+
+- **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, patch-review behavior tests; aggregate `verify_0_4` 11/11 READY
+- **0.5-prep fail-closed safety** (from main): `readiness.py`, prep-stage BLOCKED for schedule install/uninstall; `verify_0_5_prep.py`
+- **0.5-a SafetyGate v1** (from main): `src/loop_pilot/safety/`; gated `schedule install --yes` (ready stage only); `schedule status`; `safety doctor`
+
+### Stabilization
+
+- **0.4.0b1 Truthful 0.4 baseline.** Codex PR #8 + P2 on `stabilize/0.4-truthful-acceptance`; aggregate `verify_0_4_acceptance.py` target 11/11 READY. Historical note: pre-0.4.0b1 docs described `approve → resume_requested`; current semantics are **direct-finalize** for `patch.diff` runs. See [50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md).
+
 ### Documentation
+
+- **0.5 Safe Autonomy (0.5-prep only)**: fail-closed prep scaffolding on `feat/0.5-safe-autonomy` — not full 0.5 implementation
+  - [logs/2026-06-21-0.5-prep-codex-fixes.md](docs/development/logs/2026-06-21-0.5-prep-codex-fixes.md) — Codex review fixes
+  - [verify_0_5_prep.py](scripts/verify_0_5_prep.py) — `0.5-prep: PASS` / `0.5-ready: NOT READY`
+- **0.5 Safe Autonomy (revised plan)**: SafetyGate first, no daemon — spec drafted; 0.5-prep allowed in parallel
+  - [50-personal-daily-loop-0.5-spec.md](docs/development/50-personal-daily-loop-0.5-spec.md) — full spec (Steps 0–4, 0.5-a/b/c/d)
+  - [52-0.5-revised-plan-rationale.md](docs/development/52-0.5-revised-plan-rationale.md) — why SafetyGate first, why 0.4-c blocker, why no daemon
+  - [53-0.5-acceptance.md](docs/development/53-0.5-acceptance.md) — acceptance for 0.5-a/b/c/d
+  - [15-0.5-安全自治.md](docs/zh/15-0.5-安全自治.md) — Chinese guide
+  - [CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md](prompts/CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md) — implementation prompt (blocked on Truthful 0.4 Milestone A)
+  - [2026-06-21-0.5-plan-revision.md](docs/development/logs/2026-06-21-0.5-plan-revision.md) — decision log
+  - [CURSOR_0.4C_REVIEW_LAYER_PROMPT.md](prompts/CURSOR_0.4C_REVIEW_LAYER_PROMPT.md) — Priority 1 blocker note
 
 - **0.4-d spec (planned)**: Daily Summary + Schedule Preview + Daily Dry-Run — usable daily dashboard, not feature demo
   - [48-personal-daily-loop-0.4d-acceptance.md](docs/development/48-personal-daily-loop-0.4d-acceptance.md) — four-layer acceptance + 8 must-haves + SQL queries

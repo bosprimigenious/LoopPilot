@@ -1,5 +1,7 @@
 # Cursor Prompt: 0.4-c Review Layer
 
+> **Priority 1 — BLOCKER for 0.5:** Do not start [0.5 Safe Autonomy](CURSOR_0.5_SAFE_AUTONOMY_PROMPT.md) until this layer passes `python scripts/verify_0_4c_acceptance.py` and [Truthful 0.4](../docs/development/50-0.4-stabilization-and-truthful-acceptance.md) Milestone A is green. See [logs/2026-06-21-truthful-0.4-acceptance.md](../docs/development/logs/2026-06-21-truthful-0.4-acceptance.md).
+
 ## 目标（中文）
 
 实现 0.4-c 个人审阅层：`review list`、`approve`、`reject`、`defer`、`cancel`、`resume`，并确保每次进入审阅队列的 run 产出规范 artifacts。

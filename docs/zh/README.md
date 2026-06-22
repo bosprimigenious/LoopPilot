@@ -21,6 +21,7 @@
 13. [12-0.4c-审阅与决策层](12-0.4c-审阅与决策层.md) — 0.4-c 审阅 CLI 与产物
 14. [13-输出接口-人看MD机器看JSON](13-输出接口-人看MD机器看JSON.md) — 人看 MD、机器看 JSON
 15. [14-0.4d-日汇总与调度预览](14-0.4d-日汇总与调度预览.md) — 0.4-d 日汇总与调度预览
+16. [15-0.5-安全自治](15-0.5-安全自治.md) — 0.5 安全自治（规格已起草，实现待 0.4-c）
 
 ## 按场景跳转
 
@@ -34,6 +35,7 @@
 | 0.4-c 审阅层 | [12-0.4c-审阅与决策层](12-0.4c-审阅与决策层.md) + [development/45-personal-daily-loop-0.4c-acceptance.md](../development/45-personal-daily-loop-0.4c-acceptance.md) |
 | 0.4-c 审阅与输出接口 | [12-0.4c-审阅与决策层](12-0.4c-审阅与决策层.md) + [13-输出接口-人看MD机器看JSON](13-输出接口-人看MD机器看JSON.md) + [development/47-output-interface-spec.md](../development/47-output-interface-spec.md) |
 | 0.4-d 日汇总 | [14-0.4d-日汇总与调度预览](14-0.4d-日汇总与调度预览.md) + [development/48-personal-daily-loop-0.4d-acceptance.md](../development/48-personal-daily-loop-0.4d-acceptance.md) |
+| 0.5 安全自治 | [15-0.5-安全自治](15-0.5-安全自治.md) + [development/50-personal-daily-loop-0.5-spec.md](../development/50-personal-daily-loop-0.5-spec.md) |
 | 理解 1.x / Team 后移 | [09-1.x-个人到协作](09-1.x-个人到协作.md) + [development/42-1x-roadmap-personal-to-collaboration.md](../development/42-1x-roadmap-personal-to-collaboration.md) |
 | 文档怎么维护 | [10-中英文文档管理](10-中英文文档管理.md) |
 | 给 AI 的英文规格 | [en-core.md](../en-core.md) |

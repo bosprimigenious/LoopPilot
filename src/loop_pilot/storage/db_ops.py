@@ -10,6 +10,7 @@ from pathlib import Path
 
 from loop_pilot.storage.migrations import (
     CURRENT_SCHEMA_VERSION,
+    MIGRATIONS,
     apply_migrations,
     get_applied_versions,
     get_current_schema_version,
@@ -118,9 +119,27 @@ def get_db_status(
     )
 
 
+def plan_migrations_for_path(db_path: Path) -> list[int]:
+    if not db_path.exists():
+        return sorted(MIGRATIONS.keys())
+    conn = sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        try:
+            rows = conn.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall()
+            applied = {int(row[0]) for row in rows}
+        except sqlite3.OperationalError:
+            applied = set()
+        return sorted(version for version in MIGRATIONS if version not in applied)
+    finally:
+        conn.close()
+
+
 def migrate_database(db_path: Path, *, dry_run: bool = False) -> list[int]:
+    if dry_run:
+        return plan_migrations_for_path(db_path)
     with connect_db(db_path) as conn:
-        return apply_migrations(conn, dry_run=dry_run)
+        return apply_migrations(conn, dry_run=False)
 
 
 def verify_database(db_path: Path, artifact_dir: Path) -> VerifyReport:
@@ -153,12 +172,39 @@ def verify_database(db_path: Path, artifact_dir: Path) -> VerifyReport:
                     )
                 )
 
-        orphan_checkpoints = conn.execute(
-            """
-            SELECT checkpoint_id, run_id FROM checkpoints
-            WHERE run_id NOT IN (SELECT run_id FROM runs)
-            """
-        ).fetchall()
+        if "schema_migrations" not in tables:
+            has_errors = any(issue.severity == "error" for issue in issues)
+            return VerifyReport(ok=not has_errors, issues=issues)
+
+        applied_versions = get_applied_versions(conn)
+        if applied_versions:
+            expected = sorted(MIGRATIONS.keys())
+            missing_versions = [version for version in expected if version not in applied_versions]
+            if missing_versions:
+                issues.append(
+                    VerifyIssue(
+                        severity="error",
+                        code="migration_gap",
+                        message=f"Missing applied migrations: {', '.join(str(v) for v in missing_versions)}",
+                    )
+                )
+            if 4 not in applied_versions and 3 in applied_versions and "review_items" not in tables:
+                issues.append(
+                    VerifyIssue(
+                        severity="error",
+                        code="review_schema_missing",
+                        message="Run loop-pilot db migrate to apply v4 repair migration.",
+                    )
+                )
+
+        orphan_checkpoints: list = []
+        if "checkpoints" in tables and "runs" in tables:
+            orphan_checkpoints = conn.execute(
+                """
+                SELECT checkpoint_id, run_id FROM checkpoints
+                WHERE run_id NOT IN (SELECT run_id FROM runs)
+                """
+            ).fetchall()
         for row in orphan_checkpoints:
             issues.append(
                 VerifyIssue(
@@ -168,12 +214,14 @@ def verify_database(db_path: Path, artifact_dir: Path) -> VerifyReport:
                 )
             )
 
-        orphan_manifests = conn.execute(
-            """
-            SELECT run_id FROM artifact_manifests
-            WHERE run_id NOT IN (SELECT run_id FROM runs)
-            """
-        ).fetchall()
+        orphan_manifests: list = []
+        if "artifact_manifests" in tables and "runs" in tables:
+            orphan_manifests = conn.execute(
+                """
+                SELECT run_id FROM artifact_manifests
+                WHERE run_id NOT IN (SELECT run_id FROM runs)
+                """
+            ).fetchall()
         for row in orphan_manifests:
             issues.append(
                 VerifyIssue(
@@ -183,12 +231,14 @@ def verify_database(db_path: Path, artifact_dir: Path) -> VerifyReport:
                 )
             )
 
-        half_terminal = conn.execute(
-            """
-            SELECT run_id, phase, outcome FROM runs
-            WHERE phase = 'TERMINATED' AND outcome IS NULL
-            """
-        ).fetchall()
+        half_terminal: list = []
+        if "runs" in tables:
+            half_terminal = conn.execute(
+                """
+                SELECT run_id, phase, outcome FROM runs
+                WHERE phase = 'TERMINATED' AND outcome IS NULL
+                """
+            ).fetchall()
         for row in half_terminal:
             issues.append(
                 VerifyIssue(
@@ -198,13 +248,15 @@ def verify_database(db_path: Path, artifact_dir: Path) -> VerifyReport:
                 )
             )
 
-        inconsistent = conn.execute(
-            """
-            SELECT run_id, phase, outcome FROM runs
-            WHERE phase != 'TERMINATED' AND outcome IS NOT NULL
-              AND outcome NOT IN ('cancelled')
-            """
-        ).fetchall()
+        inconsistent: list = []
+        if "runs" in tables:
+            inconsistent = conn.execute(
+                """
+                SELECT run_id, phase, outcome FROM runs
+                WHERE phase != 'TERMINATED' AND outcome IS NOT NULL
+                  AND outcome NOT IN ('cancelled')
+                """
+            ).fetchall()
         for row in inconsistent:
             issues.append(
                 VerifyIssue(
@@ -217,35 +269,37 @@ def verify_database(db_path: Path, artifact_dir: Path) -> VerifyReport:
                 )
             )
 
-        for row in conn.execute("SELECT run_id, payload FROM artifact_manifests").fetchall():
-            run_id = row["run_id"]
-            manifest_path = _artifact_manifest_path(artifact_dir, run_id, row["payload"])
-            if manifest_path is not None and not manifest_path.exists():
-                issues.append(
-                    VerifyIssue(
-                        severity="warning",
-                        code="manifest_missing_on_disk",
-                        message=f"On-disk manifest missing for run {run_id}: {manifest_path}",
-                    )
-                )
-
-        for row in conn.execute(
-            "SELECT run_id, loop_type FROM runs WHERE phase != 'TERMINATED'"
-        ).fetchall():
-            run_id = row["run_id"]
-            loop_type = row["loop_type"]
-            run_dir = _run_artifact_dir(artifact_dir, loop_type, run_id)
-            if run_dir.exists():
-                tool_results = run_dir / "tool-results.json"
-                trace = run_dir / "trace.jsonl"
-                if not tool_results.exists() and trace.exists():
+        if "artifact_manifests" in tables:
+            for row in conn.execute("SELECT run_id, payload FROM artifact_manifests").fetchall():
+                run_id = row["run_id"]
+                manifest_path = _artifact_manifest_path(artifact_dir, run_id, row["payload"])
+                if manifest_path is not None and not manifest_path.exists():
                     issues.append(
                         VerifyIssue(
                             severity="warning",
-                            code="tool_results_missing",
-                            message=f"tool-results.json missing for active run {run_id}",
+                            code="manifest_missing_on_disk",
+                            message=f"On-disk manifest missing for run {run_id}: {manifest_path}",
                         )
                     )
+
+        if "runs" in tables:
+            for row in conn.execute(
+                "SELECT run_id, loop_type FROM runs WHERE phase != 'TERMINATED'"
+            ).fetchall():
+                run_id = row["run_id"]
+                loop_type = row["loop_type"]
+                run_dir = _run_artifact_dir(artifact_dir, loop_type, run_id)
+                if run_dir.exists():
+                    tool_results = run_dir / "tool-results.json"
+                    trace = run_dir / "trace.jsonl"
+                    if not tool_results.exists() and trace.exists():
+                        issues.append(
+                            VerifyIssue(
+                                severity="warning",
+                                code="tool_results_missing",
+                                message=f"tool-results.json missing for active run {run_id}",
+                            )
+                        )
 
     has_errors = any(issue.severity == "error" for issue in issues)
     return VerifyReport(ok=not has_errors, issues=issues)
