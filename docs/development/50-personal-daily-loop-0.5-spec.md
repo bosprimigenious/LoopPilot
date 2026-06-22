@@ -82,6 +82,8 @@ Complete the Review Layer per [45-personal-daily-loop-0.4c-acceptance.md](45-per
 
 **Default safe mode**: allows Levels **0–3**, **blocks Level 4**.
 
+**Gate actions** (Codex PR #7): `adapter.invoke` checks `policy.max_level` via `allows_level()` before allow; Level 4 is always denied; levels ≤2 blocked in safe profile; `safety.stage=ready` does **not** bypass `max_level`. See [logs/2026-06-21-codex-p1-adapter-max-level-fix.md](logs/2026-06-21-codex-p1-adapter-max-level-fix.md).
+
 **Module layout** (`src/loop_pilot/safety/`):
 
 | File | Responsibility |

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #7 — P1/P2 on feat/0.5-safe-autonomy)
+
+- **P1 `adapter.invoke` max_level**: enforce `policy.allows_level()` before allow; block level 4 even when `safety.stage=ready`; prep stage still blocks level 3+; safe profile blocks level ≤2.
+- **P2 file locks fail-closed**: unknown/legacy lock payloads are not treated as stale; only unlink when dead PID is confirmed.
+- **P2 summary deferred alignment**: `SummaryCollector` reads `review_items.deferred_until`; future-deferred runs hidden from `needs_review` until due (matches review list).
+
+See [logs/2026-06-21-codex-p1-p2-merge-fixes.md](docs/development/logs/2026-06-21-codex-p1-p2-merge-fixes.md).
+
 ### Fixed (Codex PR #7 — P2 on feat/0.5-safe-autonomy)
 
 - **`verify_0_4_acceptance.py` bootstrap**: insert `src` into `sys.path` before `loop_pilot` imports (source checkout without install).

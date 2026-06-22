@@ -152,6 +152,7 @@
 - [logs/2026-06-21-0.5-prep-codex-fixes.md](logs/2026-06-21-0.5-prep-codex-fixes.md) — 0.5-prep fail-closed（Codex PR #7 P0）
 - [logs/2026-06-21-patch-review-gate-fix.md](logs/2026-06-21-patch-review-gate-fix.md) — Patch review gate（Codex PR #8）
 - [logs/2026-06-21-codex-p2-fixes.md](logs/2026-06-21-codex-p2-fixes.md) — Codex P2 bootstrap + config hash
+- [logs/2026-06-21-codex-p1-adapter-max-level-fix.md](logs/2026-06-21-codex-p1-adapter-max-level-fix.md) — Codex P1 adapter max_level + P2 locks/defer summary
 - [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md) — 0.9 RC 规划
 
 ## 文档权威性
