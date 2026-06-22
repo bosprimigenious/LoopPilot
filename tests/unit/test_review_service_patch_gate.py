@@ -14,6 +14,7 @@ from loop_pilot.app import App
 from loop_pilot.domain.models import RunRecord
 from loop_pilot.domain.schema_validation import validate_artifact_manifest
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.review.errors import ReviewDecisionError
 from loop_pilot.review.service import ReviewService
 from loop_pilot.runtime.orchestrator import ResumeError
 from loop_pilot.summary.collector import SummaryCollector, read_gate_result
@@ -318,3 +319,92 @@ def test_patch_run_needs_review_blocks_resume(tmp_path: Path) -> None:
 
     with pytest.raises(ResumeError, match="approve/reject/cancel"):
         service.resume(run_id)
+
+
+def test_approved_review_cannot_be_rejected_later(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-double-reject"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="ship it")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: approved"):
+        service.reject(run_id, reason="too late")
+
+
+def test_rejected_review_cannot_be_cancelled_later(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-double-cancel"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.reject(run_id, reason="unsafe patch")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
+        service.cancel(run_id, reason="changed mind")
+
+
+def test_reject_persists_blocked_artifact_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-reject-db-sync"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    pre_reject_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    app.state_store.save_artifact_manifest(run_id, pre_reject_manifest)
+
+    service.reject(run_id, reason="unsafe patch")
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"
+    disk_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    db_manifest = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert disk_manifest == db_manifest
+    assert db_manifest["terminal_outcome"] == "blocked"
+    assert db_manifest["schema_version"] == "1"
+
+
+def test_cancel_persists_blocked_artifact_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-cancel-db-sync"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    pre_cancel_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    app.state_store.save_artifact_manifest(run_id, pre_cancel_manifest)
+
+    service.cancel(run_id, reason="no longer needed")
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"
+    disk_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    db_manifest = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert disk_manifest == db_manifest
+    assert db_manifest["terminal_outcome"] == "cancelled"
+    assert db_manifest["schema_version"] == "1"

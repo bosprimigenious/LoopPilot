@@ -13,6 +13,8 @@
 - **P2-2 review_suggestion manifest**: `review_suggestion.json` is written before `finalize_terminal_artifacts()` so the sealed manifest includes it with a matching checksum.
 - **P2-3 patch trace truthfulness**: InternLoop appends the terminal trace event after review gating so `loop_trace.jsonl` reflects `partial` / `needs_review`, not `succeeded`.
 - **P2-4 approve DB manifest sync**: `ReviewService.approve()` on patch runs now persists the refreshed `artifact-manifest.json` payload to SQLite `artifact_manifests` via `save_artifact_manifest()` so disk and DB share one truth after `gate=pass`.
+- **P2-6 decided review immutability**: `approve` / `reject` / `cancel` call `_require_decidable_item()` — only `pending` or `deferred` items accept a decision; already `approved` / `rejected` / `cancelled` items raise `ReviewDecisionError`.
+- **P2-7 reject/cancel DB manifest sync**: `reject` and `cancel` on patch runs now persist the refreshed `artifact-manifest.json` (`gate=blocked`) to SQLite `artifact_manifests`, symmetric with approve.
 - **P2-5 canonical manifest schema**: `finalize_terminal_artifacts()` emits `schema_version: "1"`; `schemas/artifact-manifest.json` requires `schema_version`, `run_id`, `loop_type`, `terminal_outcome`, `artifacts` with `additionalProperties=false`; `validate_artifact_manifest()` passes on generated and post-approve manifests.
 - **P2 deferred sync**: `upsert_pending` keeps `deferred` items until `deferred_until`; approved/rejected/cancelled never revert to pending.
 - **0.3 acceptance**: intern fixture/workspace expected outcome updated to `partial` (truthful review semantics).
