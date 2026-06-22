@@ -7,7 +7,21 @@
   "properties": {
     "schema_version": {"type": "string"},
     "run_id": {"type": "string"},
-    "artifacts": {"type": "array"},
+    "loop_type": {"type": "string"},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string"},
+          "sha256": {"type": "string"},
+          "kind": {"type": "string"},
+          "human_readable": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
     "terminal_outcome": {"type": ["string", "null"]},
     "created_at": {"type": "string"}
   },

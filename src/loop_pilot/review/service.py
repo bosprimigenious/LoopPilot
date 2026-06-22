@@ -145,7 +145,13 @@ class ReviewService:
                 status="approved",
                 reason=note,
             )
-            finalize_terminal_artifacts(run_dir, record, gate="pass", review_required=False)
+            manifest = finalize_terminal_artifacts(
+                run_dir,
+                record,
+                gate="pass",
+                review_required=False,
+            )
+            self.state_store.save_artifact_manifest(run_id, manifest)
         else:
             record = approve_run(self.state_store, run_id)
             self.store.record_decision(

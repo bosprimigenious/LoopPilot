@@ -12,6 +12,7 @@ import pytest
 
 from loop_pilot.app import App
 from loop_pilot.domain.models import RunRecord
+from loop_pilot.domain.schema_validation import validate_artifact_manifest
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.review.service import ReviewService
 from loop_pilot.runtime.orchestrator import ResumeError
@@ -49,6 +50,18 @@ def _review_service(tmp_path: Path) -> tuple[ReviewService, App]:
     app = App.from_config_dir(config_dir)
     service = ReviewService(config=app.config, state_store=app.state_store, orchestrator=app.orchestrator)
     return service, app
+
+
+def _load_db_manifest(sqlite_path: Path, run_id: str) -> dict:
+    import sqlite3
+
+    with sqlite3.connect(sqlite_path) as conn:
+        row = conn.execute(
+            "SELECT payload FROM artifact_manifests WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+    assert row is not None, f"artifact_manifests row missing for {run_id}"
+    return json.loads(row[0])
 
 
 def _seed_patch_run(
@@ -154,6 +167,59 @@ def test_patch_run_is_needs_review_not_completed_in_summary(tmp_path: Path) -> N
     )
     weekly = collector.collect_weekly(f"{iso.year}-W{iso.week:02d}")
     assert not any(run_id in item and "succeeded" in item for item in weekly.completed)
+
+
+def test_approve_refreshes_persisted_artifact_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-db-sync"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    pre_approve_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    app.state_store.save_artifact_manifest(run_id, pre_approve_manifest)
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "needs_review"
+    db_before = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert db_before["terminal_outcome"] == "partial"
+
+    service.approve(run_id, note="ship it")
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "pass"
+    disk_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    db_manifest = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert disk_manifest == db_manifest
+    assert disk_manifest["terminal_outcome"] == "succeeded"
+    assert disk_manifest["schema_version"] == "1"
+    for item in disk_manifest["artifacts"]:
+        rel = item["path"]
+        assert item["sha256"] == _sha256(run_dir / rel), rel
+
+
+def test_approved_manifest_validates_against_schema(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-schema-approved"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="looks good")
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    validate_artifact_manifest(manifest)
 
 
 def test_approve_patch_run_finalizes_directly(tmp_path: Path) -> None:

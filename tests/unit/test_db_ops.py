@@ -87,7 +87,16 @@ def test_verify_ok_after_valid_run(tmp_path: Path) -> None:
         outcome=RunOutcome.SUCCEEDED,
     )
     store.save_run(record)
-    store.save_artifact_manifest(record.run_id, {"run_id": record.run_id, "loop_type": "intern"})
+    store.save_artifact_manifest(
+        record.run_id,
+        {
+            "schema_version": 1,
+            "run_id": record.run_id,
+            "loop_type": "intern",
+            "terminal_outcome": "succeeded",
+            "artifacts": [],
+        },
+    )
 
     report = verify_database(db_path, tmp_path / "artifacts")
     assert report.ok is True

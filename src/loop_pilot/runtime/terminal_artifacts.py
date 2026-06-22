@@ -195,6 +195,7 @@ def finalize_terminal_artifacts(
     artifacts = _scan_run_dir_artifacts(run_dir, prior)
 
     manifest = {
+        "schema_version": "1",
         "run_id": record.run_id,
         "loop_type": record.loop_type,
         "terminal_outcome": record.outcome.value if record.outcome else None,

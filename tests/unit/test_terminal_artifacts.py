@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from loop_pilot.domain.models import RunRecord, RunRequest
+from loop_pilot.domain.schema_validation import validate_artifact_manifest
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.loops.intern.loop import InternLoop
 from loop_pilot.policy.engine import PolicyEngine
@@ -19,6 +20,25 @@ def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+def test_generated_artifact_manifest_validates_against_schema(tmp_path: Path) -> None:
+    run_dir = tmp_path / "intern" / "run-schema"
+    run_dir.mkdir(parents=True)
+    (run_dir / "development-report.md").write_text("# Dev report\n", encoding="utf-8")
+
+    record = RunRecord(
+        run_id="run-schema",
+        loop_type="intern",
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.SUCCEEDED,
+        started_at="2026-06-21T00:00:00Z",
+        finished_at="2026-06-21T00:05:00Z",
+    )
+    manifest = finalize_terminal_artifacts(run_dir, record, gate="pass")
+    validate_artifact_manifest(manifest)
+    assert manifest["schema_version"] == "1"
+    assert manifest["loop_type"] == "intern"
 
 
 def test_finalize_terminal_artifacts_writes_canonical_set(tmp_path: Path) -> None:

@@ -51,7 +51,7 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 | phase | `WAITING_APPROVAL` (not `TERMINATED`) | `TERMINATED` |
 | outcome | `PARTIAL` | `SUCCEEDED` |
 | gate | `needs_review` | `pass` |
-| manifest | includes `review_suggestion.json` with matching sha256 | refreshed after approve |
+| manifest | includes `review_suggestion.json` with matching sha256 | refreshed on disk **and** in SQLite `artifact_manifests` (`schema_version: 1`) |
 | loop_trace | `waiting_review` / `partial` / `needs_review` — no `terminated/succeeded` | updated on approve |
 | resume | blocked — use approve/reject/cancel | **blocked** — already finalized |
 
