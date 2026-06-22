@@ -176,7 +176,7 @@ class ReviewService:
         return record
 
     def defer(self, run_id: str, until: str, reason: str = "") -> ReviewItem:
-        self._require_item(run_id)
+        self._require_decidable_item(run_id)
         updated = self.store.record_decision(
             run_id,
             decision="defer",

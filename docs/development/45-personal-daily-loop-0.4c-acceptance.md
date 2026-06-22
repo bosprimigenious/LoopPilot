@@ -53,7 +53,7 @@ Acceptance scripts MUST assert JSON structure and manifest membership; MUST NOT 
 | gate | `needs_review` | `pass` |
 | manifest | includes `review_suggestion.json` with matching sha256 | refreshed on disk **and** in SQLite `artifact_manifests` (`schema_version: 1`) |
 | reject / cancel | — | manifest refreshed on disk **and** in SQLite (`gate=blocked`; `terminal_outcome` = `blocked` / `cancelled`) |
-| decided review | — | **immutable** — `_require_decidable_item()` blocks second approve/reject/cancel (`ReviewDecisionError`) |
+| decided review | — | **immutable** — `_require_decidable_item()` blocks second approve/reject/defer/cancel (`ReviewDecisionError`) |
 | loop_trace | `waiting_review` / `partial` / `needs_review` — no `terminated/succeeded` | updated on approve |
 | resume | blocked — use approve/reject/cancel | **blocked** — already finalized |
 

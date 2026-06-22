@@ -117,7 +117,7 @@ def defer(ctx: click.Context, run_id: str, until: str, reason: str) -> None:
     """Defer review until a future date (requires runtime.state_backend=sqlite)."""
     try:
         item = _review_service(ctx.obj["config_dir"]).defer(run_id, until, reason)
-    except ApprovalError as exc:
+    except (ApprovalError, ReviewDecisionError) as exc:
         _handle_review_error(exc)
     click.echo(f"Deferred {run_id} until {item.deferred_until}")
 

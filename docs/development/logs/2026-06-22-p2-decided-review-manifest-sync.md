@@ -7,9 +7,15 @@ Branch: `stabilize/0.4-truthful-acceptance`
 
 **Problem:** `approve` only blocked `rejected`/`cancelled`; `reject`/`cancel` used `_require_item()` and allowed re-decision on already-approved items.
 
-**Fix:** `_require_decidable_item()` — only `pending` or `deferred` accept a decision; raises `ReviewDecisionError` otherwise. Used by `approve`, `reject`, and `cancel`.
+**Fix:** `_require_decidable_item()` — only `pending` or `deferred` accept a decision; raises `ReviewDecisionError` otherwise. Used by `approve`, `reject`, `defer`, and `cancel`.
 
-**Tests:** `test_approved_review_cannot_be_rejected_later`, `test_rejected_review_cannot_be_cancelled_later`
+**Tests:** `test_approved_review_cannot_be_rejected_later`, `test_rejected_review_cannot_be_cancelled_later`, `test_approved_review_cannot_be_deferred_later`, `test_rejected_review_cannot_be_deferred_later`
+
+## P2-6b — defer cannot override decided review (2026-06-22)
+
+**Problem:** `defer()` still used `_require_item()`, so approve → defer could revert `approved` to `deferred`, reopening reject/cancel on a finalized item.
+
+**Fix:** `ReviewService.defer()` now calls `_require_decidable_item()`; CLI `defer` catches `ReviewDecisionError`.
 
 ## P2-7 — reject/cancel sync SQLite artifact_manifests
 

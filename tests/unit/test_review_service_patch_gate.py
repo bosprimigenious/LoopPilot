@@ -339,6 +339,41 @@ def test_approved_review_cannot_be_rejected_later(tmp_path: Path) -> None:
         service.reject(run_id, reason="too late")
 
 
+def test_approved_review_cannot_be_deferred_later(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-double-defer"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="ship it")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: approved"):
+        service.defer(run_id, until="2099-01-01", reason="too late")
+
+
+def test_rejected_review_cannot_be_deferred_later(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-reject-then-defer"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.reject(run_id, reason="unsafe patch")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
+        service.defer(run_id, until="2099-01-01", reason="changed mind")
+
+
 def test_rejected_review_cannot_be_cancelled_later(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-double-cancel"
