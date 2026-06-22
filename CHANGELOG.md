@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed (Codex P2 — review guards & CLI on feat/0.5-safe-autonomy)
+
+- **P2 finalized review guard**: `approve` / `reject` / `defer` / `cancel` refuse items already `approved`, `rejected`, or `cancelled` (`ReviewDecisionError`); stale decisions cannot rewrite terminal state.
+- **P2 review CLI subcommands**: `review approve|reject|defer|cancel|resume` registered under the `review` group; root commands kept as backward-compatible aliases.
+
+See [logs/2026-06-22-codex-p2-review-guards-cli.md](docs/development/logs/2026-06-22-codex-p2-review-guards-cli.md).
+
 ### Fixed (Codex PR #7 — P2 summary & scheduler on feat/0.5-safe-autonomy)
 
 - **P2 summary decided-review**: `SummaryCollector` excludes runs whose `review_items` status is `rejected`, `cancelled`, or `approved` from daily/weekly `needs_review` (aligns with review list; deferred-until logic unchanged).

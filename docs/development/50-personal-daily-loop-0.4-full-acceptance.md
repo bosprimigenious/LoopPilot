@@ -95,11 +95,11 @@ If inbox/queue/today CLI missing → **FAIL layer 2, note blocked**.
 | 3.1 | Intern run | `run intern --workspace examples/intern_demo --dry-run [--json]` |
 | 3.2 | Review list | `review list` |
 | 3.3 | Review show | `review show <run-id>` |
-| 3.4 | Approve | `review approve <run-id> --note "checked locally"` |
-| 3.5 | Reject (with reason) | `review reject <run-id> --reason "needs more tests"` |
+| 3.4 | Approve | `review approve <run-id> --note "checked locally"` (alias: `loop-pilot approve`) |
+| 3.5 | Reject (with reason) | `review reject <run-id> --reason "needs more tests"` (alias: `loop-pilot reject`) |
 | 3.6 | Reject (no reason) | must **FAIL** |
-| 3.7 | Defer | `review defer <run-id> --until 2026-06-25` |
-| 3.8 | Cancel | `review cancel <run-id> --reason "not needed"` |
+| 3.7 | Defer | `review defer <run-id> --until 2026-06-25` (alias: `loop-pilot defer`) |
+| 3.8 | Cancel | `review cancel <run-id> --reason "not needed"` (alias: `loop-pilot cancel`) |
 | 3.9 | Recovery after cancel | `recovery-scan` |
 | 3.10 | Report | `report <run-id>` |
 
