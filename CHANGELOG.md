@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #7 — adapter path wiring on feat/0.5-safe-autonomy)
+
+- **P1 adapter execution path**: `create_adapter` calls `SafetyGate.check("adapter.invoke")` before real adapter instantiation when config is wired from Orchestrator; kind→level mapping in `safety/adapter_levels.py`; fail-closed on deny.
+- **P2 locks PermissionError**: `_pid_alive` treats `PermissionError` from `os.kill` as live PID (fail-closed stale removal).
+
+See [logs/2026-06-21-codex-adapter-path-wiring.md](docs/development/logs/2026-06-21-codex-adapter-path-wiring.md).
+
 ### Fixed (Codex PR #7 — P1/P2 on feat/0.5-safe-autonomy)
 
 - **P1 `adapter.invoke` max_level**: enforce `policy.allows_level()` before allow; block level 4 even when `safety.stage=ready`; prep stage still blocks level 3+; safe profile blocks level ≤2.
