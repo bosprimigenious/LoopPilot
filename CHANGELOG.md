@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Documentation
+
+- **README refresh (2026-06-22)**: 根 `README.md` 重写 — inline SVG 徽章、0.3→0.4→0.5 里程碑条、Loop 状态机 + review gate 流程图；验收门禁表（`verify_0_3` / `0_4b` / `0_4c` / `0_4d` / `0_4` / `0_5_prep`）；反映 PR #8 合入后 **11/11 READY**、**254 pytest**
+- **Development log**: [logs/2026-06-22-main-sync-readme-refresh.md](docs/development/logs/2026-06-22-main-sync-readme-refresh.md) — main 同步、Truthful 0.4 合入事实、README 重写摘要
+- **Development index**: `docs/development/README.md` 更新当前工程焦点为 `main` + PR #8 merged
+
 ### Fixed (Codex PR #8 — truthful patch review acceptance)
 
 - **P0-1 patch review gate**: `patch.diff` runs finalize as `WAITING_APPROVAL` / `PARTIAL` / `needs_review` (not completed) until human approve; `gate_result.json` is `needs_review`; weekly summary excludes them from Completed.

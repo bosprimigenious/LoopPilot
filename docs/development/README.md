@@ -19,16 +19,15 @@
 - 项目名：`LoopPilot`；GitHub：[bosprimigenious/LoopPilot](https://github.com/bosprimigenious/LoopPilot)
 - PyPI / CLI：`loop-pilot`；Python 包：`loop_pilot` / `src/loop_pilot/`
 - **阶段版本**：0.x 个人优先（0.1 → … → 0.9）→ **1.x**（1.0 稳定 → 1.1 智能 → 1.2 协作 → 1.3 团队 preview），路线图权威见 [34-version-roadmap-0x.md](34-version-roadmap-0x.md) + [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)；semver 索引见 [33-version-roadmap.md](33-version-roadmap.md)
-- **当前工程焦点**：
+- **当前工程焦点**（`main`，2026-06-22）：
   - **0.1** 已完成
   - **0.2** 已验收 `v0.2.0a1`（2026-06-21）
-  - **0.3** safety alpha `v0.3.0a1`（分支 `adapter-mvp-0.3`）— L1/L2 通过；Full DoD 待 MANUAL 层
-  - **0.4.0b1 Truthful 0.4 baseline** — `stabilize/0.4-truthful-acceptance` aggregate **11/11 READY**（PR #8 merge into `main`）
-  - **0.4-c** Review Layer ✅（`verify_0_4c_acceptance.py` 36/36）
-  - **0.4-d** summary/schedule ✅；Truthful 0.4 聚合验收见 [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md) §7 Next steps
-  - **0.5-prep**（from merged PR #7 on `main`）：SafetyGate、readiness — 正式 Step 1 待 0.4 baseline 合入后继续在 `feat/0.5-safe-autonomy` 或 follow-up PR
-  - 当前权威行动项：[50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
-  - **0.5** Safe Autonomy 规格已修订（SafetyGate 优先、无 daemon）— 见 [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md)；实现 **0.5-prep 可并行**，正式 Step 1 待 Truthful 0.4 Milestone A 全绿
+  - **0.3** `v0.3.0b1` ToolBroker — `verify_0_3` 20/20 ✅
+  - **0.4.0b1 Truthful 0.4 baseline** — PR #8 merged into `main`（`f073353`）；`verify_0_4_acceptance.py` **11/11 READY**；`pytest` **254 passed**
+  - **0.4-a/b/c/d** 均已交付；聚合验收权威见 [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
+  - **0.5-prep**（PR #7 on `main`）：SafetyGate fail-closed — `verify_0_5_prep.py` prep PASS / ready NOT READY
+  - **0.5** Safe Autonomy 正式实现 — 继续在 `feat/0.5-safe-autonomy`；规格见 [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md)
+  - README 重写记录：[logs/2026-06-22-main-sync-readme-refresh.md](logs/2026-06-22-main-sync-readme-refresh.md)
   - **0.5+** Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
 - 0.1–0.3 CLI：`doctor`、`run`、`run all`、`status`、`inspect`；0.3 增 `adapters list/doctor`
@@ -153,6 +152,7 @@
 - [logs/2026-06-21-patch-review-gate-fix.md](logs/2026-06-21-patch-review-gate-fix.md) — Patch review gate（Codex PR #8）
 - [logs/2026-06-21-codex-p2-fixes.md](logs/2026-06-21-codex-p2-fixes.md) — Codex P2 bootstrap + config hash
 - [logs/2026-06-21-codex-p1-adapter-max-level-fix.md](logs/2026-06-21-codex-p1-adapter-max-level-fix.md) — Codex P1 adapter max_level + P2 locks/defer summary
+- [logs/2026-06-22-main-sync-readme-refresh.md](logs/2026-06-22-main-sync-readme-refresh.md) — main 同步、PR #8 合入、README SVG 重写
 - [logs/2026-06-20-0.9-release-candidate-spec.md](logs/2026-06-20-0.9-release-candidate-spec.md) — 0.9 RC 规划
 
 ## 文档权威性
