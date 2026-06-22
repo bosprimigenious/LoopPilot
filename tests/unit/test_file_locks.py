@@ -35,3 +35,35 @@ def test_acquire_writes_pid_payload(tmp_path: Path) -> None:
     with store.acquire("loop:paper", "holder"):
         payload = (lock_dir / "loop_paper.lock").read_text(encoding="utf-8")
     assert payload.startswith(f"{os.getpid()}:")
+
+
+def test_unknown_legacy_lock_payload_is_not_treated_as_stale(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    legacy = lock_dir / "loop_legacy.lock"
+    legacy.write_text("legacy-holder-only", encoding="utf-8")
+
+    clear_stale_locks(lock_dir)
+
+    assert legacy.exists()
+
+
+def test_dead_pid_lock_is_stale(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    stale = lock_dir / "loop_dead.lock"
+    stale.write_text("999999:dead-run", encoding="utf-8")
+
+    store = FileLockStore(lock_dir, timeout_seconds=0.1)
+    assert store._lock_is_stale(stale)
+    clear_stale_locks(lock_dir)
+    assert not stale.exists()
+
+
+def test_live_pid_lock_is_not_stale(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    store = FileLockStore(lock_dir, timeout_seconds=1.0)
+    with store.acquire("loop:live", "holder"):
+        live = lock_dir / "loop_live.lock"
+        assert live.exists()
+        assert not store._lock_is_stale(live)

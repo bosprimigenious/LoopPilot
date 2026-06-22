@@ -69,11 +69,14 @@ class FileLockStore:
         except OSError:
             return False
         if not raw:
-            return True
-        pid_part, _, _ = raw.partition(":")
-        if pid_part.isdigit():
-            return not _pid_alive(int(pid_part))
-        return True
+            return False
+        pid_part, _, holder = raw.partition(":")
+        if not pid_part.isdigit() or not holder:
+            return False
+        pid = int(pid_part)
+        if pid <= 0:
+            return False
+        return not _pid_alive(pid)
 
     def _clear_stale_lock(self, path: Path) -> None:
         if path.exists() and self._lock_is_stale(path):
