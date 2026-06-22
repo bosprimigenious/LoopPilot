@@ -67,3 +67,34 @@ def test_policy_defaults() -> None:
     assert policy.max_level == SafetyLevel.REAL_GUARDED
     assert not policy.allow_schedule_install
     assert policy.config is not None
+
+
+def _adapter_gate(*, max_level: int, stage: str = "ready", tmp_path: Path) -> SafetyGate:
+    return SafetyGate.from_config(
+        LoopPilotConfig(
+            runtime={"state_dir": str(tmp_path / "state")},
+            safety={"stage": stage, "max_level": max_level},
+            config_dir=tmp_path / "config",
+        )
+    )
+
+
+def test_adapter_invoke_denied_when_level_exceeds_max_level(tmp_path: Path) -> None:
+    gate = _adapter_gate(max_level=2, tmp_path=tmp_path)
+    for level in (SafetyLevel.REAL_GUARDED, SafetyLevel.REAL_BOUNDED):
+        result = gate.check("adapter.invoke", level=level)
+        assert result.denied
+        assert result.reason_code in {"LEVEL_EXCEEDS_MAX", "LEVEL_4_BLOCKED"}
+
+
+def test_adapter_invoke_level_4_denied_even_when_stage_ready(tmp_path: Path) -> None:
+    gate = _adapter_gate(max_level=4, tmp_path=tmp_path)
+    result = gate.check("adapter.invoke", level=SafetyLevel.REAL_BOUNDED)
+    assert result.denied and result.reason_code == "LEVEL_4_BLOCKED"
+
+
+def test_adapter_invoke_cannot_bypass_policy_allows_level(tmp_path: Path) -> None:
+    gate = _adapter_gate(max_level=2, stage="ready", tmp_path=tmp_path)
+    result = gate.check("adapter.invoke", level=SafetyLevel.REAL_GUARDED)
+    assert result.denied and result.reason_code == "LEVEL_EXCEEDS_MAX"
+    assert not gate.policy.allows_level(SafetyLevel.REAL_GUARDED)

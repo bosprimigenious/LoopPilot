@@ -132,6 +132,22 @@ class SafetyGate:
             )
         if level <= SafetyLevel.MOCK_EXECUTE:
             return self._deny("adapter.invoke", "ADAPTER_BLOCKED_IN_SAFE_PROFILE", "adapters disabled in safe profile", context, level=level)
+        if level == SafetyLevel.REAL_BOUNDED:
+            return self._deny(
+                "adapter.invoke",
+                "LEVEL_4_BLOCKED",
+                "level 4 blocked by default safe policy",
+                context,
+                level=level,
+            )
+        if not self.policy.allows_level(level):
+            return self._deny(
+                "adapter.invoke",
+                "LEVEL_EXCEEDS_MAX",
+                f"level {level.value} exceeds policy max {self.policy.max_level.value}",
+                context,
+                level=level,
+            )
         return self._allow("adapter.invoke", "ADAPTER_ALLOWED", "adapter invoke permitted at guarded level", context, level=level)
 
     def _allow(self, action: str, reason_code: str, message: str, context: dict[str, Any], *, level: SafetyLevel | None = None) -> GateResult:
