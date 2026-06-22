@@ -11,6 +11,7 @@ from typing import Any, Callable
 from loop_pilot.adapters.blocked_trace import append_adapter_blocked_event, adapter_trace_artifact_ref
 from loop_pilot.adapters.errors import AdapterBlockedError
 from loop_pilot.adapters.factory import create_adapter
+from loop_pilot.config import LoopPilotConfig
 from loop_pilot.domain.models import (
     ArtifactManifest,
     ArtifactReference,
@@ -68,6 +69,7 @@ class InternLoop:
         budget_manager: BudgetManager | None = None,
         router: ModelRouter | None = None,
         tool_broker: ToolBroker | None = None,
+        config: LoopPilotConfig | None = None,
     ) -> None:
         self.artifact_dir = artifact_dir
         self.policy = policy
@@ -77,6 +79,7 @@ class InternLoop:
         self.tool_broker = tool_broker or ToolBroker(
             ToolPolicy(allowed_commands=["pytest", "python", "git"])
         )
+        self.config = config
         self.state_machine = StateMachine()
 
     def run(
@@ -124,6 +127,7 @@ class InternLoop:
             adapter = create_adapter(
                 self.router,
                 "coding_agent",
+                config=self.config,
                 fixture_dir=fixture_dir,
                 artifact_dir=self.artifact_dir,
                 adapter_override=request.adapter_override,

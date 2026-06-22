@@ -11,8 +11,11 @@ from loop_pilot.adapters.mock_adapter import MockAdapter
 from loop_pilot.adapters.openai_compatible import OpenAICompatibleAdapter, OpenAICompatibleConfig
 from loop_pilot.adapters.preflight import validate_adapter_run
 from loop_pilot.adapters.registry import adapter_kind, assert_real_adapters_allowed, is_real_adapter_kind
+from loop_pilot.config import LoopPilotConfig
 from loop_pilot.domain.errors import ErrorCode, LoopPilotError
 from loop_pilot.models.router import ModelRouter, RouterDecision
+from loop_pilot.safety.adapter_levels import requires_adapter_invoke_gate, safety_level_for_kind
+from loop_pilot.safety.gate import SafetyGate
 
 
 def _assert_known_adapter(router: ModelRouter, adapter_id: str, role: str) -> dict[str, Any]:
@@ -21,10 +24,35 @@ def _assert_known_adapter(router: ModelRouter, adapter_id: str, role: str) -> di
     return router.adapter_config(adapter_id)
 
 
+def _check_adapter_safety_gate(
+    config: LoopPilotConfig,
+    *,
+    role: str,
+    kind: str,
+    adapter_id: str | None,
+) -> None:
+    if not requires_adapter_invoke_gate(kind):
+        return
+    level = safety_level_for_kind(kind)
+    result = SafetyGate.from_config(config).check(
+        "adapter.invoke",
+        level=level,
+        role=role,
+        adapter_id=adapter_id,
+        kind=kind,
+    )
+    if result.denied:
+        raise AdapterBlockedError(
+            role,
+            f"safety gate denied adapter.invoke ({result.reason_code}): {result.message}",
+        )
+
+
 def create_adapter(
     router: ModelRouter,
     role: str,
     *,
+    config: LoopPilotConfig | None = None,
     fixture_dir: Path | None = None,
     artifact_dir: Path | None = None,
     data_class: str = "PROJECT",
@@ -36,6 +64,8 @@ def create_adapter(
         kind = adapter_kind(adapter_config)
         if is_real_adapter_kind(kind) and not router.allow_real_adapters:
             raise AdapterBlockedError(role, f"adapter {adapter_override} blocked by allow_real_adapters=false")
+        if config is not None:
+            _check_adapter_safety_gate(config, role=role, kind=kind, adapter_id=adapter_override)
         validate_adapter_run(
             adapter_override,
             adapter_config,
@@ -55,9 +85,14 @@ def create_adapter(
     decision = router.resolve_role(role, data_class=data_class)
     if decision.blocked or decision.adapter_id is None:
         raise AdapterBlockedError(role, decision.reason or "no capable adapter")
+    adapter_id = decision.adapter_id
+    adapter_config = router.adapter_config(adapter_id)
+    kind = adapter_kind(adapter_config)
+    if config is not None:
+        _check_adapter_safety_gate(config, role=role, kind=kind, adapter_id=adapter_id)
     return build_adapter(
-        decision.adapter_id,
-        router.adapter_config(decision.adapter_id),
+        adapter_id,
+        adapter_config,
         fixture_dir=fixture_dir,
         artifact_dir=artifact_dir,
         allow_real_adapters=router.allow_real_adapters,
