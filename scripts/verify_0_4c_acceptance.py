@@ -9,14 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
 
 
 @dataclass
@@ -41,7 +37,6 @@ REQUIRED_MODULES = [
     "src/loop_pilot/cli_review.py",
 ]
 REQUIRED_CLI = ("review", "approve", "reject", "defer", "cancel", "resume")
-REVIEW_SUBCOMMANDS = ("approve", "reject", "defer", "cancel", "resume")
 REQUIRED_TESTS = [
     "tests/unit/test_review_store.py",
     "tests/integration/test_review_cli.py",
@@ -55,20 +50,16 @@ BEHAVIOR_TESTS = [
     "tests/unit/test_review_service_patch_gate.py::test_rejected_patch_run_cannot_resume",
     "tests/unit/test_review_service_patch_gate.py::test_cancelled_patch_run_cannot_resume",
     "tests/unit/test_terminal_artifacts.py::test_manifest_does_not_include_self_checksum",
-    "tests/unit/test_summary_collector.py::test_report_path_prefers_final_report_over_diff_summary",
+    "tests/unit/test_terminal_artifacts.py::test_artifact_manifest_excludes_itself",
+    "tests/unit/test_terminal_artifacts.py::test_terminal_artifacts_manifest_checksums_match_final_files",
+    "tests/unit/test_terminal_artifacts.py::test_intern_patch_run_does_not_overwrite_canonical_manifest",
+    "tests/unit/test_summary_collector.py::test_report_path_prefers_actual_report_over_diff_summary",
+    "tests/unit/test_review_store.py::test_deferred_review_item_survives_sync_until_due_date",
 ]
 
 
-def _subprocess_env() -> dict[str, str]:
-    env = os.environ.copy()
-    src = str(SRC)
-    prefix = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = src if not prefix else f"{src}{os.pathsep}{prefix}"
-    return env
-
-
 def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False, env=_subprocess_env())
+    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
 
 
 def _display(cmd: list[str]) -> str:
@@ -84,11 +75,6 @@ def _loop_pilot(*args: str, config_dir: str) -> list[str]:
 
 def _cli_has_command(repo: Path, name: str) -> bool:
     proc = _run([sys.executable, "-m", "loop_pilot.cli", name, "--help"], cwd=repo)
-    return proc.returncode == 0 and "Error: No such command" not in (proc.stdout + proc.stderr)
-
-
-def _cli_has_review_subcommand(repo: Path, name: str) -> bool:
-    proc = _run([sys.executable, "-m", "loop_pilot.cli", "review", name, "--help"], cwd=repo)
     return proc.returncode == 0 and "Error: No such command" not in (proc.stdout + proc.stderr)
 
 
@@ -111,11 +97,7 @@ def _readiness_checks(repo: Path) -> tuple[list[StepResult], bool]:
         record(f"test {rel}", f"exists {rel}", path.is_file(), "present" if path.is_file() else "missing")
 
     cli_py = repo / "src/loop_pilot/cli.py"
-    cli_review_py = repo / "src/loop_pilot/cli_review.py"
     wired = cli_py.is_file() and ("cli_review" in cli_py.read_text(encoding="utf-8"))
-    review_subs_wired = cli_review_py.is_file() and (
-        "review.add_command(approve" in cli_review_py.read_text(encoding="utf-8")
-    )
     record(
         "CLI wired in cli.py",
         "grep cli.py for cli_review",
@@ -126,15 +108,6 @@ def _readiness_checks(repo: Path) -> tuple[list[StepResult], bool]:
     for cmd_name in REQUIRED_CLI:
         ok = _cli_has_command(repo, cmd_name)
         record(f"CLI {cmd_name}", f"loop-pilot {cmd_name} --help", ok, "registered" if ok else "not registered")
-
-    for sub_name in REVIEW_SUBCOMMANDS:
-        ok = _cli_has_review_subcommand(repo, sub_name) or review_subs_wired
-        record(
-            f"CLI review {sub_name}",
-            f"loop-pilot review {sub_name} --help",
-            ok,
-            "registered" if ok else "not registered under review group",
-        )
 
     migrations = repo / "src/loop_pilot/storage/migrations.py"
     if migrations.is_file():

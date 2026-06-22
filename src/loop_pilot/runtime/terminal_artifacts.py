@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from loop_pilot.domain.models import RunRecord
-from loop_pilot.domain.states import RunOutcome
 
 CANONICAL_ARTIFACTS = (
     "run_meta.json",
@@ -25,15 +24,6 @@ LOOP_REPORT_NAMES = {
     "paper": "paper-development-report.md",
     "daily_news": "daily-news-report.md",
 }
-
-
-_PATCH_DECIDED = frozenset({"approved", "rejected", "cancelled"})
-
-
-def _patch_awaiting_review(run_dir: Path, record: RunRecord) -> bool:
-    if not (run_dir / "patch.diff").exists():
-        return False
-    return (record.review_status or "") not in _PATCH_DECIDED
 
 
 def _sha256(path: Path) -> str:
@@ -55,6 +45,84 @@ def _gate_for_record(record: RunRecord) -> str:
     return "pass"
 
 
+def _prior_metadata(run_dir: Path) -> dict[str, dict[str, Any]]:
+    """Load kind/human_readable from an existing manifest; never reuse sha256."""
+    manifest_path = run_dir / "artifact-manifest.json"
+    if not manifest_path.exists():
+        return {}
+    try:
+        existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    metadata: dict[str, dict[str, Any]] = {}
+    prior = existing.get("artifacts", [])
+    if not isinstance(prior, list):
+        return metadata
+    for item in prior:
+        if not isinstance(item, dict):
+            continue
+        rel = item.get("path")
+        if not rel or rel == "artifact-manifest.json":
+            continue
+        entry: dict[str, Any] = {}
+        if "kind" in item:
+            entry["kind"] = item["kind"]
+        if "human_readable" in item:
+            entry["human_readable"] = item["human_readable"]
+        metadata[str(rel)] = entry
+    return metadata
+
+
+def _infer_kind(rel: str) -> str:
+    if rel in {
+        "report.md",
+        "development-report.md",
+        "paper-development-report.md",
+        "daily-news-report.md",
+        "review_required.md",
+    }:
+        return "report"
+    if rel.endswith(".md"):
+        return "log"
+    if "trace" in rel:
+        return "trace"
+    return "machine"
+
+
+def _infer_human_readable(rel: str) -> bool:
+    return rel.endswith(".md")
+
+
+def _scan_run_dir_artifacts(run_dir: Path, prior: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    artifacts: list[dict[str, Any]] = []
+    for path in sorted(run_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(run_dir).as_posix()
+        if rel == "artifact-manifest.json" or rel.startswith("."):
+            continue
+        meta = prior.get(rel, {})
+        kind = meta.get("kind") if "kind" in meta else _infer_kind(rel)
+        human_readable = (
+            meta.get("human_readable") if "human_readable" in meta else _infer_human_readable(rel)
+        )
+        artifacts.append(
+            {
+                "path": rel,
+                "sha256": _sha256(path),
+                "human_readable": human_readable,
+                "kind": kind,
+            }
+        )
+    return artifacts
+
+
+def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    tmp_path.replace(path)
+
+
 def finalize_terminal_artifacts(
     run_dir: Path,
     record: RunRecord,
@@ -64,14 +132,8 @@ def finalize_terminal_artifacts(
     review_required: bool = False,
 ) -> dict[str, Any]:
     run_dir.mkdir(parents=True, exist_ok=True)
-    if _patch_awaiting_review(run_dir, record):
-        record.outcome = RunOutcome.PARTIAL
-        record.review_status = "needs_review"
-        record.report_status = "needs_review"
-        resolved_gate = "needs_review"
-        review_required = True
-    else:
-        resolved_gate = gate or _gate_for_record(record)
+    resolved_gate = gate or _gate_for_record(record)
+    prior = _prior_metadata(run_dir)
 
     run_meta = {
         "run_id": record.run_id,
@@ -130,68 +192,16 @@ def finalize_terminal_artifacts(
                 encoding="utf-8",
             )
 
-    artifacts: list[dict[str, Any]] = []
-    existing_path = run_dir / "artifact-manifest.json"
-    if existing_path.exists():
-        try:
-            existing = json.loads(existing_path.read_text(encoding="utf-8"))
-            prior = existing.get("artifacts", [])
-            if isinstance(prior, list):
-                for item in prior:
-                    if isinstance(item, dict) and item.get("path") != "artifact-manifest.json":
-                        artifacts.append(dict(item))
-        except json.JSONDecodeError:
-            pass
-
-    seen = {item.get("path") for item in artifacts if isinstance(item, dict)}
-    adapter_trace_path = run_dir / "adapter-call-trace.jsonl"
-    if adapter_trace_path.exists():
-        has_adapter_trace = any(
-            isinstance(item, dict)
-            and item.get("kind") == "trace"
-            and "adapter-call-trace.jsonl" in str(item.get("path", ""))
-            for item in artifacts
-        )
-        if not has_adapter_trace:
-            artifacts.append(
-                {
-                    "path": str(adapter_trace_path),
-                    "sha256": _sha256(adapter_trace_path),
-                    "human_readable": False,
-                    "kind": "trace",
-                }
-            )
-            seen.add(str(adapter_trace_path))
-
-    for name in sorted({*CANONICAL_ARTIFACTS, "review_required.md", "patch.diff", *LOOP_REPORT_NAMES.values()}):
-        if name == "artifact-manifest.json":
-            continue
-        path = run_dir / name
-        if not path.exists():
-            continue
-        rel = name
-        if rel in seen:
-            continue
-        kind = "report" if name.endswith(".md") else "machine"
-        if "trace" in name:
-            kind = "trace"
-        artifacts.append(
-            {
-                "path": rel,
-                "sha256": _sha256(path),
-                "human_readable": name.endswith(".md"),
-                "kind": kind,
-            }
-        )
-        seen.add(rel)
+    artifacts = _scan_run_dir_artifacts(run_dir, prior)
 
     manifest = {
+        "schema_version": "1",
         "run_id": record.run_id,
         "loop_type": record.loop_type,
         "terminal_outcome": record.outcome.value if record.outcome else None,
         "artifacts": artifacts,
     }
-    (run_dir / "artifact-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    _atomic_write_json(run_dir / "artifact-manifest.json", manifest)
     return manifest
 
 

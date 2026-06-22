@@ -14,12 +14,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-from loop_pilot.runtime.locks import clear_repo_runtime_locks  # noqa: E402
+from loop_pilot.runtime.locks import clear_repo_runtime_locks
 
 
 @dataclass

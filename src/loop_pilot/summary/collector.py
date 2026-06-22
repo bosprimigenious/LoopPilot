@@ -46,14 +46,17 @@ def read_gate_result(artifact_dir: Path, loop_type: str, run_id: str) -> str | N
     return str(gate) if gate else None
 
 
+REPORT_NAME_PRIORITY = (
+    "report.md",
+    "development-report.md",
+    "paper-development-report.md",
+    "daily-news-report.md",
+)
+
+
 def report_path(artifact_dir: Path, loop_type: str, run_id: str) -> str | None:
     run_dir = run_artifact_dir(artifact_dir, loop_type, run_id)
-    for name in (
-        "report.md",
-        "development-report.md",
-        "paper-development-report.md",
-        "daily-news-report.md",
-    ):
+    for name in REPORT_NAME_PRIORITY:
         candidate = run_dir / name
         if candidate.exists():
             return str(candidate)
@@ -69,6 +72,8 @@ def report_path(artifact_dir: Path, loop_type: str, run_id: str) -> str | None:
                     continue
                 path_name = entry.get("path", "")
                 if not path_name.endswith(".md"):
+                    continue
+                if path_name in {"diff-summary.md", "patch.diff"}:
                     continue
                 if entry.get("human_readable") is False:
                     continue

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -11,12 +12,19 @@ import pytest
 
 from loop_pilot.app import App
 from loop_pilot.domain.models import RunRecord
+from loop_pilot.domain.schema_validation import validate_artifact_manifest
 from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.review.errors import ReviewDecisionError
 from loop_pilot.review.service import ReviewService
 from loop_pilot.runtime.orchestrator import ResumeError
 from loop_pilot.summary.collector import SummaryCollector, read_gate_result
 from loop_pilot.tasks.store import TaskStore
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def _review_service(tmp_path: Path) -> tuple[ReviewService, App]:
@@ -43,6 +51,18 @@ def _review_service(tmp_path: Path) -> tuple[ReviewService, App]:
     app = App.from_config_dir(config_dir)
     service = ReviewService(config=app.config, state_store=app.state_store, orchestrator=app.orchestrator)
     return service, app
+
+
+def _load_db_manifest(sqlite_path: Path, run_id: str) -> dict:
+    import sqlite3
+
+    with sqlite3.connect(sqlite_path) as conn:
+        row = conn.execute(
+            "SELECT payload FROM artifact_manifests WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+    assert row is not None, f"artifact_manifests row missing for {run_id}"
+    return json.loads(row[0])
 
 
 def _seed_patch_run(
@@ -76,6 +96,39 @@ def _seed_patch_run(
     return run_dir
 
 
+def test_patch_run_phase_is_waiting_approval_before_approve(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-waiting"
+    _seed_patch_run(app, run_id=run_id, phase=RunPhase.REPORTING, outcome=RunOutcome.SUCCEEDED)
+
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    record = app.state_store.get_run(run_id)
+    assert record is not None
+    assert record.phase == RunPhase.WAITING_APPROVAL
+    assert record.phase != RunPhase.TERMINATED
+    assert record.outcome == RunOutcome.PARTIAL
+    assert record.review_status == "needs_review"
+
+
+def test_review_suggestion_included_in_final_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-manifest-suggestion"
+    run_dir = _seed_patch_run(app, run_id=run_id)
+
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    suggestion_path = run_dir / "review_suggestion.json"
+    assert suggestion_path.exists()
+    manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    suggestion_entry = next(
+        item for item in manifest["artifacts"] if item["path"] == "review_suggestion.json"
+    )
+    assert suggestion_entry["sha256"] == _sha256(suggestion_path)
+    suggestion = json.loads(suggestion_path.read_text(encoding="utf-8"))
+    assert suggestion["gate"] == "needs_review"
+
+
 def test_patch_run_writes_needs_review_gate_before_approval(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-001"
@@ -85,7 +138,7 @@ def test_patch_run_writes_needs_review_gate_before_approval(tmp_path: Path) -> N
 
     record = app.state_store.get_run(run_id)
     assert record is not None
-    assert record.phase == RunPhase.TERMINATED
+    assert record.phase == RunPhase.WAITING_APPROVAL
     assert record.outcome == RunOutcome.PARTIAL
     assert record.review_status == "needs_review"
     assert record.report_status == "needs_review"
@@ -115,6 +168,59 @@ def test_patch_run_is_needs_review_not_completed_in_summary(tmp_path: Path) -> N
     )
     weekly = collector.collect_weekly(f"{iso.year}-W{iso.week:02d}")
     assert not any(run_id in item and "succeeded" in item for item in weekly.completed)
+
+
+def test_approve_refreshes_persisted_artifact_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-db-sync"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    pre_approve_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    app.state_store.save_artifact_manifest(run_id, pre_approve_manifest)
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "needs_review"
+    db_before = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert db_before["terminal_outcome"] == "partial"
+
+    service.approve(run_id, note="ship it")
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "pass"
+    disk_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    db_manifest = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert disk_manifest == db_manifest
+    assert disk_manifest["terminal_outcome"] == "succeeded"
+    assert disk_manifest["schema_version"] == "1"
+    for item in disk_manifest["artifacts"]:
+        rel = item["path"]
+        assert item["sha256"] == _sha256(run_dir / rel), rel
+
+
+def test_approved_manifest_validates_against_schema(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-schema-approved"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="looks good")
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    validate_artifact_manifest(manifest)
 
 
 def test_approve_patch_run_finalizes_directly(tmp_path: Path) -> None:
@@ -215,7 +321,7 @@ def test_patch_run_needs_review_blocks_resume(tmp_path: Path) -> None:
         service.resume(run_id)
 
 
-def test_reject_after_approve_raises_and_preserves_state(tmp_path: Path) -> None:
+def test_approved_review_cannot_be_rejected_later(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-double-reject"
     _seed_patch_run(
@@ -232,16 +338,28 @@ def test_reject_after_approve_raises_and_preserves_state(tmp_path: Path) -> None
     with pytest.raises(ReviewDecisionError, match="already decided: approved"):
         service.reject(run_id, reason="too late")
 
-    record = app.state_store.get_run(run_id)
-    assert record is not None
-    assert record.review_status == "approved"
-    assert record.outcome == RunOutcome.SUCCEEDED
-    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "pass"
 
-
-def test_defer_after_approve_raises(tmp_path: Path) -> None:
+def test_approved_review_cannot_be_deferred_later(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
-    run_id = "patch-run-defer-after-approve"
+    run_id = "patch-run-double-defer"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="ship it")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: approved"):
+        service.defer(run_id, until="2099-01-01", reason="too late")
+
+
+def test_rejected_review_cannot_be_deferred_later(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-reject-then-defer"
     _seed_patch_run(
         app,
         run_id=run_id,
@@ -250,13 +368,13 @@ def test_defer_after_approve_raises(tmp_path: Path) -> None:
         review_status="needs_review",
     )
     service.maybe_enqueue(app.state_store.get_run(run_id))
-    service.approve(run_id, note="ship it")
+    service.reject(run_id, reason="unsafe patch")
 
-    with pytest.raises(ReviewDecisionError, match="already decided: approved"):
-        service.defer(run_id, until="2099-01-01", reason="later")
+    with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
+        service.defer(run_id, until="2099-01-01", reason="changed mind")
 
 
-def test_cancel_after_reject_raises(tmp_path: Path) -> None:
+def test_rejected_review_cannot_be_cancelled_later(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
     run_id = "patch-run-double-cancel"
     _seed_patch_run(
@@ -272,29 +390,56 @@ def test_cancel_after_reject_raises(tmp_path: Path) -> None:
     with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
         service.cancel(run_id, reason="changed mind")
 
-    record = app.state_store.get_run(run_id)
-    assert record is not None
-    assert record.review_status == "rejected"
-    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"
 
-
-def test_approve_after_reject_raises(tmp_path: Path) -> None:
+def test_reject_persists_blocked_artifact_manifest(tmp_path: Path) -> None:
     service, app = _review_service(tmp_path)
-    run_id = "patch-run-approve-after-reject"
+    run_id = "patch-run-reject-db-sync"
     _seed_patch_run(
         app,
         run_id=run_id,
         phase=RunPhase.TERMINATED,
         outcome=RunOutcome.PARTIAL,
         review_status="needs_review",
+        report_status="needs_review",
     )
     service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    pre_reject_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    app.state_store.save_artifact_manifest(run_id, pre_reject_manifest)
+
     service.reject(run_id, reason="unsafe patch")
 
-    with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
-        service.approve(run_id, note="second thoughts")
-
-    record = app.state_store.get_run(run_id)
-    assert record is not None
-    assert record.review_status == "rejected"
     assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"
+    disk_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    db_manifest = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert disk_manifest == db_manifest
+    assert db_manifest["terminal_outcome"] == "blocked"
+    assert db_manifest["schema_version"] == "1"
+
+
+def test_cancel_persists_blocked_artifact_manifest(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-cancel-db-sync"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+
+    run_dir = app.config.artifact_dir / "intern" / run_id
+    pre_cancel_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    app.state_store.save_artifact_manifest(run_id, pre_cancel_manifest)
+
+    service.cancel(run_id, reason="no longer needed")
+
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"
+    disk_manifest = json.loads((run_dir / "artifact-manifest.json").read_text(encoding="utf-8"))
+    db_manifest = _load_db_manifest(app.config.sqlite_path, run_id)
+    assert disk_manifest == db_manifest
+    assert db_manifest["terminal_outcome"] == "cancelled"
+    assert db_manifest["schema_version"] == "1"

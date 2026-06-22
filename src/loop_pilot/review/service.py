@@ -32,18 +32,21 @@ def mark_patch_run_waiting_review(
     artifact_dir: Path,
     record: RunRecord,
     state_store: StateStore | None = None,
+    gate: str | None = None,
 ) -> RunRecord:
     """Patch-producing runs are not final success until a human approves."""
-    record.phase = RunPhase.TERMINATED
+    record.phase = RunPhase.WAITING_APPROVAL
     record.outcome = RunOutcome.PARTIAL
     record.review_status = "needs_review"
     record.report_status = "needs_review"
     record.terminal_reason = record.terminal_reason or "Patch produced; waiting for human review"
     run_dir = run_artifact_dir(artifact_dir, record.loop_type, record.run_id)
+    resolved_gate = gate or "needs_review"
+    write_review_suggestion(run_dir, record, gate=resolved_gate)
     finalize_terminal_artifacts(
         run_dir,
         record,
-        gate="needs_review",
+        gate=resolved_gate,
         review_required=True,
     )
     if state_store is not None:
@@ -75,11 +78,13 @@ class ReviewService:
                 artifact_dir=self.artifact_dir,
                 record=record,
                 state_store=self.state_store,
+                gate="needs_review",
             )
-        elif record.review_status is None:
-            record.review_status = "pending"
-        gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id) or "needs_review"
-        write_review_suggestion(run_dir, record, gate)
+        else:
+            if record.review_status is None:
+                record.review_status = "pending"
+            gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id) or "needs_review"
+            write_review_suggestion(run_dir, record, gate)
         review_path = run_dir / "review_required.md"
         if not review_path.exists():
             legacy = run_dir / "review-required.md"
@@ -139,7 +144,13 @@ class ReviewService:
                 status="approved",
                 reason=note,
             )
-            finalize_terminal_artifacts(run_dir, record, gate="pass", review_required=False)
+            manifest = finalize_terminal_artifacts(
+                run_dir,
+                record,
+                gate="pass",
+                review_required=False,
+            )
+            self.state_store.save_artifact_manifest(run_id, manifest)
         else:
             record = approve_run(self.state_store, run_id)
             self.store.record_decision(
@@ -158,7 +169,8 @@ class ReviewService:
         self._require_decidable_item(run_id)
         record = reject_run(self.state_store, run_id, reason)
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
-        finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
+        manifest = finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
+        self.state_store.save_artifact_manifest(run_id, manifest)
         self.store.record_decision(run_id, decision="reject", status="rejected", reason=reason)
         self.store.append_event(run_id=run_id, event_type="review_rejected", payload={"reason": reason})
         return record
@@ -183,7 +195,8 @@ class ReviewService:
         self._require_decidable_item(run_id)
         record = cancel_run(self.state_store, run_id, reason)
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
-        finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
+        manifest = finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
+        self.state_store.save_artifact_manifest(run_id, manifest)
         self.store.record_decision(run_id, decision="cancel", status="cancelled", reason=reason)
         self.store.append_event(run_id=run_id, event_type="review_cancelled", payload={"reason": reason})
         return record
