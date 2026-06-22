@@ -27,4 +27,4 @@ Branch: `stabilize/0.4-truthful-acceptance`
 | 生成 manifest 通过 `validate_artifact_manifest()` | PASS — `test_generated_artifact_manifest_validates_against_schema` |
 | approve 后 manifest 通过 schema | PASS — `test_approved_manifest_validates_against_schema` |
 | patch 审阅门语义 WAITING_APPROVAL | PASS — `test_patch_run_phase_is_waiting_approval_before_approve` |
-| verify_0_4 11/11 READY | (run below) |
+| verify_0_4 11/11 READY | PASS — `verify_0_4_acceptance.py` 2026-06-22 |
