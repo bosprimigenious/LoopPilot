@@ -291,9 +291,9 @@ def _seed_decided_review_run(
     return state, tasks, review_store, collector
 
 
-def test_rejected_review_item_not_in_summary_needs_review(tmp_path: Path) -> None:
+def test_rejected_review_item_hidden_from_summary(tmp_path: Path) -> None:
     today = datetime.now(ZoneInfo("UTC")).date().isoformat()
-    _, _, _, collector = _seed_decided_review_run(
+    _, _, review_store, collector = _seed_decided_review_run(
         tmp_path,
         run_id="run-rejected-summary",
         today=today,
@@ -303,10 +303,12 @@ def test_rejected_review_item_not_in_summary_needs_review(tmp_path: Path) -> Non
         decision="reject",
     )
     data = collector.collect_daily(today)
-    assert not any(row.run_id == "run-rejected-summary" for row in data.needs_review)
+    run_id = "run-rejected-summary"
+    assert run_id not in {row.run_id for row in data.needs_review}
+    assert run_id not in {item.run_id for item in review_store.list_pending()}
 
 
-def test_cancelled_review_item_not_in_summary_needs_review(tmp_path: Path) -> None:
+def test_cancelled_review_item_hidden_from_summary(tmp_path: Path) -> None:
     today = datetime.now(ZoneInfo("UTC")).date().isoformat()
     _, _, _, collector = _seed_decided_review_run(
         tmp_path,
@@ -321,7 +323,7 @@ def test_cancelled_review_item_not_in_summary_needs_review(tmp_path: Path) -> No
     assert not any(row.run_id == "run-cancelled-summary" for row in data.needs_review)
 
 
-def test_approved_review_item_not_in_summary_needs_review(tmp_path: Path) -> None:
+def test_approved_review_item_hidden_from_summary(tmp_path: Path) -> None:
     today = datetime.now(ZoneInfo("UTC")).date().isoformat()
     _, _, _, collector = _seed_decided_review_run(
         tmp_path,

@@ -10,7 +10,7 @@
 
 **Fix:** `_needs_review()` now checks `ReviewStore` — if `review_items.status` is `rejected`, `cancelled`, or `approved`, the run is excluded from summary `needs_review`. Future-deferred hide logic unchanged.
 
-**Tests:** `test_rejected_review_item_not_in_summary_needs_review`, `test_cancelled_review_item_not_in_summary_needs_review`, `test_approved_review_item_not_in_summary_needs_review`.
+**Tests:** `test_rejected_review_item_hidden_from_summary`, `test_cancelled_review_item_hidden_from_summary`, `test_approved_review_item_hidden_from_summary` (summary `needs_review` agrees with `review_store.list_pending()`).
 
 ## P2-2: Include `--no-dry-run` in ready-stage install command
 
@@ -24,7 +24,7 @@ loop-pilot --config-dir <dir> run daily --unattended --safe --no-dry-run
 
 `DEFAULT_PROFILE.command` remains `loop-pilot run daily --dry-run` for prep/preview paths.
 
-**Tests:** `test_installed_scheduler_command_includes_no_dry_run`, integration marker assertion updated.
+**Tests:** `test_installed_command_includes_no_dry_run`, integration marker assertion updated.
 
 ## Self-check
 

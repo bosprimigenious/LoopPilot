@@ -88,7 +88,7 @@ def test_cron_marker_only_not_installed(tmp_path: Path, monkeypatch: pytest.Monk
     assert payload["install_status"] == InstallStatus.PREVIEWED.value
 
 
-def test_installed_scheduler_command_includes_no_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_installed_command_includes_no_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     config_dir = _config_dir(tmp_path, stage="ready", allow_install=True)
     cfg = LoopPilotConfig(
