@@ -257,6 +257,8 @@ class SummaryCollector:
     def _needs_review(self, record: RunRecord) -> bool:
         if not self._run_signals_review(record):
             return False
+        if self._is_decided_review_item(record.run_id):
+            return False
         if self._is_deferred_until_future(record.run_id):
             return False
         return True
@@ -270,6 +272,12 @@ class SummaryCollector:
             return True
         gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id)
         return gate in {"needs_review", "blocked"}
+
+    def _is_decided_review_item(self, run_id: str) -> bool:
+        item = self.review_store.get_by_run_id(run_id)
+        if item is None:
+            return False
+        return item.status in {"rejected", "cancelled", "approved"}
 
     def _deferred_until(self, run_id: str) -> str | None:
         item = self.review_store.get_by_run_id(run_id)

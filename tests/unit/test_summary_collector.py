@@ -238,3 +238,99 @@ def test_summary_needs_review_matches_review_list_for_deferred(tmp_path: Path) -
     summary_ids = {row.run_id for row in data.needs_review}
     assert run_id not in summary_ids
     assert run_id not in pending_ids
+
+
+def _seed_decided_review_run(
+    tmp_path: Path,
+    *,
+    run_id: str,
+    today: str,
+    review_status: str,
+    outcome: RunOutcome,
+    decision_status: str,
+    decision: str,
+) -> tuple[SQLiteStateStore, TaskStore, ReviewStore, SummaryCollector]:
+    db_path = tmp_path / "loop_pilot.db"
+    artifact_dir = tmp_path / "artifacts"
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+
+    state = SQLiteStateStore(db_path)
+    tasks = TaskStore(db_path)
+    review_store = ReviewStore(db_path)
+    run_dir = artifact_dir / "intern" / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "gate_result.json").write_text('{"gate":"blocked"}', encoding="utf-8")
+
+    record = RunRecord(
+        run_id=run_id,
+        loop_type="intern",
+        phase=RunPhase.TERMINATED,
+        outcome=outcome,
+        review_status=review_status,
+        started_at=f"{today}T10:00:00+00:00",
+        finished_at=f"{today}T10:30:00+00:00",
+    )
+    state.save_run(record)
+    review_store.upsert_pending(run_id=run_id, loop_type="intern", artifact_path=str(run_dir))
+    review_store.record_decision(
+        run_id,
+        decision=decision,
+        status=decision_status,
+        reason=f"{decision_status} in test",
+    )
+
+    collector = SummaryCollector(
+        state_store=state,
+        task_store=tasks,
+        artifact_dir=artifact_dir,
+        lock_dir=lock_dir,
+        timezone="UTC",
+        review_store=review_store,
+    )
+    return state, tasks, review_store, collector
+
+
+def test_rejected_review_item_not_in_summary_needs_review(tmp_path: Path) -> None:
+    today = datetime.now(ZoneInfo("UTC")).date().isoformat()
+    _, _, _, collector = _seed_decided_review_run(
+        tmp_path,
+        run_id="run-rejected-summary",
+        today=today,
+        review_status="rejected",
+        outcome=RunOutcome.BLOCKED,
+        decision_status="rejected",
+        decision="reject",
+    )
+    data = collector.collect_daily(today)
+    assert not any(row.run_id == "run-rejected-summary" for row in data.needs_review)
+
+
+def test_cancelled_review_item_not_in_summary_needs_review(tmp_path: Path) -> None:
+    today = datetime.now(ZoneInfo("UTC")).date().isoformat()
+    _, _, _, collector = _seed_decided_review_run(
+        tmp_path,
+        run_id="run-cancelled-summary",
+        today=today,
+        review_status="cancelled",
+        outcome=RunOutcome.CANCELLED,
+        decision_status="cancelled",
+        decision="cancel",
+    )
+    data = collector.collect_daily(today)
+    assert not any(row.run_id == "run-cancelled-summary" for row in data.needs_review)
+
+
+def test_approved_review_item_not_in_summary_needs_review(tmp_path: Path) -> None:
+    today = datetime.now(ZoneInfo("UTC")).date().isoformat()
+    _, _, _, collector = _seed_decided_review_run(
+        tmp_path,
+        run_id="run-approved-summary",
+        today=today,
+        review_status="approved",
+        outcome=RunOutcome.BLOCKED,
+        decision_status="approved",
+        decision="approve",
+    )
+    data = collector.collect_daily(today)
+    assert not any(row.run_id == "run-approved-summary" for row in data.needs_review)
