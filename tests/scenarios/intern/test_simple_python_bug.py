@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -31,8 +32,9 @@ class TestInternLoop:
         record = RunRecord(run_id=request.run_id, loop_type="intern", phase=RunPhase.CREATED)
         record, manifest, rounds = loop.run(request, record)
 
-        assert record.outcome == RunOutcome.SUCCEEDED
+        assert record.outcome == RunOutcome.PARTIAL
         assert record.phase == RunPhase.TERMINATED
+        assert record.review_status == "needs_review"
         assert len(rounds) == 2
         assert rounds[0].decision == "retryable_fail"
         assert rounds[1].decision == "pass"
@@ -42,7 +44,7 @@ class TestInternLoop:
         content = report.read_text(encoding="utf-8")
         assert "schema_version" in content
         assert "run_id:" in content
-        assert manifest.terminal_outcome == "succeeded"
+        assert manifest.terminal_outcome == "partial"
 
     def test_dry_run_does_not_modify_files(self, artifact_dir: Path) -> None:
         loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))
@@ -55,7 +57,7 @@ class TestInternLoop:
         record = RunRecord(run_id=request.run_id, loop_type="intern", phase=RunPhase.CREATED)
         record, _, _ = loop.run(request, record)
         assert record.dry_run is True
-        assert record.outcome == RunOutcome.SUCCEEDED
+        assert record.outcome == RunOutcome.PARTIAL
 
     def test_worker_cannot_self_approve(self, artifact_dir: Path) -> None:
         """Evaluation is independent — round 1 must not be pass before fix."""
@@ -86,7 +88,7 @@ class TestInternLoop:
 
         assert "1 passed" in report or "exit_code=0" in report
         assert broker_calls, "pytest must route through ToolBroker"
-        assert broker_calls[0][0] == "pytest"
+        assert broker_calls[0][:3] == [sys.executable, "-m", "pytest"]
 
     def test_non_dry_run_generates_real_git_diff(self, artifact_dir: Path) -> None:
         loop = InternLoop(artifact_dir, PolicyEngine(), ReportRenderer(Path("templates")))

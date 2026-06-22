@@ -28,6 +28,10 @@ class StepResult:
     notes: list[str] = field(default_factory=list)
 
 
+def _acceptance_ready(results: list[StepResult]) -> bool:
+    return bool(results) and all(result.passed for result in results)
+
+
 DEFAULT_CONFIG_DIR = "tests/fixtures/acceptance_0_4a/config"
 REQUIRED_MODULES = [
     "src/loop_pilot/tasks/__init__.py",
@@ -304,7 +308,7 @@ def main() -> int:
     results = run_acceptance(repo, config_dir=args.config_dir)
     passed = sum(1 for r in results if r.passed)
     total = len(results)
-    ready = all(r.passed for r in results if r.name.startswith(("module", "CLI", "migration", "test tests")))
+    ready = _acceptance_ready(results)
 
     if args.json:
         payload = {

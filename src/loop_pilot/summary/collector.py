@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
-
-from loop_pilot.domain.models import RunRecord
+from loop_pilot.domain.models import RunRecord, rfc3339
+from loop_pilot.util.timezone import zone_info
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.review.store import ReviewStore
 from loop_pilot.runtime.recovery_scan import scan_recovery
 from loop_pilot.storage.base import StateStore
 from loop_pilot.summary.models import (
@@ -48,10 +48,35 @@ def read_gate_result(artifact_dir: Path, loop_type: str, run_id: str) -> str | N
 
 def report_path(artifact_dir: Path, loop_type: str, run_id: str) -> str | None:
     run_dir = run_artifact_dir(artifact_dir, loop_type, run_id)
-    for name in ("report.md", "daily-news-report.md"):
+    for name in (
+        "report.md",
+        "development-report.md",
+        "paper-development-report.md",
+        "daily-news-report.md",
+    ):
         candidate = run_dir / name
         if candidate.exists():
             return str(candidate)
+
+    manifest_path = run_dir / "artifact-manifest.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for entry in manifest.get("artifacts", []):
+                if not isinstance(entry, dict):
+                    continue
+                if entry.get("kind") != "report":
+                    continue
+                path_name = entry.get("path", "")
+                if not path_name.endswith(".md"):
+                    continue
+                if entry.get("human_readable") is False:
+                    continue
+                candidate = run_dir / path_name
+                if candidate.exists():
+                    return str(candidate)
+        except json.JSONDecodeError:
+            pass
     return None
 
 
@@ -74,18 +99,20 @@ class SummaryCollector:
         artifact_dir: Path,
         lock_dir: Path,
         timezone: str = "Asia/Shanghai",
+        review_store: ReviewStore | None = None,
     ) -> None:
         self.state_store = state_store
         self.task_store = task_store
         self.artifact_dir = artifact_dir
         self.lock_dir = lock_dir
         self.timezone = timezone
+        self.review_store = review_store or ReviewStore(task_store.db_path)
         self.today_service = TodayService(task_store, timezone=timezone)
 
     def resolve_date(self, date_str: str | None) -> str:
         if date_str:
             return date_str
-        return datetime.now(ZoneInfo(self.timezone)).date().isoformat()
+        return datetime.now(zone_info(self.timezone)).date().isoformat()
 
     def collect_daily(self, date_str: str | None = None) -> DailySummaryData:
         target = self.resolve_date(date_str)
@@ -164,7 +191,7 @@ class SummaryCollector:
             for row in data.runs:
                 stats = loop_stats.setdefault(row.loop_type, {"runs": 0, "succeeded": 0, "blocked": 0})
                 stats["runs"] += 1
-                if row.outcome == RunOutcome.SUCCEEDED.value:
+                if self._counts_as_completed(row):
                     stats["succeeded"] += 1
                     completed.append(f"{day}: {row.run_id} ({row.loop_type}) succeeded")
                 if row.outcome in {RunOutcome.BLOCKED.value, RunOutcome.FAILED.value}:
@@ -228,14 +255,50 @@ class SummaryCollector:
         return rows
 
     def _needs_review(self, record: RunRecord) -> bool:
+        if not self._run_signals_review(record):
+            return False
+        if self._is_decided_review_item(record.run_id):
+            return False
+        if self._is_deferred_until_future(record.run_id):
+            return False
+        return True
+
+    def _run_signals_review(self, record: RunRecord) -> bool:
         if record.phase == RunPhase.WAITING_APPROVAL:
             return True
-        if record.review_status in {"pending", "needs_review", "needs_revision"}:
+        if record.review_status in {"pending", "needs_review", "needs_revision", "resume_requested"}:
             return True
         if record.outcome in {RunOutcome.PARTIAL, RunOutcome.BLOCKED, RunOutcome.EXHAUSTED}:
             return True
         gate = read_gate_result(self.artifact_dir, record.loop_type, record.run_id)
         return gate in {"needs_review", "blocked"}
+
+    def _is_decided_review_item(self, run_id: str) -> bool:
+        item = self.review_store.get_by_run_id(run_id)
+        if item is None:
+            return False
+        return item.status in {"rejected", "cancelled", "approved"}
+
+    def _deferred_until(self, run_id: str) -> str | None:
+        item = self.review_store.get_by_run_id(run_id)
+        if item is None or item.status != "deferred":
+            return None
+        return item.deferred_until
+
+    def _is_deferred_until_future(self, run_id: str) -> bool:
+        deferred_until = self._deferred_until(run_id)
+        if deferred_until is None:
+            return False
+        return deferred_until > rfc3339()[:10]
+
+    def _counts_as_completed(self, row: RunSummaryRow) -> bool:
+        if row.outcome != RunOutcome.SUCCEEDED.value:
+            return False
+        if row.phase == RunPhase.WAITING_APPROVAL.value:
+            return False
+        if row.gate in {"needs_review", "blocked"}:
+            return False
+        return True
 
     def _build_highlights(
         self,
@@ -257,7 +320,13 @@ class SummaryCollector:
         if today_items:
             highlights.append(f"Today: {len(today_items)} scheduled task(s)")
         if not highlights and runs:
-            highlights.append(f"{len(runs)} run(s) completed today")
+            completed_count = sum(
+                1
+                for record in runs
+                if record.outcome == RunOutcome.SUCCEEDED and not self._needs_review(record)
+            )
+            if completed_count:
+                highlights.append(f"{completed_count} run(s) completed today")
         if not highlights:
             highlights.append("No major activity recorded for this date")
         return highlights[:3]
@@ -302,7 +371,7 @@ class SummaryCollector:
             start = date.fromisocalendar(year, week_num, 1)
             label = f"{year}-W{week_num:02d}"
         else:
-            today = datetime.now(ZoneInfo(self.timezone)).date()
+            today = datetime.now(zone_info(self.timezone)).date()
             iso = today.isocalendar()
             start = date.fromisocalendar(iso.year, iso.week, 1)
             label = f"{iso.year}-W{iso.week:02d}"

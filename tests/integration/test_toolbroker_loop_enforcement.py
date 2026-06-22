@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
 import pytest
@@ -79,7 +80,7 @@ def test_intern_run_pytest_routes_through_tool_broker(
 
     assert "exit_code=0" in report
     assert calls, "InternLoop._run_pytest must invoke ToolBroker.run_command"
-    assert calls[0][0] == "pytest"
+    assert calls[0][:3] == [sys.executable, "-m", "pytest"]
 
 
 def test_intern_apply_fix_routes_through_tool_broker(tmp_path: Path) -> None:

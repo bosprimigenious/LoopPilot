@@ -29,6 +29,14 @@ def build_recovery_plan(store: StateStore, run_id: str) -> RecoveryPlan | None:
 
     checkpoint = store.latest_checkpoint(run_id)
 
+    if run.review_status in {"rejected", "cancelled"}:
+        return RecoveryPlan(
+            run=run,
+            checkpoint=checkpoint or {},
+            can_resume=False,
+            reason=f"review status is {run.review_status}",
+        )
+
     if run.phase == RunPhase.TERMINATED and run.outcome == RunOutcome.SUCCEEDED:
         return RecoveryPlan(run=run, checkpoint=checkpoint or {}, can_resume=False, reason="run already succeeded")
 

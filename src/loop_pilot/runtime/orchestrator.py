@@ -22,6 +22,7 @@ from loop_pilot.runtime.budgets import BudgetManager, BudgetPolicy
 from loop_pilot.runtime.checkpoints import CheckpointWriter
 from loop_pilot.runtime.locks import FileLockStore
 from loop_pilot.runtime.recovery import RecoveryPlan, build_recovery_plan
+from loop_pilot.runtime.terminal_artifacts import finalize_terminal_artifacts
 from loop_pilot.runtime.run_ids import new_run_id
 from loop_pilot.storage.base import StateStore
 from loop_pilot.tools.broker import ToolBroker
@@ -163,6 +164,14 @@ class Orchestrator:
                 record.run_id,
                 json.loads(manifest_path.read_text(encoding="utf-8")),
             )
+        if self.state_store.supports_v1_features():
+            from loop_pilot.review.service import ReviewService
+
+            ReviewService(
+                config=self.config,
+                state_store=self.state_store,
+                orchestrator=self,
+            ).maybe_enqueue(record)
         return record
 
     def resume_run(self, run_id: str) -> RunRecord:
@@ -282,6 +291,7 @@ class Orchestrator:
         )
         record.finished_at = rfc3339()
         record.report_status = "failed"
+        finalize_terminal_artifacts(run_dir, record, gate="blocked")
         return record
 
     def _run_artifact_dir(self, request: RunRequest, run_id: str) -> Path:
@@ -314,6 +324,7 @@ class Orchestrator:
                 budget_mgr,
                 router=active_router,
                 tool_broker=broker,
+                config=self.config,
             )
         if loop_type == "paper":
             return PaperLoop(
@@ -323,6 +334,7 @@ class Orchestrator:
                 budget_mgr,
                 router=active_router,
                 tool_broker=broker,
+                config=self.config,
             )
         if loop_type == "daily_news":
             return DailyNewsLoop(
@@ -332,6 +344,7 @@ class Orchestrator:
                 budget_mgr,
                 router=active_router,
                 tool_broker=broker,
+                config=self.config,
             )
         raise ValueError(f"Unknown loop type: {loop_type}")
 

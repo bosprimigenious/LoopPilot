@@ -2,6 +2,8 @@
 
 > Loop Engineering Ecosystem 的运行时层：受控 AI 工作闭环、可审计产物、默认安全。
 
+> **当前状态（2026-06-21）：0.4.0b1 stabilization in progress。** 0.4-d summary/schedule 实现存在，但 Full 0.4 因全量回归失败、0.4-c 未完成、migration v3 冲突及失败路径审计缺口而 **NOT READY**。权威补救计划见 [0.4 Stabilization and Truthful Acceptance](docs/development/50-0.4-stabilization-and-truthful-acceptance.md)。
+
 **LoopPilot** is a controlled runtime for loop-engineered personal AI workflows. It runs development, research, and information loops with explicit safety gates, auditable artifacts, and reproducible dry-run workflows.
 
 English interface spec: [docs/en-core.md](docs/en-core.md)
@@ -66,8 +68,8 @@ agentic-rubric-runner
 | **0.2** Practical MVP | ✅ Completed | demo workspace / demo profile 可运行 |
 | **0.3.0a1** Adapter Safety Alpha | ✅ Completed | Adapter gate、blocked trace、CI verify |
 | **0.3.0b1** ToolBroker Beta | ✅ Completed automated acceptance | ToolBroker 全 Loop 强制、自动化验收通过；**live run 仍为 MANUAL** |
-| **0.4** Personal Daily Loop | 🔄 In progress | 0.4-a/b 已交付；0.4-c/d 待做 |
-| **0.5** Unattended Safe Mode | 📋 Planned | 安全无人值守、本地定时运行、evaluation gate |
+| **0.4** Personal Daily Loop | 🔄 In progress | 0.4-a/b 已交付；0.4-d 已实现；**0.4-c 阻塞** Full 0.4 |
+| **0.5** Safe Autonomy | 🔒 **0.5-prep only** (fail-closed) | SafetyGate + readiness gate; schedule/unattended **BLOCKED** in prep — [spec](docs/development/50-personal-daily-loop-0.5-spec.md), [verify](scripts/verify_0_5_prep.py) |
 | **0.6+** Real Adapter Long Run | 📋 Planned | Cursor CLI / Codex / DeepSeek 长期运行与预算控制 |
 | **1.x** | 📋 Planned | 1.0 个人稳定 → 1.1 智能 → 1.2 协作 → 1.3 团队 preview |
 

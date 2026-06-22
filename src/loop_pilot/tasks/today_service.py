@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from loop_pilot.tasks.models import QueueItem
+from loop_pilot.util.timezone import zone_info
 from loop_pilot.tasks.queue_service import QueueService
 from loop_pilot.tasks.store import TaskStore
 
@@ -23,7 +23,7 @@ class TodayService:
         self.timezone = timezone
 
     def today_date(self) -> str:
-        return datetime.now(ZoneInfo(self.timezone)).date().isoformat()
+        return datetime.now(zone_info(self.timezone)).date().isoformat()
 
     def list_today(self) -> tuple[str, list[QueueItem]]:
         date = self.today_date()

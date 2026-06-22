@@ -9,10 +9,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
 
 
 @dataclass
@@ -24,6 +28,10 @@ class StepResult:
     notes: list[str] = field(default_factory=list)
 
 
+def _acceptance_ready(results: list[StepResult]) -> bool:
+    return bool(results) and all(result.passed for result in results)
+
+
 DEFAULT_CONFIG_DIR = "tests/fixtures/acceptance_0_4a/config"
 REQUIRED_MODULES = [
     "src/loop_pilot/review/__init__.py",
@@ -33,14 +41,34 @@ REQUIRED_MODULES = [
     "src/loop_pilot/cli_review.py",
 ]
 REQUIRED_CLI = ("review", "approve", "reject", "defer", "cancel", "resume")
+REVIEW_SUBCOMMANDS = ("approve", "reject", "defer", "cancel", "resume")
 REQUIRED_TESTS = [
     "tests/unit/test_review_store.py",
     "tests/integration/test_review_cli.py",
+    "tests/unit/test_review_service_patch_gate.py",
+]
+BEHAVIOR_TESTS = [
+    "tests/unit/test_review_service_patch_gate.py::test_patch_run_writes_needs_review_gate_before_approval",
+    "tests/unit/test_review_service_patch_gate.py::test_patch_run_is_needs_review_not_completed_in_summary",
+    "tests/unit/test_review_service_patch_gate.py::test_approve_patch_run_finalizes_directly",
+    "tests/unit/test_review_service_patch_gate.py::test_approved_patch_run_does_not_enter_resume_requested",
+    "tests/unit/test_review_service_patch_gate.py::test_rejected_patch_run_cannot_resume",
+    "tests/unit/test_review_service_patch_gate.py::test_cancelled_patch_run_cannot_resume",
+    "tests/unit/test_terminal_artifacts.py::test_manifest_does_not_include_self_checksum",
+    "tests/unit/test_summary_collector.py::test_report_path_prefers_final_report_over_diff_summary",
 ]
 
 
+def _subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    src = str(SRC)
+    prefix = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = src if not prefix else f"{src}{os.pathsep}{prefix}"
+    return env
+
+
 def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
+    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False, env=_subprocess_env())
 
 
 def _display(cmd: list[str]) -> str:
@@ -56,6 +84,11 @@ def _loop_pilot(*args: str, config_dir: str) -> list[str]:
 
 def _cli_has_command(repo: Path, name: str) -> bool:
     proc = _run([sys.executable, "-m", "loop_pilot.cli", name, "--help"], cwd=repo)
+    return proc.returncode == 0 and "Error: No such command" not in (proc.stdout + proc.stderr)
+
+
+def _cli_has_review_subcommand(repo: Path, name: str) -> bool:
+    proc = _run([sys.executable, "-m", "loop_pilot.cli", "review", name, "--help"], cwd=repo)
     return proc.returncode == 0 and "Error: No such command" not in (proc.stdout + proc.stderr)
 
 
@@ -78,7 +111,11 @@ def _readiness_checks(repo: Path) -> tuple[list[StepResult], bool]:
         record(f"test {rel}", f"exists {rel}", path.is_file(), "present" if path.is_file() else "missing")
 
     cli_py = repo / "src/loop_pilot/cli.py"
+    cli_review_py = repo / "src/loop_pilot/cli_review.py"
     wired = cli_py.is_file() and ("cli_review" in cli_py.read_text(encoding="utf-8"))
+    review_subs_wired = cli_review_py.is_file() and (
+        "review.add_command(approve" in cli_review_py.read_text(encoding="utf-8")
+    )
     record(
         "CLI wired in cli.py",
         "grep cli.py for cli_review",
@@ -90,16 +127,25 @@ def _readiness_checks(repo: Path) -> tuple[list[StepResult], bool]:
         ok = _cli_has_command(repo, cmd_name)
         record(f"CLI {cmd_name}", f"loop-pilot {cmd_name} --help", ok, "registered" if ok else "not registered")
 
+    for sub_name in REVIEW_SUBCOMMANDS:
+        ok = _cli_has_review_subcommand(repo, sub_name) or review_subs_wired
+        record(
+            f"CLI review {sub_name}",
+            f"loop-pilot review {sub_name} --help",
+            ok,
+            "registered" if ok else "not registered under review group",
+        )
+
     migrations = repo / "src/loop_pilot/storage/migrations.py"
     if migrations.is_file():
         text = migrations.read_text(encoding="utf-8")
         has_review = "review_items" in text
-        has_v3 = "CURRENT_SCHEMA_VERSION = 3" in text or "_migrate_v3" in text
+        has_v4 = "CURRENT_SCHEMA_VERSION = 4" in text or "_migrate_v4" in text
         record(
-            "migration v3 review_items",
+            "migration v4 review_items",
             "grep migrations.py",
-            has_review and has_v3,
-            "v3 with review_items" if has_review and has_v3 else "missing v3 or review_items",
+            has_review and has_v4,
+            "v4 with review_items" if has_review and has_v4 else "missing v4 or review_items",
         )
     else:
         record("migrations.py", "exists", False, "missing")
@@ -123,7 +169,7 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
             "NOT READY — implement 0.4-c before full acceptance",
             [
                 "Add src/loop_pilot/review/ and cli_review.py; wire into cli.py",
-                "Migration v3: review_items + queue_items extensions",
+                "Migration v4: review_items + queue indexes",
                 "Implement ReviewAgent (suggestion only) and human decision CLI",
                 "Add tests and run commands in docs/development/45-personal-daily-loop-0.4c-acceptance.md",
             ],
@@ -150,6 +196,12 @@ def run_acceptance(repo: Path, *, config_dir: str) -> list[StepResult]:
         proc = _run(cmd, cwd=repo)
         record(f"pytest {test_path}", cmd, proc.returncode == 0, proc.stdout.strip().splitlines()[-1] if proc.stdout else f"rc={proc.returncode}")
 
+    for test_target in BEHAVIOR_TESTS:
+        cmd = [sys.executable, "-m", "pytest", test_target, "-q"]
+        proc = _run(cmd, cwd=repo)
+        label = test_target.rsplit("/", 1)[-1]
+        record(f"behavior {label}", cmd, proc.returncode == 0, proc.stdout.strip().splitlines()[-1] if proc.stdout else f"rc={proc.returncode}")
+
     cmd = [sys.executable, "-m", "loop_pilot.cli", "approve", "--help"]
     proc = _run(cmd, cwd=repo)
     json_ok = proc.returncode != 0 or "No such command" in (proc.stdout + proc.stderr) or "sqlite" in (proc.stdout + proc.stderr).lower()
@@ -174,7 +226,7 @@ def main() -> int:
     results = run_acceptance(repo, config_dir=args.config_dir)
     passed = sum(1 for r in results if r.passed)
     total = len(results)
-    ready = all(r.passed for r in results if r.name.startswith(("module", "CLI", "migration", "test tests")))
+    ready = _acceptance_ready(results)
 
     if args.json:
         payload = {
