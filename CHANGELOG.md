@@ -8,7 +8,7 @@
 - **P2 file locks fail-closed**: unknown/legacy lock payloads are not treated as stale; only unlink when dead PID is confirmed.
 - **P2 summary deferred alignment**: `SummaryCollector` reads `review_items.deferred_until`; future-deferred runs hidden from `needs_review` until due (matches review list).
 
-See [logs/2026-06-21-codex-p1-p2-merge-fixes.md](docs/development/logs/2026-06-21-codex-p1-p2-merge-fixes.md).
+See [logs/2026-06-21-codex-p1-adapter-max-level-fix.md](docs/development/logs/2026-06-21-codex-p1-adapter-max-level-fix.md).
 
 ### Fixed (Codex PR #7 — P2 on feat/0.5-safe-autonomy)
 

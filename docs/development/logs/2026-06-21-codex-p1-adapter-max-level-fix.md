@@ -1,8 +1,7 @@
-# 2026-06-21 — Codex P1/P2 merge 修复日志
+# 2026-06-21 — Codex PR #7 P1/P2 修复日志
 
 > Branch: `feat/0.5-safe-autonomy`  
-> Context: Codex re-review on PR #7 — **P1 merge blocker** + two P2 quality fixes  
-> Prior agent [Fix P1 SafetyGate locks defer](35a81e6c-e627-434e-bf39-113a1ed00a5f): **未完成**；本步全量交付
+> Context: Codex re-review on PR #7 — **P1 merge blocker** + two P2 quality fixes
 
 ## Codex 发现
 
@@ -41,21 +40,19 @@
 
 ```text
 ruff check .                              → All checks passed
-python -m pytest -q                       → 241 passed
+python -m pytest -q                       → 250 passed
 python scripts/verify_0_4c_acceptance.py  → 32/32 READY
 python scripts/verify_0_4_acceptance.py   → 11/11 READY
 python scripts/verify_0_5_prep.py         → 3/3 PASS, 0.5-ready: NOT READY
 ```
 
-## merge 后下一步
+## 合并阻塞
 
-1. PR #7 Codex re-review → merge
-2. readiness 自动化（禁止手改 `safety.stage=ready`）
-3. 0.5-b/c/d
+- **P1 cleared:** `adapter.invoke` 不再绕过 `max_level` 或 `stage=ready`
 
 ## Commits
 
 - `5ba9781` — fix(safety): enforce max_level on adapter.invoke (Codex P1)
 - `9d8812e` — fix(locks): fail-closed unknown lock payloads
 - `b3a1840` — fix(summary): honor deferred_until in needs_review
-- *(docs)* — docs: codex P1/P2 merge fix log
+- `d2ca1ab` — docs: codex P1/P2 merge fix log
