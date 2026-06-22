@@ -82,6 +82,8 @@ Complete the Review Layer per [45-personal-daily-loop-0.4c-acceptance.md](45-per
 
 **Default safe mode**: allows Levels **0–3**, **blocks Level 4**.
 
+**Gate actions** (Codex PR #7): `adapter.invoke` checks `policy.max_level` via `allows_level()` before allow; Level 4 is always denied; levels ≤2 blocked in safe profile; `safety.stage=ready` does **not** bypass `max_level`. See [logs/2026-06-21-codex-p1-adapter-max-level-fix.md](logs/2026-06-21-codex-p1-adapter-max-level-fix.md).
+
 **Module layout** (`src/loop_pilot/safety/`):
 
 | File | Responsibility |
@@ -184,14 +186,43 @@ loop-pilot run daily --unattended --safe
 
 ## 8. 0.5-prep (parallel work, allowed now)
 
+**Status (2026-06-21):** 0.5-prep scaffolding delivered on `feat/0.5-safe-autonomy`. This is **0.5-prep only**, not full 0.5 implementation.
+
+Default config: `safety.stage: prep` (fail-closed). Set `safety.stage: ready` only after Truthful 0.4 Milestone A + readiness gate.
+
 The following may proceed **in parallel with 0.4-c** on a separate branch, but must **not** ship real unattended runs or default real schedule install:
 
 | Prep item | Allowed | Not allowed yet |
 |-----------|---------|-----------------|
-| SafetyGate type stubs / schema alignment | ✅ | wiring into live run path |
-| Schedule install dry implementation skeleton | ✅ | `--yes` default or live OS write |
-| `schedule status` / audit log schema | ✅ | — |
+| SafetyGate v1 + readiness gate | ✅ | Level 3+ in prep |
+| Schedule install dry-run / preview | ✅ | `--yes` OS write in prep |
+| `schedule status` / audit log schema | ✅ | cron/systemd reporting `installed: true` |
+| InstallStatus PREVIEWED/BLOCKED/INSTALLED | ✅ | — |
+| `verify_0_5_prep.py` | ✅ | `verify_0_5_acceptance.py` READY |
 | Unattended run log schema | ✅ | real `--unattended` execution |
+
+### Blocked paths in 0.5-prep (must BLOCK with clear message)
+
+| Command | Prep behavior |
+|---------|---------------|
+| `schedule install --yes` | SafetyGate `PREP_STAGE_BLOCKED`; no `schtasks /Create` |
+| `schedule uninstall --yes` | SafetyGate `PREP_STAGE_BLOCKED`; no `schtasks /Delete` |
+| `run daily --unattended --safe` | SafetyGate `PREP_STAGE_BLOCKED` |
+| `schedule install --dry-run` | ✅ WITHOUT OS write |
+
+Verify: `python scripts/verify_0_5_prep.py` → `0.5-prep: PASS` / `0.5-ready: NOT READY`
+
+Log: [logs/2026-06-21-0.5-prep-codex-fixes.md](logs/2026-06-21-0.5-prep-codex-fixes.md), [logs/2026-06-21-codex-p2-fixes.md](logs/2026-06-21-codex-p2-fixes.md)
+
+---
+
+## 13. Roadmap snapshot (2026-06-22)
+
+**Done this step:** 0.5-prep fail-closed, patch review gate, Codex P2 fixes, Truthful 0.4 aggregate 11/11 on branch.
+
+**Next:** PR #7 merge after Codex re-review; PR #8 if needed; 0.5-ready prerequisites (automated readiness + `safety.stage=ready`); then 0.5-b unattended.
+
+**Future:** readiness automation, 0.5-c recovery, 5-day trial.
 
 ---
 
@@ -232,6 +263,7 @@ Manual: on Windows, compare `schedule install --dry-run` vs `--yes`; confirm ins
 
 ## 12. References
 
+- [logs/2026-06-21-patch-review-gate-fix.md](logs/2026-06-21-patch-review-gate-fix.md) — Codex PR #8 patch review gate (prerequisite for truthful 0.4 / 0.5-prep)
 - [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md) — why SafetyGate first, 0.4-c blocker, no daemon
 - [53-0.5-acceptance.md](53-0.5-acceptance.md) — acceptance for 0.5-a/b/c/d
 - [logs/2026-06-21-0.5-plan-revision.md](logs/2026-06-21-0.5-plan-revision.md) — decision log

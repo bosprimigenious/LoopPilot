@@ -165,3 +165,10 @@ def report(ctx: click.Context, run_id: str) -> None:
         click.echo(f"No report found for {run_id}", err=True)
         sys.exit(1)
     click.echo(path)
+
+
+review.add_command(approve, name="approve")
+review.add_command(reject, name="reject")
+review.add_command(defer, name="defer")
+review.add_command(cancel, name="cancel")
+review.add_command(resume, name="resume")

@@ -90,6 +90,7 @@ def run_acceptance(repo: Path) -> list[StepResult]:
             ok = outcome == expected and proc.returncode == 0
         record(name, cmd, ok, f"outcome={outcome}, rc={proc.returncode}")
 
+    clear_repo_runtime_locks(repo)
     ok, msg = _check_daily_news_candidates(artifact_dir)
     record(
         "L1.1 daily_news candidate artifacts",
@@ -111,6 +112,7 @@ def run_acceptance(repo: Path) -> list[StepResult]:
         ok = outcome == expected or (name.endswith("run all demo") and proc.returncode == 0 and outcome == "composite")
         record(name, cmd, ok, f"outcome={outcome}, rc={proc.returncode}")
 
+    clear_repo_runtime_locks(repo)
     # L2 Adapter core
     for name, args in [
         ("L2 adapters list", ["adapters", "list"]),
@@ -150,6 +152,7 @@ def run_acceptance(repo: Path) -> list[StepResult]:
     )
 
     # L3 Safety
+    clear_repo_runtime_locks(repo)
     for name, args, expect in [
         ("L3 cursor_cli default gate", ["run", "intern", "--workspace", "examples/intern_demo", "--adapter", "cursor_cli", "--dry-run"], "blocked"),
         ("L3 deepseek default gate", ["run", "paper", "--workspace", "examples/paper_demo", "--adapter", "deepseek", "--dry-run"], "blocked"),
@@ -173,6 +176,7 @@ def run_acceptance(repo: Path) -> list[StepResult]:
         ["unknown adapter must BLOCKED, not mock fallback"],
     )
 
+    clear_repo_runtime_locks(repo)
     for name, cmd in [
         ("L3 pytest", [sys.executable, "-m", "pytest", "-q"]),
         ("L3 ruff", [sys.executable, "-m", "ruff", "check", "."]),

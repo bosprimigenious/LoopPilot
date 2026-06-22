@@ -72,6 +72,13 @@ def test_review_list_and_reject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     )
     assert reject_result.exit_code == 0, reject_result.output
 
+    review_reject = runner.invoke(
+        app,
+        ["--config-dir", str(config_dir), "review", "reject", run_id, "--reason", "duplicate"],
+    )
+    assert review_reject.exit_code != 0
+    assert "already decided" in review_reject.output.lower()
+
     show_result = runner.invoke(app, ["--config-dir", str(config_dir), "review", "show", run_id])
     assert show_result.exit_code == 0
     assert "too risky" in show_result.output or "reject" in show_result.output

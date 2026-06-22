@@ -67,7 +67,19 @@ class ReviewStore:
         now = rfc3339()
         if existing is not None and existing.status == "deferred":
             if existing.deferred_until and existing.deferred_until > now[:10]:
-                return existing
+                with self._connect() as conn:
+                    conn.execute(
+                        """
+                        UPDATE review_items
+                        SET artifact_path = ?
+                        WHERE run_id = ?
+                        """,
+                        (artifact_path, run_id),
+                    )
+                    conn.commit()
+                    row = conn.execute("SELECT * FROM review_items WHERE run_id = ?", (run_id,)).fetchone()
+                assert row is not None
+                return ReviewItem.from_row(row)
         if existing is not None:
             with self._connect() as conn:
                 conn.execute(

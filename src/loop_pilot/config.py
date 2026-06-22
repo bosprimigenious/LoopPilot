@@ -25,6 +25,8 @@ class LoopPilotConfig:
     sources: dict[str, Any] = field(default_factory=dict)
     models: dict[str, Any] = field(default_factory=dict)
     adapters: dict[str, Any] = field(default_factory=dict)
+    schedule: dict[str, Any] = field(default_factory=dict)
+    safety: dict[str, Any] = field(default_factory=dict)
     config_dir: Path = field(default_factory=lambda: Path("config"))
 
     @property
@@ -74,6 +76,8 @@ class LoopPilotConfig:
             "intern": self.intern,
             "paper": self.paper,
             "daily_news": self.daily_news,
+            "schedule": self.schedule,
+            "safety": self.safety,
         }
         canonical = json.dumps(payload, sort_keys=True)
         return hashlib.sha256(canonical.encode()).hexdigest()
@@ -122,6 +126,8 @@ def load_config(config_dir: Path | None = None) -> LoopPilotConfig:
         sources=_load_yaml(config_dir / "sources.yaml"),
         models=_merge_models_config(config_dir),
         adapters=_load_yaml(config_dir / "adapters.yaml"),
+        schedule=main.get("schedule", {}) if isinstance(main.get("schedule"), dict) else {},
+        safety=main.get("safety", {}) if isinstance(main.get("safety"), dict) else {},
         config_dir=config_dir,
     )
 

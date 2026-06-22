@@ -19,9 +19,21 @@
 - **P2 deferred sync**: `upsert_pending` keeps `deferred` items until `deferred_until`; approved/rejected/cancelled never revert to pending.
 - **0.3 acceptance**: intern fixture/workspace expected outcome updated to `partial` (truthful review semantics).
 
+### Fixed (from merged main / PR #7 — 0.5-prep)
+
+- **P2 review CLI subcommands**: `review approve|reject|defer|cancel|resume` registered under the `review` group; root commands kept as backward-compatible aliases.
+- **P2 summary decided-review**: `SummaryCollector` excludes runs whose `review_items` status is `rejected`, `cancelled`, or `approved` from daily/weekly `needs_review`.
+- **P2 scheduler install command**: ready-stage `schedule install --yes` embeds `--no-dry-run` so installed daily runs execute for real.
+- **P1 adapter execution path**: `SafetyGate.check("adapter.invoke")` before real adapter instantiation when wired from Orchestrator.
+- **P2 locks PermissionError**: `_pid_alive` treats `PermissionError` from `os.kill` as live PID (fail-closed stale removal).
+- **P2 file locks fail-closed**: unknown/legacy lock payloads are not treated as stale; only unlink when dead PID is confirmed.
+- **`verify_0_4_acceptance.py` bootstrap**: insert `src` into `sys.path` before `loop_pilot` imports (source checkout without install).
+
 ### Added
 
-- **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, patch-review behavior tests
+- **0.4-c Review Layer**: review CLI (sqlite-only), migration v4 `review_items`, patch-review behavior tests; aggregate `verify_0_4` 11/11 READY
+- **0.5-prep fail-closed safety** (from main): `readiness.py`, prep-stage BLOCKED for schedule install/uninstall; `verify_0_5_prep.py`
+- **0.5-a SafetyGate v1** (from main): `src/loop_pilot/safety/`; gated `schedule install --yes` (ready stage only); `schedule status`; `safety doctor`
 
 ### Stabilization
 
@@ -29,6 +41,9 @@
 
 ### Documentation
 
+- **0.5 Safe Autonomy (0.5-prep only)**: fail-closed prep scaffolding on `feat/0.5-safe-autonomy` — not full 0.5 implementation
+  - [logs/2026-06-21-0.5-prep-codex-fixes.md](docs/development/logs/2026-06-21-0.5-prep-codex-fixes.md) — Codex review fixes
+  - [verify_0_5_prep.py](scripts/verify_0_5_prep.py) — `0.5-prep: PASS` / `0.5-ready: NOT READY`
 - **0.5 Safe Autonomy (revised plan)**: SafetyGate first, no daemon — spec drafted; 0.5-prep allowed in parallel
   - [50-personal-daily-loop-0.5-spec.md](docs/development/50-personal-daily-loop-0.5-spec.md) — full spec (Steps 0–4, 0.5-a/b/c/d)
   - [52-0.5-revised-plan-rationale.md](docs/development/52-0.5-revised-plan-rationale.md) — why SafetyGate first, why 0.4-c blocker, why no daemon

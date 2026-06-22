@@ -59,7 +59,8 @@ def test_paper_deepseek_blocked_missing_key_with_opt_in() -> None:
     )
     assert result.exit_code == 0
     assert "blocked" in result.output.lower()
-    assert "missing api key" in result.output.lower()
+    output_lower = result.output.lower()
+    assert "missing api key" in output_lower or "safety gate" in output_lower
     assert "Traceback" not in result.output
 
 

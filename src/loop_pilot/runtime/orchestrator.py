@@ -324,6 +324,7 @@ class Orchestrator:
                 budget_mgr,
                 router=active_router,
                 tool_broker=broker,
+                config=self.config,
             )
         if loop_type == "paper":
             return PaperLoop(
@@ -333,6 +334,7 @@ class Orchestrator:
                 budget_mgr,
                 router=active_router,
                 tool_broker=broker,
+                config=self.config,
             )
         if loop_type == "daily_news":
             return DailyNewsLoop(
@@ -342,6 +344,7 @@ class Orchestrator:
                 budget_mgr,
                 router=active_router,
                 tool_broker=broker,
+                config=self.config,
             )
         raise ValueError(f"Unknown loop type: {loop_type}")
 

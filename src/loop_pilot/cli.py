@@ -14,12 +14,15 @@ from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
 from loop_pilot.cli_db import db
 from loop_pilot.cli_review import approve, cancel, defer, reject, report, resume, review
+from loop_pilot.cli_safety import safety
 from loop_pilot.cli_schedule import schedule
 from loop_pilot.cli_summary import summary
 from loop_pilot.cli_tasks import inbox, queue, today
 from loop_pilot.config import load_config
 from loop_pilot.domain.models import RunRequest
 from loop_pilot.runtime.daily_run import DailyRunService
+from loop_pilot.safety.gate import SafetyGate
+from loop_pilot.safety.readiness import is_prep_stage
 from loop_pilot.runtime.recovery_scan import scan_recovery
 from loop_pilot.runtime.run_ids import new_run_id
 from loop_pilot.storage.db_ops import sqlite_doctor_checks
@@ -266,9 +269,18 @@ def run_all(ctx: click.Context, fixture_set: str, profile: str | None, dry_run: 
 
 
 @run.command("daily")
-@click.option("--dry-run", is_flag=True, default=True, help="Preview daily workflow (default)")
+@click.option("--dry-run/--no-dry-run", default=True, help="Preview daily workflow (default)")
+@click.option("--unattended", is_flag=True, default=False, help="Unattended daily run (0.5-ready only)")
+@click.option("--safe", is_flag=True, default=False, help="Require safe profile (pair with --unattended)")
+@click.option("--level", type=int, default=None, help="Safety level 0-4 (default 0)")
 @click.pass_context
-def run_daily(ctx: click.Context, dry_run: bool) -> None:
+def run_daily(
+    ctx: click.Context,
+    dry_run: bool,
+    unattended: bool,
+    safe: bool,
+    level: int | None,
+) -> None:
     """Run daily workflow: verify, recovery-scan, today preview, summary."""
     config_dir: Path = ctx.obj["config_dir"]
     application = _get_app(config_dir)
@@ -276,9 +288,30 @@ def run_daily(ctx: click.Context, dry_run: bool) -> None:
     if backend != "sqlite":
         raise click.ClickException("run daily requires runtime.state_backend=sqlite")
 
+    cfg = application.config
+    if unattended or not dry_run:
+        gate = SafetyGate.from_config(cfg).check(
+            "unattended.daily",
+            unattended=unattended,
+            safe=safe,
+            dry_run=dry_run,
+            level=level if level is not None else 0,
+        )
+        if gate.denied:
+            raise click.ClickException(f"BLOCKED: {gate.message} ({gate.reason_code})")
+
+    if unattended and safe and not dry_run:
+        if is_prep_stage(cfg):
+            raise click.ClickException(
+                "BLOCKED: run daily --unattended --safe is not available in 0.5-prep "
+                "(set safety.stage=ready after 0.4c + readiness gate)"
+            )
+        raise click.ClickException(
+            "BLOCKED: run daily --unattended --safe pipeline not implemented until 0.5-b"
+        )
+
     from loop_pilot.cli_tasks import _task_services
 
-    cfg = application.config
     task_store, _, _, _ = _task_services(cfg)
     service = DailyRunService(cfg, application.state_store, task_store)
     try:
@@ -378,6 +411,7 @@ app.add_command(queue)
 app.add_command(today)
 app.add_command(summary)
 app.add_command(schedule)
+app.add_command(safety)
 
 
 @app.command("recovery-scan")
