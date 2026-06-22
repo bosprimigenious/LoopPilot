@@ -23,9 +23,13 @@ def _pid_alive(pid: int) -> bool:
         return False
     try:
         os.kill(pid, 0)
-    except OSError:
+        return True
+    except ProcessLookupError:
         return False
-    return True
+    except PermissionError:
+        return True
+    except OSError:
+        return True
 
 
 def clear_stale_locks(lock_dir: Path) -> None:

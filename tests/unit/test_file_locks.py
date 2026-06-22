@@ -5,7 +5,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from loop_pilot.runtime.locks import FileLockStore, clear_stale_locks
+import pytest
+
+from loop_pilot.runtime.locks import FileLockStore, _pid_alive, clear_stale_locks
 
 
 def test_stale_lock_from_dead_pid_is_cleared(tmp_path: Path) -> None:
@@ -67,3 +69,32 @@ def test_live_pid_lock_is_not_stale(tmp_path: Path) -> None:
         live = lock_dir / "loop_live.lock"
         assert live.exists()
         assert not store._lock_is_stale(live)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="os.kill PID probe is Unix-only")
+def test_permission_error_pid_treated_as_alive(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_kill(pid: int, sig: int) -> None:
+        raise PermissionError("Operation not permitted")
+
+    monkeypatch.setattr(os, "kill", fake_kill)
+    assert _pid_alive(12345) is True
+
+
+@pytest.mark.skipif(os.name == "nt", reason="os.kill PID probe is Unix-only")
+def test_permission_error_pid_treated_as_alive_lock_not_stale(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_kill(pid: int, sig: int) -> None:
+        raise PermissionError("Operation not permitted")
+
+    monkeypatch.setattr(os, "kill", fake_kill)
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    lock = lock_dir / "loop_perm.lock"
+    lock.write_text("12345:other-user", encoding="utf-8")
+
+    store = FileLockStore(lock_dir, timeout_seconds=0.1)
+    assert not store._lock_is_stale(lock)
+    clear_stale_locks(lock_dir)
+    assert lock.exists()
