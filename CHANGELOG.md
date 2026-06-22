@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed (Codex PR #7 — P2 summary & scheduler on feat/0.5-safe-autonomy)
+
+- **P2 summary decided-review**: `SummaryCollector` excludes runs whose `review_items` status is `rejected`, `cancelled`, or `approved` from daily/weekly `needs_review` (aligns with review list; deferred-until logic unchanged).
+- **P2 scheduler install command**: ready-stage `schedule install --yes` embeds `--no-dry-run` so installed daily runs execute for real; prep/preview `DEFAULT_PROFILE` still uses `--dry-run`.
+
+See [logs/2026-06-22-codex-p2-summary-scheduler.md](docs/development/logs/2026-06-22-codex-p2-summary-scheduler.md).
+
 ### Fixed (Codex PR #7 — adapter path wiring on feat/0.5-safe-autonomy)
 
 - **P1 adapter execution path**: `create_adapter` calls `SafetyGate.check("adapter.invoke")` before real adapter instantiation when config is wired from Orchestrator; kind→level mapping in `safety/adapter_levels.py`; fail-closed on deny.
