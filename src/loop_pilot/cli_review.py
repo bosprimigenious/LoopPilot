@@ -10,6 +10,7 @@ import click
 
 from loop_pilot.app import App
 from loop_pilot.config import load_config
+from loop_pilot.review.errors import ReviewDecisionError
 from loop_pilot.review.service import ReviewService
 from loop_pilot.runtime.approvals import ApprovalError
 from loop_pilot.runtime.orchestrator import ResumeError
@@ -89,7 +90,7 @@ def approve(ctx: click.Context, run_id: str, note: str) -> None:
     """Approve a run pending review (requires runtime.state_backend=sqlite)."""
     try:
         record = _review_service(ctx.obj["config_dir"]).approve(run_id, note)
-    except (ApprovalError, ResumeError) as exc:
+    except (ApprovalError, ReviewDecisionError, ResumeError) as exc:
         _handle_review_error(exc)
     click.echo(f"Approved {run_id}; review_status={record.review_status}")
 
@@ -102,7 +103,7 @@ def reject(ctx: click.Context, run_id: str, reason: str) -> None:
     """Reject a run pending review (requires runtime.state_backend=sqlite)."""
     try:
         record = _review_service(ctx.obj["config_dir"]).reject(run_id, reason)
-    except ApprovalError as exc:
+    except (ApprovalError, ReviewDecisionError) as exc:
         _handle_review_error(exc)
     click.echo(f"Rejected {run_id}: {record.outcome.value if record.outcome else 'blocked'}")
 
@@ -116,7 +117,7 @@ def defer(ctx: click.Context, run_id: str, until: str, reason: str) -> None:
     """Defer review until a future date (requires runtime.state_backend=sqlite)."""
     try:
         item = _review_service(ctx.obj["config_dir"]).defer(run_id, until, reason)
-    except ApprovalError as exc:
+    except (ApprovalError, ReviewDecisionError) as exc:
         _handle_review_error(exc)
     click.echo(f"Deferred {run_id} until {item.deferred_until}")
 
@@ -129,7 +130,7 @@ def cancel(ctx: click.Context, run_id: str, reason: str) -> None:
     """Cancel a run and release review queue entry (requires runtime.state_backend=sqlite)."""
     try:
         record = _review_service(ctx.obj["config_dir"]).cancel(run_id, reason)
-    except ApprovalError as exc:
+    except (ApprovalError, ReviewDecisionError) as exc:
         _handle_review_error(exc)
     click.echo(f"Cancelled {run_id}: {record.outcome.value if record.outcome else 'cancelled'}")
 
@@ -164,3 +165,10 @@ def report(ctx: click.Context, run_id: str) -> None:
         click.echo(f"No report found for {run_id}", err=True)
         sys.exit(1)
     click.echo(path)
+
+
+review.add_command(approve, name="approve")
+review.add_command(reject, name="reject")
+review.add_command(defer, name="defer")
+review.add_command(cancel, name="cancel")
+review.add_command(resume, name="resume")
