@@ -12,6 +12,7 @@ import pytest
 from loop_pilot.app import App
 from loop_pilot.domain.models import RunRecord
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.review.errors import ReviewDecisionError
 from loop_pilot.review.service import ReviewService
 from loop_pilot.runtime.orchestrator import ResumeError
 from loop_pilot.summary.collector import SummaryCollector, read_gate_result
@@ -212,3 +213,88 @@ def test_patch_run_needs_review_blocks_resume(tmp_path: Path) -> None:
 
     with pytest.raises(ResumeError, match="approve/reject/cancel"):
         service.resume(run_id)
+
+
+def test_reject_after_approve_raises_and_preserves_state(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-double-reject"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+        report_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="ship it")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: approved"):
+        service.reject(run_id, reason="too late")
+
+    record = app.state_store.get_run(run_id)
+    assert record is not None
+    assert record.review_status == "approved"
+    assert record.outcome == RunOutcome.SUCCEEDED
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "pass"
+
+
+def test_defer_after_approve_raises(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-defer-after-approve"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.approve(run_id, note="ship it")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: approved"):
+        service.defer(run_id, until="2099-01-01", reason="later")
+
+
+def test_cancel_after_reject_raises(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-double-cancel"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.reject(run_id, reason="unsafe patch")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
+        service.cancel(run_id, reason="changed mind")
+
+    record = app.state_store.get_run(run_id)
+    assert record is not None
+    assert record.review_status == "rejected"
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"
+
+
+def test_approve_after_reject_raises(tmp_path: Path) -> None:
+    service, app = _review_service(tmp_path)
+    run_id = "patch-run-approve-after-reject"
+    _seed_patch_run(
+        app,
+        run_id=run_id,
+        phase=RunPhase.TERMINATED,
+        outcome=RunOutcome.PARTIAL,
+        review_status="needs_review",
+    )
+    service.maybe_enqueue(app.state_store.get_run(run_id))
+    service.reject(run_id, reason="unsafe patch")
+
+    with pytest.raises(ReviewDecisionError, match="already decided: rejected"):
+        service.approve(run_id, note="second thoughts")
+
+    record = app.state_store.get_run(run_id)
+    assert record is not None
+    assert record.review_status == "rejected"
+    assert read_gate_result(app.config.artifact_dir, "intern", run_id) == "blocked"

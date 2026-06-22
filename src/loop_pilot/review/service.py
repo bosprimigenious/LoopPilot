@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from loop_pilot.config import LoopPilotConfig
 from loop_pilot.domain.models import RunRecord, rfc3339
 from loop_pilot.domain.states import RunOutcome, RunPhase
+from loop_pilot.review.errors import ReviewDecisionError
 from loop_pilot.review.review_agent import suggest_review, write_suggestion
 from loop_pilot.review.store import ReviewItem, ReviewStore
 from loop_pilot.runtime.approvals import ApprovalError, approve_run, cancel_run, reject_run
@@ -120,12 +121,10 @@ class ReviewService:
     def approve(self, run_id: str, note: str = "", *, actor: str = "human") -> RunRecord:
         if actor != "human":
             raise ApprovalError("workers cannot self-approve review items")
-        item = self._require_item(run_id)
+        self._require_decidable_item(run_id)
         record = self.state_store.get_run(run_id)
         if record is None:
             raise ApprovalError(f"Run not found: {run_id}")
-        if item.status in {"rejected", "cancelled"}:
-            raise ApprovalError(f"review already decided: {item.decision}")
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
         if (run_dir / "patch.diff").exists():
             self.state_store.record_review(run_id, "approve", note)
@@ -156,7 +155,7 @@ class ReviewService:
     def reject(self, run_id: str, reason: str) -> RunRecord:
         if not reason.strip():
             raise ApprovalError("reject requires --reason")
-        self._require_item(run_id)
+        self._require_decidable_item(run_id)
         record = reject_run(self.state_store, run_id, reason)
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
         finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
@@ -165,7 +164,7 @@ class ReviewService:
         return record
 
     def defer(self, run_id: str, until: str, reason: str = "") -> ReviewItem:
-        self._require_item(run_id)
+        self._require_decidable_item(run_id)
         updated = self.store.record_decision(
             run_id,
             decision="defer",
@@ -181,7 +180,7 @@ class ReviewService:
         return updated
 
     def cancel(self, run_id: str, reason: str) -> RunRecord:
-        self._require_item(run_id)
+        self._require_decidable_item(run_id)
         record = cancel_run(self.state_store, run_id, reason)
         run_dir = run_artifact_dir(self.artifact_dir, record.loop_type, run_id)
         finalize_terminal_artifacts(run_dir, record, gate="blocked", review_required=True)
@@ -225,6 +224,12 @@ class ReviewService:
             item = self.store.get_by_run_id(run_id)
         if item is None:
             raise ApprovalError(f"No review item for run: {run_id}")
+        return item
+
+    def _require_decidable_item(self, run_id: str) -> ReviewItem:
+        item = self._require_item(run_id)
+        if item.status not in {"pending", "deferred"}:
+            raise ReviewDecisionError(f"review item for run {run_id} is already decided: {item.status}")
         return item
 
     def _needs_review(self, record: RunRecord) -> bool:
