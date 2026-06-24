@@ -9,6 +9,34 @@
 - 页面结构变化只能导致单源失败，不能使整个 DailyNewsLoop 失败。
 - 抓取结果先标准化和核验，再交给模型摘要。
 
+### 1.1 Source Policy 与 Evaluator 对齐
+
+> **0.5.2.4.x scope:** 本节定义 LoopPilot 侧的来源使用分类，用于对齐
+> `agentic-rubric-runner` 的 `web_evidence_policy`。LoopPilot 可以负责发现、
+> 抓取、读取和生成 source artifacts，但不能单方面宣布内容可信；可信判断必须交给
+> evaluator gate 或人工审阅。
+
+每个 source/profile 应显式声明：
+
+| 字段 | 取值 | 含义 |
+|---|---|---|
+| `mode` | `replay` / `live` | replay 使用本地 fixture 或快照；live 才是真实联网 |
+| `live` | `false` / `true` | 是否发生真实联网 |
+| `source_use` | `discovery_only` / `evidence_allowed` / `report_allowed` | 该来源可用于发现、证据、或报告正文 |
+| `evaluator_required` | `true` / `false` | 是否必须经过 evaluator 才能进入可信输出 |
+
+推荐默认：
+
+```yaml
+mode: replay
+live: false
+source_use: discovery_only
+evaluator_required: true
+```
+
+`live-small` 这类名称如果仍指向 fixture JSON，必须标记 `mode: replay` 与
+`live: false`，避免误导为真实联网 connector。
+
 ## 2. Connector 接口
 
 ```text

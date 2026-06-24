@@ -27,6 +27,7 @@
   - **0.4-a/b/c/d** 均已交付；聚合验收权威见 [50-0.4-stabilization-and-truthful-acceptance.md](50-0.4-stabilization-and-truthful-acceptance.md)
   - **0.5-prep**（PR #7 on `main`）：SafetyGate fail-closed — `verify_0_5_prep.py` prep PASS / ready NOT READY
   - **0.5** Safe Autonomy 正式实现 — 继续在 `feat/0.5-safe-autonomy`；规格见 [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md)
+  - **0.5 fine-grained planning**：后续公开发布用短版本（如 `0.5.2`），内部切片/门控/证据运行用长版本（如 `0.5.2.1`、`0.5.2.1.3`、`0.5.2.1.3.2`），对齐 `agentic-rubric-runner` 的版本治理；权威见 [61-0.5-version-alignment-with-agent-runner.md](61-0.5-version-alignment-with-agent-runner.md)
   - README 重写记录：[logs/2026-06-22-main-sync-readme-refresh.md](logs/2026-06-22-main-sync-readme-refresh.md)
   - **0.5+** Team/Cloud **仅在 1.3 preview**（1.2 为文件包协作）
 - 1.x：**1.0** Personal Stable → **1.1** Intelligence → **1.2** Controlled Collaboration → **1.3** Team/Cloud Preview（见 [42-1x-roadmap-personal-to-collaboration.md](42-1x-roadmap-personal-to-collaboration.md)）
@@ -100,6 +101,7 @@
 52. [50-personal-daily-loop-0.5-spec.md](50-personal-daily-loop-0.5-spec.md) — **0.5 Safe Autonomy 规格**
 53. [52-0.5-revised-plan-rationale.md](52-0.5-revised-plan-rationale.md) — **0.5 修订理由（SafetyGate 优先、无 daemon）**
 54. [53-0.5-acceptance.md](53-0.5-acceptance.md) — **0.5 验收（0.5-a/b/c/d）**
+55. [61-0.5-version-alignment-with-agent-runner.md](61-0.5-version-alignment-with-agent-runner.md) — **0.5 细粒度版本与 agentic-rubric-runner 对齐规划**
 
 ## 中文认知层对应关系
 
@@ -161,6 +163,7 @@
 - 运行流程冲突 → `02-runtime-mechanism.md`
 - 单 Loop 行为 → 对应 Loop 分册
 - **阶段版本（个人优先）** → `34-version-roadmap-0x.md`；**1.x** → `42-1x-roadmap-personal-to-collaboration.md`；0.4 规格 → `40-personal-daily-loop-0.4-spec.md`；0.4-a/b/c/d 验收 → `43` / `44` / `45` / `48`；0.4-c/d 架构 → `46` / `49`；**0.5 Safe Autonomy** → `50-personal-daily-loop-0.5-spec.md` / `52` / `53`
+- **0.5 fine-grained version planning and agentic-rubric-runner alignment** → `61-0.5-version-alignment-with-agent-runner.md`
 - semver 索引（含历史 0.6–0.8 详细规格）→ `33-version-roadmap.md`
 - 是否完成 → `10-testing-and-acceptance.md` + 对应版本验收 doc（32/35/36）
 - 当前行动项 → `41-next-steps-after-0.3.md`

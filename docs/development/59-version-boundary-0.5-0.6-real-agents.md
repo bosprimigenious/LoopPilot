@@ -1,5 +1,10 @@
 # 0.5 / 0.6 / 0.7 版本边界：真实 Agent 何时打通
 
+> **Versioning update:** 后续 0.5 规划采用和 `agentic-rubric-runner`
+> 一致的细粒度版本层级：公开发布如 `0.5.2`，内部切片如 `0.5.2.1`，
+> 门控迭代如 `0.5.2.1.3`，证据运行如 `0.5.2.1.3.2`。权威编号见
+> [61-0.5-version-alignment-with-agent-runner.md](61-0.5-version-alignment-with-agent-runner.md)。
+
 ## 核心结论
 
 不要把 0.5 写成“三个真实 Agent 已打通”。
@@ -196,11 +201,11 @@ read connector scaffolding
 ### Real GitHub Intern Agent
 
 ```text
-0.5.1  GitHub connector foundation，只读
+0.5.3.1  GitHub connector foundation，只读
 0.6.0  Real InternLoop，可新分支、修代码、跑测试、开 draft PR
 ```
 
-0.5.1 只负责安全读取：
+0.5.3.1 只负责安全读取：
 
 - repo metadata；
 - PR；
@@ -274,21 +279,21 @@ read connector scaffolding
 Truthful Runtime Baseline
 已经完成：状态、审计、review、SQLite、summary、fixture loops
 
-0.5.0
+0.5.2.3
 Personal Runtime Substrate
 目标：真实运行地基，不直接碰外部世界写操作
 
-0.5.1
-GitHub Read Connector
-目标：只读 GitHub repo / PR / CI / issue
+0.5.2.4.x
+Web Evidence / Source Policy
+目标：标清 replay/live/source_use/evaluator_required，不把 replay 误称 live
 
-0.5.2
-Paper/Data Read Connector
-目标：只读 paper repo / server data manifest
+0.5.2.5.x
+LoopPilot Evaluation Bridge
+目标：evaluation_request.json -> evaluation_result.json -> pass/needs_review/blocked
 
-0.5.3
-News Read Connector
-目标：只读 GitHub/arXiv/RSS/news source，生成 replay artifacts
+0.5.3.x
+Read Connector Prototypes
+目标：只读 GitHub / Paper / News connector prototypes，仍不写外部世界
 
 0.6.0
 Real InternLoop
@@ -325,4 +330,3 @@ Morning OS
 0.5 完成 = 三个真实 agent 可以安全接入
 0.6 完成 = 三个真实 agent 真正打通
 ```
-

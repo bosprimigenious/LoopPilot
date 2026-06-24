@@ -331,6 +331,7 @@ python scripts/verify_0_5_prep.py   # 0.5-prep: PASS · 0.5-ready: NOT READY
 | 0.x 版本路线图 | [docs/development/34-version-roadmap-0x.md](docs/development/34-version-roadmap-0x.md) |
 | 0.4 稳定化 / 诚实验收 | [docs/development/50-0.4-stabilization-and-truthful-acceptance.md](docs/development/50-0.4-stabilization-and-truthful-acceptance.md) |
 | 0.5 Safe Autonomy | [docs/development/50-personal-daily-loop-0.5-spec.md](docs/development/50-personal-daily-loop-0.5-spec.md) |
+| 0.5 细粒度版本与 agentic-rubric-runner 对齐规划 | [docs/development/61-0.5-version-alignment-with-agent-runner.md](docs/development/61-0.5-version-alignment-with-agent-runner.md) |
 | Evaluation 层 | [agentic-rubric-runner](https://github.com/bosprimigenious/agentic-rubric-runner) |
 
 ---

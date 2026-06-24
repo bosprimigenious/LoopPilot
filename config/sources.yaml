@@ -1,11 +1,19 @@
 sources:
   - id: github_snapshots
     kind: local_json
+    mode: replay
+    live: false
+    source_use: discovery_only
+    evaluator_required: true
     path: tests/fixtures/daily_news/github_star_snapshots/input/snapshots/github_day2.json
     tier: B
     enabled: true
   - id: paper_signals
     kind: local_json
+    mode: replay
+    live: false
+    source_use: discovery_only
+    evaluator_required: true
     path: tests/fixtures/daily_news/github_star_snapshots/input/paper_signal.json
     tier: B
     enabled: true
@@ -16,6 +24,10 @@ profiles:
     sources:
       - id: demo_items
         kind: local_json
+        mode: replay
+        live: false
+        source_use: discovery_only
+        evaluator_required: true
         path: examples/daily_news_demo/items.json
         tier: B
         enabled: true
@@ -25,16 +37,28 @@ profiles:
     sources:
       - id: github_fixture
         kind: github
+        mode: replay
+        live: false
+        source_use: discovery_only
+        evaluator_required: true
         path: tests/fixtures/daily_news/github_star_snapshots/input/snapshots/github_day2.json
         tier: B
         enabled: true
       - id: arxiv_fixture
         kind: arxiv
+        mode: replay
+        live: false
+        source_use: discovery_only
+        evaluator_required: true
         path: tests/fixtures/daily_news/github_star_snapshots/input/paper_signal.json
         tier: B
         enabled: true
       - id: rss_fixture
         kind: rss
+        mode: replay
+        live: false
+        source_use: discovery_only
+        evaluator_required: true
         path: tests/fixtures/daily_news/github_star_snapshots/input/snapshots/github_day1.json
         tier: C
         enabled: true
