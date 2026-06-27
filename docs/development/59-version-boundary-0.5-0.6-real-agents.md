@@ -12,9 +12,9 @@
 最准确的边界是：
 
 ```text
-0.5 完成 = 三个真实 agent 可以安全接入
-0.6 完成 = 三个真实 agent 真正打通
-0.7 完成 = 三个真实 agent 可以进入 Morning OS 调度
+0.5 完成 = 三条 loop 可以在 safe personal mode 自动跑通
+0.6 完成 = 三个真实 agent 真正打通外部读写
+0.7 完成 = 三个真实 agent 可以进入 Morning OS 级别调度
 ```
 
 也就是说：
@@ -194,7 +194,13 @@ failure report quality
 daily task surface
 schedule still fail-closed
 read connector scaffolding
+safe automatic three-loop daily runner
 ```
+
+也就是说，0.5 不是“真实写入型 agent 打通”，但必须是“个人安全模式下三条 loop
+能自动跑通”。自动跑的边界是 replay / dry-run / read-only inputs、可审计 artifacts、
+SafetyGate、evaluator gate 和 fail-closed；不是自动改代码、自动改论文或自动发布可信 live
+新闻。
 
 ## 三个真实 Agent 的版本边界
 
@@ -202,6 +208,7 @@ read connector scaffolding
 
 ```text
 0.5.3.1  GitHub connector foundation，只读
+0.5.4    InternLoop 进入 safe automatic daily runner
 0.6.0  Real InternLoop，可新分支、修代码、跑测试、开 draft PR
 ```
 
@@ -226,11 +233,12 @@ read connector scaffolding
 ### Real Paper Agent
 
 ```text
-0.5.2  Paper/data connector foundation，只读
+0.5.3.2  Paper/data connector foundation，只读
+0.5.4    PaperLoop 进入 safe automatic daily runner
 0.6.1  Real PaperLoop，可读新数据、改论文、开 draft PR
 ```
 
-0.5.2 只负责安全读取：
+0.5.3.2 只负责安全读取：
 
 - paper repo；
 - manuscript；
@@ -251,6 +259,7 @@ read connector scaffolding
 
 ```text
 0.5.3  News connector foundation，只读 replay / live-small
+0.5.4  DailyNewsLoop 进入 safe automatic daily runner
 0.6.2  Real DailyNewsLoop，真实联网、聚簇、核验、日报、候选导入
 ```
 
@@ -295,6 +304,11 @@ LoopPilot Evaluation Bridge
 Read Connector Prototypes
 目标：只读 GitHub / Paper / News connector prototypes，仍不写外部世界
 
+0.5.4.x
+Three-Loop Safe Auto Runner
+目标：run daily --unattended --safe --profile personal 可自动跑 DailyNewsLoop -> InternLoop -> PaperLoop，
+并产出 evaluator-gated artifacts
+
 0.6.0
 Real InternLoop
 目标：新分支 -> 修代码 -> 测试 -> draft PR
@@ -309,12 +323,13 @@ Real DailyNewsLoop
 
 0.7.0
 Morning OS
-目标：三条 loop 每天 30 分钟调度运行，但仍不自动 merge/approve
+目标：在 0.5 safe auto runner 和 0.6 real agents 之上，进入更完整的 Morning OS 调度
 ```
 
 ## 一句话
 
-0.5 是“把门、锁、日志、身份、路径、证据系统建好”。
+0.5 是“把门、锁、日志、身份、路径、证据系统建好，并让三条 loop 在 safe personal
+mode 自动跑通”。
 
 0.6 才是“真的派 Intern / Paper / DailyNews 去干活”。
 
@@ -327,6 +342,6 @@ Morning OS
 应该统一写成：
 
 ```text
-0.5 完成 = 三个真实 agent 可以安全接入
-0.6 完成 = 三个真实 agent 真正打通
+0.5 完成 = 三条 loop 可以在 safe personal mode 自动跑通
+0.6 完成 = 三个真实 agent 真正打通外部读写
 ```
