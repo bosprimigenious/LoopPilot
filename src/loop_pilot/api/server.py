@@ -118,7 +118,10 @@ class ApiBridge:
             store = ReviewStore(self.cfg.sqlite_path)
             items = store.list_pending(include_deferred=True)
             if items:
-                return [self._review_item_to_dict(item) for item in items]
+                return [
+                    self._with_run_summary(self._review_item_to_dict(item), item.run_id)
+                    for item in items
+                ]
         return self._review_rows_from_runs()
 
     def review_detail(self, run_id: str) -> dict[str, Any] | None:
@@ -185,6 +188,7 @@ class ApiBridge:
                 / record.run_id
             ),
             "createdAt": record.finished_at or record.started_at,
+            "run": self.run_summary(record),
         }
 
     def _review_item_to_dict(self, item: ReviewItem) -> dict[str, Any]:
@@ -201,6 +205,11 @@ class ApiBridge:
             "createdAt": data["created_at"],
             "decidedAt": data["decided_at"],
         }
+
+    def _with_run_summary(self, detail: dict[str, Any], run_id: str) -> dict[str, Any]:
+        record = self.app.state_store.get_run(run_id)
+        detail["run"] = self.run_summary(record) if record is not None else None
+        return detail
 
     def _needs_review(self, record: RunRecord) -> bool:
         if record.review_status in {"pending", "needs_review", "needs_revision", "resume_requested"}:

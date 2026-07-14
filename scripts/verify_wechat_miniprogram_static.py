@@ -167,6 +167,20 @@ def check_review_detail_run_context() -> str:
     return "review detail run context"
 
 
+def check_review_list_run_context() -> str:
+    js_path = CLIENT_ROOT / "pages" / "review" / "review.js"
+    wxml_path = CLIENT_ROOT / "pages" / "review" / "review.wxml"
+    js_source = js_path.read_text(encoding="utf-8")
+    wxml_source = wxml_path.read_text(encoding="utf-8")
+    for marker in ("runSummary", "normalizeReview", "badgeClass"):
+        if marker not in js_source:
+            raise AssertionError(f"review.js missing run context marker: {marker}")
+    for marker in ("item.runSummary", "item.runSummary.phase", "item.runSummary.badgeClass"):
+        if marker not in wxml_source:
+            raise AssertionError(f"review.wxml missing run context marker: {marker}")
+    return "review list run context"
+
+
 def main() -> int:
     checks = [
         _check("app_json", check_app_json),
@@ -177,6 +191,7 @@ def main() -> int:
         _check("home_run_detail_navigation", check_home_run_detail_navigation),
         _check("settings_health_shape", check_settings_health_shape),
         _check("review_detail_run_context", check_review_detail_run_context),
+        _check("review_list_run_context", check_review_list_run_context),
     ]
     passed = sum(1 for _, ok, _ in checks if ok)
     total = len(checks)

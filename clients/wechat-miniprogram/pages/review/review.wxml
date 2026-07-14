@@ -18,6 +18,10 @@
             <text class="badge badge-review">{{item.status}}</text>
           </view>
           <view class="item-meta">{{item.loopType}} · {{item.runId}}</view>
+          <view wx:if="{{item.runSummary}}" class="row">
+            <view class="item-meta">{{item.runSummary.phase}} · Gate {{item.runSummary.gate}}</view>
+            <text class="badge {{item.runSummary.badgeClass}}">{{item.runSummary.outcome}}</text>
+          </view>
           <view class="button-row">
             <button class="button button-secondary" data-path="{{item.artifactPath}}" catchtap="copyPath">复制产物路径</button>
           </view>

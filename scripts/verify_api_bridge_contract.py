@@ -160,11 +160,13 @@ def check_reviews(bridge: ApiBridge) -> str:
     status, payload = bridge.dispatch("GET", "/api/reviews")
     assert status == 200
     assert payload["items"][0]["runId"] == "contract-review-1"
+    assert payload["items"][0]["run"]["phase"] == "WAITING_APPROVAL"
+    assert payload["items"][0]["run"]["outcome"] == "partial"
     status, detail = bridge.dispatch("GET", "/api/reviews/contract-review-1")
     assert status == 200
     assert detail["runId"] == "contract-review-1"
     assert detail["run"]["phase"] == "WAITING_APPROVAL"
-    return "reviews list/detail"
+    return "reviews list/detail with run context"
 
 
 def check_read_only_rejection(bridge: ApiBridge) -> str:

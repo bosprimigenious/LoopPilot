@@ -1,5 +1,27 @@
 const api = require("../../utils/api");
 
+function badgeClass(outcome) {
+  if (outcome === "succeeded") return "badge-pass";
+  if (outcome === "blocked" || outcome === "failed") return "badge-blocked";
+  if (outcome === "partial" || outcome === "exhausted") return "badge-review";
+  return "badge-neutral";
+}
+
+function normalizeReview(data) {
+  const run = data.run || null;
+  const outcome = run ? run.outcome || "unknown" : "";
+  const runSummary = run ? {
+    phase: run.phase || "-",
+    outcome,
+    gate: run.gate || "-",
+    badgeClass: badgeClass(outcome)
+  } : null;
+  return {
+    ...data,
+    runSummary
+  };
+}
+
 Page({
   data: {
     reviews: [],
@@ -19,7 +41,7 @@ Page({
     this.setData({ loading: true });
     return api.listReviews().then((reviews) => {
       this.setData({
-        reviews,
+        reviews: reviews.map(normalizeReview),
         connection: api.connectionState(),
         loading: false
       });
