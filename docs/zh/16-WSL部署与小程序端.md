@@ -69,7 +69,7 @@ MVP 页面：
 | 页面 | 作用 | 数据来源 |
 |------|------|----------|
 | 首页 | 今日概览、最新运行、待审阅数量 | mock，后续接本地 API |
-| 运行 | 最近 run 列表与 outcome | mock，后续接 `/api/runs` |
+| 运行 | 最近 run 列表、详情与 outcome | mock，后续接 `/api/runs`、`/api/runs/{run_id}` |
 | 审阅 | 待处理 review item | mock，后续接 `/api/reviews` |
 | 设置 | 配置 API base URL、切换 mock/live | local storage |
 

@@ -13,6 +13,7 @@ This is a lightweight mobile client for LoopPilot. The first milestone is a read
 
 - `pages/home/home`: daily overview.
 - `pages/runs/runs`: recent run records.
+- `pages/run-detail/run-detail`: read-only run detail.
 - `pages/review/review`: pending review items.
 - `pages/settings/settings`: API base URL and mock/live toggle.
 
@@ -36,6 +37,7 @@ The first bridge exposes:
 GET /api/health
 GET /api/summary/today
 GET /api/runs
+GET /api/runs/{run_id}
 GET /api/reviews
 ```
 

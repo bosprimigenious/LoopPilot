@@ -34,5 +34,12 @@ Page({
         loading: false
       });
     });
+  },
+
+  openRun(event) {
+    const runId = event.currentTarget.dataset.runId;
+    wx.navigateTo({
+      url: `/pages/run-detail/run-detail?runId=${encodeURIComponent(runId)}`
+    });
   }
 });

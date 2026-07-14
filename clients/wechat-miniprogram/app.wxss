@@ -108,6 +108,10 @@ page {
   padding-bottom: 0;
 }
 
+.item-link {
+  cursor: pointer;
+}
+
 .item-title {
   color: #111827;
   font-size: 28rpx;
@@ -204,4 +208,44 @@ page {
   line-height: 1.45;
   margin-bottom: 24rpx;
   padding: 18rpx 20rpx;
+}
+
+.detail-list {
+  border-top: 1rpx solid #e5ebf3;
+  margin-top: 20rpx;
+}
+
+.detail-row {
+  align-items: flex-start;
+  border-bottom: 1rpx solid #e5ebf3;
+  display: flex;
+  gap: 18rpx;
+  justify-content: space-between;
+  padding: 18rpx 0;
+}
+
+.detail-label {
+  color: #64748b;
+  flex: 0 0 150rpx;
+  font-size: 24rpx;
+}
+
+.detail-value {
+  color: #0f172a;
+  flex: 1;
+  font-size: 24rpx;
+  line-height: 1.4;
+  text-align: right;
+  word-break: break-all;
+}
+
+.reason {
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+  color: #334155;
+  font-size: 24rpx;
+  line-height: 1.5;
+  margin-top: 20rpx;
+  padding: 18rpx;
 }

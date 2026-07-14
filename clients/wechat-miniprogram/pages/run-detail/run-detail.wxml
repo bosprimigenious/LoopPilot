@@ -1,0 +1,37 @@
+<view class="page">
+  <view class="header">
+    <view class="eyebrow">Run</view>
+    <view class="title">运行详情</view>
+  </view>
+
+  <view wx:if="{{connection.source && connection.source !== 'live'}}" class="notice">
+    {{connection.useMock ? "Mock 数据模式" : "Live API 不可用，已回退 Mock 数据"}}
+    <text wx:if="{{connection.error}}"> · {{connection.error}}</text>
+  </view>
+
+  <view wx:if="{{error}}" class="notice">{{error}}</view>
+
+  <view wx:if="{{run}}" class="panel">
+    <view class="row">
+      <view class="item-title">{{run.title}}</view>
+      <text class="badge {{run.badgeClass}}">{{run.outcome}}</text>
+    </view>
+    <view class="item-meta">{{run.runId}}</view>
+
+    <view class="detail-list">
+      <block wx:for="{{run.rows}}" wx:key="label">
+        <view class="detail-row">
+          <text class="detail-label">{{item.label}}</text>
+          <text class="detail-value">{{item.value}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view wx:if="{{run.terminalReason}}" class="reason">{{run.terminalReason}}</view>
+
+    <view class="button-row">
+      <button class="button button-secondary" data-value="{{run.runId}}" bindtap="copyValue">复制 Run ID</button>
+      <button wx:if="{{run.reportPath}}" class="button" data-value="{{run.reportPath}}" bindtap="copyValue">复制报告路径</button>
+    </view>
+  </view>
+</view>

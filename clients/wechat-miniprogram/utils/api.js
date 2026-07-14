@@ -76,6 +76,11 @@ function listRuns() {
   return fallback(request("/api/runs"), { items: mock.runs }).then((data) => data.items || data);
 }
 
+function getRun(runId) {
+  const local = mock.runs.find((item) => item.runId === runId) || null;
+  return fallback(request(`/api/runs/${encodeURIComponent(runId)}`), local);
+}
+
 function listReviews() {
   return fallback(request("/api/reviews"), { items: mock.reviews }).then((data) => data.items || data);
 }
@@ -87,6 +92,7 @@ function checkHealth() {
 module.exports = {
   getTodaySummary,
   listRuns,
+  getRun,
   listReviews,
   checkHealth,
   connectionState

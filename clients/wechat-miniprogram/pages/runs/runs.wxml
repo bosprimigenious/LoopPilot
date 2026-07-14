@@ -12,7 +12,7 @@
   <view class="panel">
     <block wx:if="{{runs.length}}">
       <block wx:for="{{runs}}" wx:key="runId">
-        <view class="item">
+        <view class="item item-link" data-run-id="{{item.runId}}" bindtap="openRun">
           <view class="row">
             <view class="item-title">{{item.title}}</view>
             <text class="badge {{item.badgeClass}}">{{item.outcome}}</text>
