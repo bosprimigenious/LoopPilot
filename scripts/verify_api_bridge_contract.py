@@ -115,11 +115,14 @@ def check_health(bridge: ApiBridge) -> str:
     assert status == 200
     assert payload["readOnly"] is True
     assert payload["mutationsEnabled"] is False
+    assert payload["allowedMethods"] == ["GET", "OPTIONS"]
+    assert payload["corsPreflight"] is True
     endpoints = payload.get("endpoints", [])
     assert "/api/runs/{run_id}" in endpoints
     assert "/api/reviews/{run_id}" in endpoints
+    assert "POST" not in payload["allowedMethods"]
     assert all("approve" not in endpoint and "reject" not in endpoint for endpoint in endpoints)
-    return f"{len(endpoints)} read-only endpoints"
+    return f"{len(endpoints)} read-only endpoints, GET/OPTIONS only"
 
 
 def check_runs(bridge: ApiBridge) -> str:
@@ -171,6 +174,13 @@ def check_read_only_rejection(bridge: ApiBridge) -> str:
     return "POST rejected"
 
 
+def check_options_preflight(bridge: ApiBridge) -> str:
+    status, payload = bridge.dispatch("OPTIONS", "/api/health")
+    assert status == 204
+    assert payload == {}
+    return "OPTIONS preflight accepted without mutation"
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="looppilot-api-contract-") as raw:
         bridge = ApiBridge(_seed_app(Path(raw)))
@@ -180,6 +190,7 @@ def main() -> int:
             _check("summary", lambda: check_summary(bridge)),
             _check("reviews", lambda: check_reviews(bridge)),
             _check("read_only_rejection", lambda: check_read_only_rejection(bridge)),
+            _check("options_preflight", lambda: check_options_preflight(bridge)),
         ]
 
     passed = sum(1 for _, ok, _ in checks if ok)

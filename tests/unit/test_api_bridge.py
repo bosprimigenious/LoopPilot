@@ -19,7 +19,10 @@ def test_api_bridge_health_advertises_read_only_capabilities(sqlite_config_dir: 
     assert payload["status"] == "ok"
     assert payload["readOnly"] is True
     assert payload["mutationsEnabled"] is False
+    assert payload["allowedMethods"] == ["GET", "OPTIONS"]
+    assert payload["corsPreflight"] is True
     assert "/api/reviews/{run_id}" in payload["endpoints"]
+    assert "POST" not in payload["allowedMethods"]
     assert all("approve" not in endpoint and "reject" not in endpoint for endpoint in payload["endpoints"])
 
 
@@ -113,6 +116,10 @@ def test_api_bridge_reviews_are_read_only(sqlite_config_dir: Path) -> None:
     status, denied = bridge.dispatch("POST", "/api/reviews/run-review-1/approve")
     assert status == 405
     assert denied["error"] == "method_not_allowed"
+
+    status, preflight = bridge.dispatch("OPTIONS", "/api/reviews/run-review-1/approve")
+    assert status == 204
+    assert preflight == {}
 
 
 def test_api_bridge_today_summary(sqlite_config_dir: Path) -> None:

@@ -78,6 +78,8 @@ class ApiBridge:
             "stateBackend": backend,
             "readOnly": True,
             "mutationsEnabled": False,
+            "allowedMethods": ["GET", "OPTIONS"],
+            "corsPreflight": True,
             "endpoints": list(self.READ_ONLY_ENDPOINTS),
             "allowRealAdapters": self.cfg.allow_real_adapters,
         }

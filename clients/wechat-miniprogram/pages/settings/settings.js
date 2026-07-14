@@ -6,12 +6,15 @@ function boolText(value, trueText, falseText) {
 
 function normalizeHealth(data) {
   const endpoints = Array.isArray(data.endpoints) ? data.endpoints : [];
+  const methods = Array.isArray(data.allowedMethods) ? data.allowedMethods : [];
   return [
     { label: "Status", value: data.status || "ok" },
     { label: "Version", value: data.version || "-" },
     { label: "State", value: data.stateBackend || "-" },
     { label: "Read-only", value: boolText(data.readOnly, "yes", "no") },
     { label: "Mutations", value: boolText(data.mutationsEnabled, "enabled", "disabled") },
+    { label: "Methods", value: methods.length ? methods.join(", ") : "-" },
+    { label: "Preflight", value: boolText(data.corsPreflight, "enabled", "disabled") },
     { label: "Adapters", value: boolText(data.allowRealAdapters, "real enabled", "blocked") },
     { label: "Endpoints", value: endpoints.length ? String(endpoints.length) : "-" }
   ];

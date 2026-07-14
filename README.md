@@ -268,7 +268,7 @@ loop-pilot schedule print
 loop-pilot api serve --host 127.0.0.1 --port 7860
 ```
 
-用于小程序端或轻量 dashboard 读取 `/api/health`、`/api/summary/today`、`/api/runs`、`/api/runs/{run_id}`、`/api/reviews`、`/api/reviews/{run_id}`。`/api/health` 会声明只读能力、endpoint 清单和写接口禁用状态；运行详情会带上 `reportPath` 和只读 `artifacts` 预览，便于移动端定位报告与 manifest 产物。当前不提供 approve/reject 写接口。
+用于小程序端或轻量 dashboard 读取 `/api/health`、`/api/summary/today`、`/api/runs`、`/api/runs/{run_id}`、`/api/reviews`、`/api/reviews/{run_id}`。`/api/health` 会声明只读能力、GET/OPTIONS 方法边界、endpoint 清单和写接口禁用状态；运行详情会带上 `reportPath` 和只读 `artifacts` 预览，便于移动端定位报告与 manifest 产物。当前不提供 approve/reject 写接口。
 
 ### 验收门禁（CI / 本地）
 
@@ -306,7 +306,7 @@ pytest -q
 | `verify_0_4_acceptance.py` | **Truthful 0.4 聚合** | **11/11** 全绿 + `(READY)` | ✅ **11/11 READY** |
 | `verify_0_5_prep.py` | SafetyGate 脚手架 | `0.5-prep: PASS`；`0.5-ready: NOT READY` | ✅ prep PASS |
 | `verify_wsl_deploy_static.py` | WSL 部署入口 | flags/env + prerequisite + gate + API smoke marker 完整 | ✅ PASS |
-| `verify_api_bridge_contract.py` | 本地 API bridge | 只读 health + summary/run artifact/review 合约 + POST 拒绝 | ✅ PASS |
+| `verify_api_bridge_contract.py` | 本地 API bridge | 只读 health + summary/run artifact/review 合约 + POST 拒绝 + OPTIONS 预检 | ✅ PASS |
 | `verify_wechat_miniprogram_static.py` | 小程序骨架 | 页面文件完整 + 只读 API adapter + 首页详情导航 + 详情面板 + health endpoint 清单 | ✅ PASS |
 | `pytest -q` | 全量单元/集成 | 0 failed | ✅ **258 passed** |
 | `ruff check .` | 静态检查 | 无违规 | ✅ PASS |

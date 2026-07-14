@@ -43,14 +43,14 @@ GET /api/reviews
 GET /api/reviews/{run_id}
 ```
 
-The settings health check displays bridge version, state backend, read-only status, mutation status, adapter mode, endpoint count, and the read-only endpoint list returned by `/api/health`.
+The settings health check displays bridge version, state backend, read-only status, mutation status, allowed methods, preflight status, adapter mode, endpoint count, and the read-only endpoint list returned by `/api/health`.
 
 Run detail responses include `reportPath` and a read-only `artifacts` preview from `artifact-manifest.json`, so the client can copy report or artifact paths without executing local actions.
 
 Review mutations are intentionally not wired in the first client milestone.
 When live API requests fail, pages fall back to mock data and show a visible source/status notice.
 
-The API bridge contract can be validated without binding a local port, including health, today summary, run detail with artifact preview, review detail, and POST rejection:
+The API bridge contract can be validated without binding a local port, including health, today summary, run detail with artifact preview, review detail, POST rejection, and OPTIONS preflight:
 
 ```bash
 python scripts/verify_api_bridge_contract.py
