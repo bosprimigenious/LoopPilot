@@ -1,0 +1,44 @@
+<view class="page">
+  <view class="header">
+    <view class="eyebrow">LoopPilot</view>
+    <view class="title">今日闭环</view>
+    <view class="subtitle">{{summary.date || ""}}</view>
+  </view>
+
+  <view class="panel">
+    <view class="metric-grid">
+      <view class="metric">
+        <text class="metric-value">{{summary.plannedCount || 0}}</text>
+        <text class="metric-label">计划</text>
+      </view>
+      <view class="metric">
+        <text class="metric-value">{{summary.pendingReviewCount || 0}}</text>
+        <text class="metric-label">审阅</text>
+      </view>
+      <view class="metric">
+        <text class="metric-value">{{summary.blockedCount || 0}}</text>
+        <text class="metric-label">阻塞</text>
+      </view>
+    </view>
+    <view class="button-row">
+      <button class="button" bindtap="openRuns">运行记录</button>
+      <button class="button button-secondary" bindtap="openReview">审阅队列</button>
+    </view>
+  </view>
+
+  <view class="panel">
+    <view class="panel-title">最近运行</view>
+    <block wx:if="{{latestRuns.length}}">
+      <block wx:for="{{latestRuns}}" wx:key="runId">
+        <view class="item">
+          <view class="row">
+            <view class="item-title">{{item.title}}</view>
+            <text class="badge {{item.outcome === 'succeeded' ? 'badge-pass' : 'badge-review'}}">{{item.outcome}}</text>
+          </view>
+          <view class="item-meta">{{item.loopType}} · {{item.phase}} · {{item.updatedAt}}</view>
+        </view>
+      </block>
+    </block>
+    <view wx:else class="empty">暂无运行记录</view>
+  </view>
+</view>

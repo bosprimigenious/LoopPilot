@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/runs/runs",
+    "pages/review/review",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationBarTitleText": "LoopPilot",
+    "navigationBarBackgroundColor": "#0f172a",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f6f8fb",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#64748b",
+    "selectedColor": "#0f766e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "今日"
+      },
+      {
+        "pagePath": "pages/runs/runs",
+        "text": "运行"
+      },
+      {
+        "pagePath": "pages/review/review",
+        "text": "审阅"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "设置"
+      }
+    ]
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -22,12 +22,15 @@
 14. [13-输出接口-人看MD机器看JSON](13-输出接口-人看MD机器看JSON.md) — 人看 MD、机器看 JSON
 15. [14-0.4d-日汇总与调度预览](14-0.4d-日汇总与调度预览.md) — 0.4-d 日汇总与调度预览
 16. [15-0.5-安全自治](15-0.5-安全自治.md) — 0.5 安全自治（规格已起草，实现待 0.4-c）
+17. [16-WSL部署与小程序端](16-WSL部署与小程序端.md) — WSL 一键部署、小程序端 MVP 与 API 边界
 
 ## 按场景跳转
 
 | 场景 | 文档 |
 |------|------|
 | 第一次 clone | [00-快速开始](00-快速开始.md) |
+| WSL 自动部署 | [16-WSL部署与小程序端](16-WSL部署与小程序端.md) |
+| 小程序端规划 | [16-WSL部署与小程序端](16-WSL部署与小程序端.md) |
 | 理解架构 | [01-系统是什么](01-系统是什么.md) + [development/01-architecture.md](../development/01-architecture.md) |
 | 0.3 状态与验收 | [07-0.3-Adapter验收说明](07-0.3-Adapter验收说明.md) + [development/36-adapter-mvp-0.3-acceptance.md](../development/36-adapter-mvp-0.3-acceptance.md) |
 | 规划 0.4 | [08-0.4-个人日用闭环](08-0.4-个人日用闭环.md) + [development/40-personal-daily-loop-0.4-spec.md](../development/40-personal-daily-loop-0.4-spec.md) |

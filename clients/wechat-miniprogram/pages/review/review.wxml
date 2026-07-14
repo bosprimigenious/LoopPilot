@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="header">
+    <view class="eyebrow">Review</view>
+    <view class="title">审阅队列</view>
+  </view>
+
+  <view class="panel">
+    <block wx:if="{{reviews.length}}">
+      <block wx:for="{{reviews}}" wx:key="runId">
+        <view class="item">
+          <view class="row">
+            <view class="item-title">{{item.title}}</view>
+            <text class="badge badge-review">{{item.status}}</text>
+          </view>
+          <view class="item-meta">{{item.loopType}} · {{item.runId}}</view>
+          <view class="button-row">
+            <button class="button button-secondary" data-path="{{item.artifactPath}}" bindtap="copyPath">复制产物路径</button>
+          </view>
+        </view>
+      </block>
+    </block>
+    <view wx:else class="empty">暂无待审阅事项</view>
+  </view>
+</view>

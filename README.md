@@ -222,6 +222,21 @@ python scripts/bootstrap_local.py   # optional, first time
 loop-pilot doctor
 ```
 
+### WSL 一键部署
+
+```bash
+bash scripts/deploy_wsl.sh --repo-dir "$HOME/LoopPilot"
+```
+
+脚本会自动完成 clone/pull、`.venv`、依赖安装、`doctor`、`ruff`、`pytest`、0.4/0.5 验收和 dry-run smoke。全新 WSL 环境先安装：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git python3 python3-venv python3-pip
+```
+
+更多说明见 [docs/zh/16-WSL部署与小程序端.md](docs/zh/16-WSL部署与小程序端.md)。
+
 ### 运行 Loop（dry-run）
 
 ```bash

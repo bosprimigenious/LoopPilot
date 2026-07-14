@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="header">
+    <view class="eyebrow">Settings</view>
+    <view class="title">连接设置</view>
+  </view>
+
+  <view class="panel stack">
+    <view>
+      <label class="field-label">API Base URL</label>
+      <input class="input" value="{{apiBaseUrl}}" placeholder="http://127.0.0.1:7860" bindinput="onBaseUrlInput" />
+    </view>
+
+    <view class="row">
+      <view>
+        <view class="item-title">Mock 数据</view>
+        <view class="item-meta">默认开启</view>
+      </view>
+      <switch checked="{{useMock}}" color="#0f766e" bindchange="onMockChange" />
+    </view>
+
+    <view class="button-row">
+      <button class="button" bindtap="save">保存</button>
+      <button class="button button-secondary" bindtap="testHealth">健康检查</button>
+    </view>
+
+    <view wx:if="{{healthText}}" class="item-meta">Health: {{healthText}}</view>
+  </view>
+</view>
