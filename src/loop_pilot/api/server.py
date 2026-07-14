@@ -14,7 +14,7 @@ from loop_pilot.app import App
 from loop_pilot.domain.models import RunRecord
 from loop_pilot.domain.states import RunOutcome
 from loop_pilot.review.store import ReviewItem, ReviewStore
-from loop_pilot.summary.collector import report_path
+from loop_pilot.summary.collector import report_path, run_artifact_dir
 from loop_pilot.util.timezone import zone_info
 
 
@@ -79,6 +79,7 @@ class ApiBridge:
         payload = record.to_dict()
         payload["gate"] = self._gate(record)
         payload["reportPath"] = report_path(self.cfg.artifact_dir, record.loop_type, record.run_id)
+        payload["artifacts"] = self._artifact_preview(record)
         return payload
 
     def run_summary(self, record: RunRecord) -> dict[str, Any]:
@@ -221,6 +222,52 @@ class ApiBridge:
             return None
         gate = payload.get("gate") or payload.get("verdict")
         return str(gate) if gate else None
+
+    def _artifact_preview(self, record: RunRecord) -> list[dict[str, Any]]:
+        run_dir = run_artifact_dir(self.cfg.artifact_dir, record.loop_type, record.run_id)
+        manifest_path = run_dir / "artifact-manifest.json"
+        if not manifest_path.exists():
+            return []
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return []
+        artifacts = manifest.get("artifacts", [])
+        if not isinstance(artifacts, list):
+            return []
+        return [
+            item
+            for entry in artifacts
+            if isinstance(entry, dict)
+            for item in [self._artifact_entry(run_dir, entry)]
+            if item is not None
+        ]
+
+    @staticmethod
+    def _artifact_entry(run_dir: Path, entry: dict[str, Any]) -> dict[str, Any] | None:
+        raw_path = entry.get("path")
+        if not isinstance(raw_path, str) or not raw_path:
+            return None
+        try:
+            candidate = (run_dir / raw_path).resolve()
+            candidate.relative_to(run_dir.resolve())
+        except ValueError:
+            return None
+        size = entry.get("size_bytes", entry.get("sizeBytes"))
+        if size is None and candidate.is_file():
+            size = candidate.stat().st_size
+        human_readable = entry.get("human_readable", entry.get("humanReadable"))
+        return {
+            "artifactId": str(entry.get("artifact_id", entry.get("artifactId", ""))),
+            "kind": str(entry.get("kind", "artifact")),
+            "path": raw_path,
+            "absolutePath": str(candidate),
+            "mediaType": str(entry.get("media_type", entry.get("mediaType", ""))),
+            "sizeBytes": size,
+            "sha256": str(entry.get("sha256", "")),
+            "humanReadable": bool(human_readable),
+            "exists": candidate.is_file(),
+        }
 
     @staticmethod
     def _title(record: RunRecord) -> str:

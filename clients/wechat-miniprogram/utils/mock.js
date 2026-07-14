@@ -25,7 +25,20 @@ const summary = {
       outcome: "partial",
       phase: "WAITING_APPROVAL",
       title: "InternLoop 修复建议",
-      updatedAt: "09:18"
+      updatedAt: "09:18",
+      reportPath: "var/artifacts/intern/20260715T091000Z-intern-demo/development-report.md",
+      artifacts: [
+        {
+          artifactId: "intern-demo-report",
+          kind: "report",
+          path: "development-report.md",
+          absolutePath: "var/artifacts/intern/20260715T091000Z-intern-demo/development-report.md",
+          mediaType: "text/markdown",
+          sizeBytes: 4096,
+          humanReadable: true,
+          exists: true
+        }
+      ]
     }
   ],
   needsReview: []

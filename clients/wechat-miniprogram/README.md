@@ -43,5 +43,7 @@ GET /api/reviews
 GET /api/reviews/{run_id}
 ```
 
+Run detail responses include `reportPath` and a read-only `artifacts` preview from `artifact-manifest.json`, so the client can copy report or artifact paths without executing local actions.
+
 Review mutations are intentionally not wired in the first client milestone.
 When live API requests fail, pages fall back to mock data and show a visible source/status notice.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from loop_pilot.api.server import ApiBridge
@@ -19,6 +20,28 @@ def test_api_bridge_lists_runs_and_details(sqlite_config_dir: Path) -> None:
         terminal_reason="done",
     )
     app.state_store.save_run(record)
+    run_dir = app.config.artifact_dir / "intern" / record.run_id
+    run_dir.mkdir(parents=True)
+    report = run_dir / "development-report.md"
+    report.write_text("# Done\n", encoding="utf-8")
+    (run_dir / "artifact-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1",
+                "run_id": record.run_id,
+                "loop_type": record.loop_type,
+                "artifacts": [
+                    {
+                        "path": "development-report.md",
+                        "sha256": "abc123",
+                        "kind": "report",
+                        "human_readable": True,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     bridge = ApiBridge(app)
     status, payload = bridge.dispatch("GET", "/api/runs?limit=1")
@@ -30,6 +53,20 @@ def test_api_bridge_lists_runs_and_details(sqlite_config_dir: Path) -> None:
     assert status == 200
     assert detail["run_id"] == "run-api-1"
     assert detail["outcome"] == "succeeded"
+    assert detail["reportPath"] == str(report)
+    assert detail["artifacts"] == [
+        {
+            "artifactId": "",
+            "kind": "report",
+            "path": "development-report.md",
+            "absolutePath": str(report.resolve()),
+            "mediaType": "",
+            "sizeBytes": report.stat().st_size,
+            "sha256": "abc123",
+            "humanReadable": True,
+            "exists": True,
+        }
+    ]
 
 
 def test_api_bridge_reviews_are_read_only(sqlite_config_dir: Path) -> None:

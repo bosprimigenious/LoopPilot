@@ -11,6 +11,36 @@ function pick(data, camel, snake) {
   return data[camel] !== undefined ? data[camel] : data[snake];
 }
 
+function formatBytes(value) {
+  if (value === undefined || value === null || value === "") return "";
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes)) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function normalizeArtifact(data) {
+  const path = data.path || "";
+  const absolutePath = pick(data, "absolutePath", "absolute_path") || "";
+  const mediaType = pick(data, "mediaType", "media_type") || "";
+  const sizeLabel = formatBytes(pick(data, "sizeBytes", "size_bytes"));
+  const meta = [mediaType, sizeLabel].filter(Boolean).join(" · ");
+  return {
+    artifactId: pick(data, "artifactId", "artifact_id") || path,
+    kind: data.kind || "artifact",
+    path,
+    absolutePath,
+    copyValue: absolutePath || path,
+    mediaType,
+    sizeLabel,
+    meta,
+    humanReadable: Boolean(pick(data, "humanReadable", "human_readable")),
+    readableLabel: pick(data, "humanReadable", "human_readable") ? "可读" : "机器",
+    readableBadgeClass: pick(data, "humanReadable", "human_readable") ? "badge-pass" : "badge-neutral",
+    exists: data.exists !== false
+  };
+}
+
 function normalizeRun(data) {
   const runId = pick(data, "runId", "run_id") || "";
   const loopType = pick(data, "loopType", "loop_type") || "";
@@ -22,6 +52,7 @@ function normalizeRun(data) {
   const reportPath = data.reportPath || "";
   const outcome = data.outcome || "unknown";
   const phase = data.phase || "unknown";
+  const artifacts = Array.isArray(data.artifacts) ? data.artifacts.map(normalizeArtifact) : [];
   return {
     runId,
     title: data.title || `${loopType} run`,
@@ -36,6 +67,7 @@ function normalizeRun(data) {
     finishedAt,
     gate: data.gate || "",
     reportPath,
+    artifacts,
     rows: [
       { label: "Loop", value: loopType },
       { label: "Phase", value: phase },

@@ -1,1 +1,32 @@
+.artifact-item {
+  border-top: 1rpx solid #e5ebf3;
+  padding: 20rpx 0;
+}
 
+.artifact-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.artifact-item:last-child {
+  padding-bottom: 0;
+}
+
+.artifact-kind {
+  color: #111827;
+  font-size: 26rpx;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.artifact-path {
+  color: #334155;
+  font-size: 23rpx;
+  line-height: 1.45;
+  margin-top: 10rpx;
+  word-break: break-all;
+}
+
+.artifact-actions {
+  margin-top: 14rpx;
+}

@@ -34,4 +34,21 @@
       <button wx:if="{{run.reportPath}}" class="button" data-value="{{run.reportPath}}" bindtap="copyValue">复制报告路径</button>
     </view>
   </view>
+
+  <view wx:if="{{run && run.artifacts.length}}" class="panel">
+    <view class="panel-title">产物预览</view>
+    <block wx:for="{{run.artifacts}}" wx:key="artifactId">
+      <view class="artifact-item">
+        <view class="row">
+          <view class="artifact-kind">{{item.kind}}</view>
+          <text class="badge {{item.readableBadgeClass}}">{{item.readableLabel}}</text>
+        </view>
+        <view class="artifact-path">{{item.path}}</view>
+        <view wx:if="{{item.meta}}" class="item-meta">{{item.meta}}</view>
+        <view class="button-row artifact-actions">
+          <button class="button button-secondary" data-value="{{item.copyValue}}" catchtap="copyValue">复制路径</button>
+        </view>
+      </view>
+    </block>
+  </view>
 </view>
