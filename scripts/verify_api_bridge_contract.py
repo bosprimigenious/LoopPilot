@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -59,6 +60,28 @@ def _check(name: str, fn) -> tuple[str, bool, str]:
 def _seed_app(base: Path) -> App:
     app = App.from_config_dir(_write_config(base))
     today = ApiBridge(app)._today()
+    run_dir = app.config.artifact_dir / "intern" / "contract-run-1"
+    run_dir.mkdir(parents=True)
+    report = run_dir / "development-report.md"
+    report.write_text("# Contract run\n", encoding="utf-8")
+    (run_dir / "artifact-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1",
+                "run_id": "contract-run-1",
+                "loop_type": "intern",
+                "artifacts": [
+                    {
+                        "path": "development-report.md",
+                        "sha256": "contract-sha",
+                        "kind": "report",
+                        "human_readable": True,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     app.state_store.save_run(
         RunRecord(
             run_id="contract-run-1",
@@ -107,7 +130,12 @@ def check_runs(bridge: ApiBridge) -> str:
     assert status == 200
     assert detail["run_id"] == "contract-run-1"
     assert detail["outcome"] == "succeeded"
-    return "runs list/detail"
+    assert detail["reportPath"].endswith("development-report.md")
+    assert detail["artifacts"][0]["path"] == "development-report.md"
+    assert detail["artifacts"][0]["kind"] == "report"
+    assert detail["artifacts"][0]["humanReadable"] is True
+    assert detail["artifacts"][0]["exists"] is True
+    return "runs list/detail/artifacts"
 
 
 def check_summary(bridge: ApiBridge) -> str:
