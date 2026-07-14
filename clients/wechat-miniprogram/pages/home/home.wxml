@@ -5,6 +5,11 @@
     <view class="subtitle">{{summary.date || ""}}</view>
   </view>
 
+  <view wx:if="{{connection.source && connection.source !== 'live'}}" class="notice">
+    {{connection.useMock ? "Mock 数据模式" : "Live API 不可用，已回退 Mock 数据"}}
+    <text wx:if="{{connection.error}}"> · {{connection.error}}</text>
+  </view>
+
   <view class="panel">
     <view class="metric-grid">
       <view class="metric">

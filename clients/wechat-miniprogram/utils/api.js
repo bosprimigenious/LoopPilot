@@ -1,5 +1,8 @@
 const mock = require("./mock");
 
+const SOURCE_KEY = "apiDataSource";
+const ERROR_KEY = "apiLastError";
+
 function getAppConfig() {
   const app = getApp();
   return {
@@ -8,9 +11,33 @@ function getAppConfig() {
   };
 }
 
+function setConnectionState(source, error) {
+  wx.setStorageSync(SOURCE_KEY, source);
+  wx.setStorageSync(ERROR_KEY, error || "");
+}
+
+function connectionState() {
+  const { apiBaseUrl, useMock } = getAppConfig();
+  if (useMock || !apiBaseUrl) {
+    return {
+      apiBaseUrl,
+      useMock,
+      source: "mock",
+      error: ""
+    };
+  }
+  return {
+    apiBaseUrl,
+    useMock,
+    source: wx.getStorageSync(SOURCE_KEY) || (useMock ? "mock" : "unknown"),
+    error: wx.getStorageSync(ERROR_KEY) || ""
+  };
+}
+
 function request(path) {
   const { apiBaseUrl, useMock } = getAppConfig();
   if (useMock || !apiBaseUrl) {
+    setConnectionState("mock", "");
     return Promise.reject(new Error("mock mode"));
   }
   return new Promise((resolve, reject) => {
@@ -20,12 +47,19 @@ function request(path) {
       timeout: 8000,
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
+          setConnectionState("live", "");
           resolve(res.data);
         } else {
-          reject(new Error(`HTTP ${res.statusCode}`));
+          const error = new Error(`HTTP ${res.statusCode}`);
+          setConnectionState("mock", error.message);
+          reject(error);
         }
       },
-      fail: reject
+      fail(error) {
+        const message = error.errMsg || "request failed";
+        setConnectionState("mock", message);
+        reject(new Error(message));
+      }
     });
   });
 }
@@ -54,5 +88,6 @@ module.exports = {
   getTodaySummary,
   listRuns,
   listReviews,
-  checkHealth
+  checkHealth,
+  connectionState
 };

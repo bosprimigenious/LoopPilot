@@ -4,6 +4,7 @@ Page({
   data: {
     summary: {},
     latestRuns: [],
+    connection: {},
     loading: true
   },
 
@@ -17,6 +18,7 @@ Page({
       this.setData({
         summary,
         latestRuns: summary.latestRuns || [],
+        connection: api.connectionState(),
         loading: false
       });
     });

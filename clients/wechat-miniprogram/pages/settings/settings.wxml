@@ -5,6 +5,11 @@
   </view>
 
   <view class="panel stack">
+    <view class="notice">
+      当前数据源：{{connection.source || "unknown"}}
+      <text wx:if="{{connection.error}}"> · {{connection.error}}</text>
+    </view>
+
     <view>
       <label class="field-label">API Base URL</label>
       <input class="input" value="{{apiBaseUrl}}" placeholder="http://127.0.0.1:7860" bindinput="onBaseUrlInput" />

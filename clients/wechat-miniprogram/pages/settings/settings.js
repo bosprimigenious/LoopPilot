@@ -4,6 +4,7 @@ Page({
   data: {
     apiBaseUrl: "",
     useMock: true,
+    connection: {},
     healthText: ""
   },
 
@@ -11,6 +12,7 @@ Page({
     this.setData({
       apiBaseUrl: wx.getStorageSync("apiBaseUrl") || "",
       useMock: wx.getStorageSync("useMock") === "" ? true : Boolean(wx.getStorageSync("useMock")),
+      connection: api.connectionState(),
       healthText: ""
     });
   },
@@ -36,15 +38,15 @@ Page({
   testHealth() {
     this.save();
     if (this.data.useMock) {
-      this.setData({ healthText: "mock mode" });
+      this.setData({ healthText: "mock mode", connection: api.connectionState() });
       return;
     }
     api.checkHealth()
       .then((data) => {
-        this.setData({ healthText: data.status || "ok" });
+        this.setData({ healthText: data.status || "ok", connection: api.connectionState() });
       })
       .catch((error) => {
-        this.setData({ healthText: error.message || "failed" });
+        this.setData({ healthText: error.message || "failed", connection: api.connectionState() });
       });
   }
 });

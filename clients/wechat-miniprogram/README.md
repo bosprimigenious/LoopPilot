@@ -40,3 +40,4 @@ GET /api/reviews
 ```
 
 Review mutations are intentionally not wired in the first client milestone.
+When live API requests fail, pages fall back to mock data and show a visible source/status notice.

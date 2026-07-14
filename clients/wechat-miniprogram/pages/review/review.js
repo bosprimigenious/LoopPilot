@@ -3,6 +3,7 @@ const api = require("../../utils/api");
 Page({
   data: {
     reviews: [],
+    connection: {},
     loading: true
   },
 
@@ -19,6 +20,7 @@ Page({
     return api.listReviews().then((reviews) => {
       this.setData({
         reviews,
+        connection: api.connectionState(),
         loading: false
       });
     });

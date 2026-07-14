@@ -10,6 +10,7 @@ function badgeClass(outcome) {
 Page({
   data: {
     runs: [],
+    connection: {},
     loading: true
   },
 
@@ -29,6 +30,7 @@ Page({
           ...run,
           badgeClass: badgeClass(run.outcome)
         })),
+        connection: api.connectionState(),
         loading: false
       });
     });
