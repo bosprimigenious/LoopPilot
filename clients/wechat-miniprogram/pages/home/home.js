@@ -1,5 +1,12 @@
 const api = require("../../utils/api");
 
+function badgeClass(outcome) {
+  if (outcome === "succeeded") return "badge-pass";
+  if (outcome === "blocked" || outcome === "failed") return "badge-blocked";
+  if (outcome === "partial" || outcome === "exhausted") return "badge-review";
+  return "badge-neutral";
+}
+
 Page({
   data: {
     summary: {},
@@ -18,7 +25,10 @@ Page({
     api.getTodaySummary().then((summary) => {
       this.setData({
         summary,
-        latestRuns: summary.latestRuns || [],
+        latestRuns: (summary.latestRuns || []).map((run) => ({
+          ...run,
+          badgeClass: badgeClass(run.outcome)
+        })),
         needsReview: summary.needsReview || [],
         connection: api.connectionState(),
         loading: false
@@ -32,6 +42,13 @@ Page({
 
   openReview() {
     wx.switchTab({ url: "/pages/review/review" });
+  },
+
+  openRunDetail(event) {
+    const runId = event.currentTarget.dataset.runId;
+    wx.navigateTo({
+      url: `/pages/run-detail/run-detail?runId=${encodeURIComponent(runId)}`
+    });
   },
 
   openReviewDetail(event) {

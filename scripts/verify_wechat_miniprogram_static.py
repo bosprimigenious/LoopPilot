@@ -112,6 +112,20 @@ def check_mock_run_detail_shape() -> str:
     return "mock detail includes artifact preview"
 
 
+def check_home_run_detail_navigation() -> str:
+    js_path = CLIENT_ROOT / "pages" / "home" / "home.js"
+    wxml_path = CLIENT_ROOT / "pages" / "home" / "home.wxml"
+    js_source = js_path.read_text(encoding="utf-8")
+    wxml_source = wxml_path.read_text(encoding="utf-8")
+    for marker in ("openRunDetail", "/pages/run-detail/run-detail", "badgeClass"):
+        if marker not in js_source:
+            raise AssertionError(f"home.js missing run detail marker: {marker}")
+    for marker in ("bindtap=\"openRunDetail\"", "data-run-id", "item.badgeClass"):
+        if marker not in wxml_source:
+            raise AssertionError(f"home.wxml missing run detail marker: {marker}")
+    return "home latest runs link to detail"
+
+
 def check_settings_health_shape() -> str:
     js_path = CLIENT_ROOT / "pages" / "settings" / "settings.js"
     wxml_path = CLIENT_ROOT / "pages" / "settings" / "settings.wxml"
@@ -151,6 +165,7 @@ def main() -> int:
         _check("tabbar_pages", check_tabbar_pages),
         _check("api_adapter_read_only", check_api_adapter_is_read_only),
         _check("mock_run_detail_shape", check_mock_run_detail_shape),
+        _check("home_run_detail_navigation", check_home_run_detail_navigation),
         _check("settings_health_shape", check_settings_health_shape),
         _check("review_detail_run_context", check_review_detail_run_context),
     ]

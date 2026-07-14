@@ -40,10 +40,10 @@
     <view class="panel-title">最近运行</view>
     <block wx:if="{{latestRuns.length}}">
       <block wx:for="{{latestRuns}}" wx:key="runId">
-        <view class="item">
+        <view class="item item-link" data-run-id="{{item.runId}}" bindtap="openRunDetail">
           <view class="row">
             <view class="item-title">{{item.title}}</view>
-            <text class="badge {{item.outcome === 'succeeded' ? 'badge-pass' : 'badge-review'}}">{{item.outcome}}</text>
+            <text class="badge {{item.badgeClass}}">{{item.outcome}}</text>
           </view>
           <view class="item-meta">{{item.loopType}} · {{item.phase}} · {{item.updatedAt}}</view>
         </view>
