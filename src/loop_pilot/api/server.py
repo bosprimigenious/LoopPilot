@@ -22,6 +22,14 @@ class ApiBridge:
     """Read-only adapter between local LoopPilot state and JSON HTTP responses."""
 
     REVIEW_OUTCOMES = {RunOutcome.PARTIAL, RunOutcome.BLOCKED, RunOutcome.EXHAUSTED}
+    READ_ONLY_ENDPOINTS = (
+        "/api/health",
+        "/api/summary/today",
+        "/api/runs",
+        "/api/runs/{run_id}",
+        "/api/reviews",
+        "/api/reviews/{run_id}",
+    )
 
     def __init__(self, app: App) -> None:
         self.app = app
@@ -69,6 +77,8 @@ class ApiBridge:
             "version": __version__,
             "stateBackend": backend,
             "readOnly": True,
+            "mutationsEnabled": False,
+            "endpoints": list(self.READ_ONLY_ENDPOINTS),
             "allowRealAdapters": self.cfg.allow_real_adapters,
         }
 

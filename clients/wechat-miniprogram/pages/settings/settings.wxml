@@ -29,5 +29,13 @@
     </view>
 
     <view wx:if="{{healthText}}" class="item-meta">Health: {{healthText}}</view>
+    <view wx:if="{{healthRows.length}}" class="detail-list">
+      <block wx:for="{{healthRows}}" wx:key="label">
+        <view class="detail-row">
+          <text class="detail-label">{{item.label}}</text>
+          <text class="detail-value">{{item.value}}</text>
+        </view>
+      </block>
+    </view>
   </view>
 </view>

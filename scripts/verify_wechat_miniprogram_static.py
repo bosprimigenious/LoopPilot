@@ -112,6 +112,20 @@ def check_mock_run_detail_shape() -> str:
     return "mock detail includes artifact preview"
 
 
+def check_settings_health_shape() -> str:
+    js_path = CLIENT_ROOT / "pages" / "settings" / "settings.js"
+    wxml_path = CLIENT_ROOT / "pages" / "settings" / "settings.wxml"
+    js_source = js_path.read_text(encoding="utf-8")
+    wxml_source = wxml_path.read_text(encoding="utf-8")
+    for marker in ("healthRows", "Read-only", "Mutations", "Endpoints"):
+        if marker not in js_source:
+            raise AssertionError(f"settings.js missing health marker: {marker}")
+    for marker in ("healthRows", "detail-list"):
+        if marker not in wxml_source:
+            raise AssertionError(f"settings.wxml missing health marker: {marker}")
+    return "settings health detail"
+
+
 def main() -> int:
     checks = [
         _check("app_json", check_app_json),
@@ -119,6 +133,7 @@ def main() -> int:
         _check("tabbar_pages", check_tabbar_pages),
         _check("api_adapter_read_only", check_api_adapter_is_read_only),
         _check("mock_run_detail_shape", check_mock_run_detail_shape),
+        _check("settings_health_shape", check_settings_health_shape),
     ]
     passed = sum(1 for _, ok, _ in checks if ok)
     total = len(checks)

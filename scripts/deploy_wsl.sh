@@ -135,7 +135,7 @@ api_bridge_smoke() {
   api_pid=$!
 
   for _ in $(seq 1 30); do
-    if python -c 'import json, sys, urllib.request; port=sys.argv[1]; data=json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)); raise SystemExit(0 if data.get("status") == "ok" and data.get("readOnly") is True else 1)' "$API_SMOKE_PORT" 2>/dev/null; then
+    if python -c 'import json, sys, urllib.request; port=sys.argv[1]; data=json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)); ok=data.get("status") == "ok" and data.get("readOnly") is True and data.get("mutationsEnabled") is False and "/api/reviews/{run_id}" in data.get("endpoints", []); raise SystemExit(0 if ok else 1)' "$API_SMOKE_PORT" 2>/dev/null; then
       kill "$api_pid" 2>/dev/null || true
       wait "$api_pid" 2>/dev/null || true
       printf 'API bridge smoke: OK\n'

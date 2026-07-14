@@ -10,6 +10,19 @@ from loop_pilot.domain.states import RunOutcome, RunPhase
 from loop_pilot.review.store import ReviewStore
 
 
+def test_api_bridge_health_advertises_read_only_capabilities(sqlite_config_dir: Path) -> None:
+    app = App.from_config_dir(sqlite_config_dir)
+
+    status, payload = ApiBridge(app).dispatch("GET", "/api/health")
+
+    assert status == 200
+    assert payload["status"] == "ok"
+    assert payload["readOnly"] is True
+    assert payload["mutationsEnabled"] is False
+    assert "/api/reviews/{run_id}" in payload["endpoints"]
+    assert all("approve" not in endpoint and "reject" not in endpoint for endpoint in payload["endpoints"])
+
+
 def test_api_bridge_lists_runs_and_details(sqlite_config_dir: Path) -> None:
     app = App.from_config_dir(sqlite_config_dir)
     record = RunRecord(
