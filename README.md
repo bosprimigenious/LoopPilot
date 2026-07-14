@@ -287,6 +287,7 @@ python scripts/verify_0_5_prep.py
 
 # 基础质量
 ruff check .
+python scripts/verify_wsl_deploy_static.py
 python scripts/verify_api_bridge_contract.py
 python scripts/verify_wechat_miniprogram_static.py
 pytest -q
@@ -304,6 +305,7 @@ pytest -q
 | `verify_0_4d_acceptance.py` | Summary + Schedule preview | 前置 0.3/0.4-b/0.4-c 通过 + 自身 READY | ✅ READY |
 | `verify_0_4_acceptance.py` | **Truthful 0.4 聚合** | **11/11** 全绿 + `(READY)` | ✅ **11/11 READY** |
 | `verify_0_5_prep.py` | SafetyGate 脚手架 | `0.5-prep: PASS`；`0.5-ready: NOT READY` | ✅ prep PASS |
+| `verify_wsl_deploy_static.py` | WSL 部署入口 | flags/env + prerequisite + gate + API smoke marker 完整 | ✅ PASS |
 | `verify_api_bridge_contract.py` | 本地 API bridge | 只读 health + summary/run artifact/review 合约 + POST 拒绝 | ✅ PASS |
 | `verify_wechat_miniprogram_static.py` | 小程序骨架 | 页面文件完整 + 只读 API adapter + 详情面板 + health endpoint 清单 | ✅ PASS |
 | `pytest -q` | 全量单元/集成 | 0 failed | ✅ **258 passed** |

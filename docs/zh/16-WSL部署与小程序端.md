@@ -47,6 +47,7 @@ WSL 链路完成时至少应通过：
 loop-pilot doctor
 loop-pilot adapters doctor
 ruff check .
+python scripts/verify_wsl_deploy_static.py
 python scripts/verify_api_bridge_contract.py
 python scripts/verify_wechat_miniprogram_static.py
 python -m pytest -q
