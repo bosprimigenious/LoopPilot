@@ -14,8 +14,10 @@ REPO_URL="${LOOPPILOT_REPO_URL:-https://github.com/bosprimigenious/LoopPilot.git
 REPO_DIR="${LOOPPILOT_REPO_DIR:-$HOME/LoopPilot}"
 SKIP_FULL_TESTS="${LOOPPILOT_SKIP_FULL_TESTS:-0}"
 SKIP_ACCEPTANCE="${LOOPPILOT_SKIP_ACCEPTANCE:-0}"
+SKIP_API_SMOKE="${LOOPPILOT_SKIP_API_SMOKE:-0}"
 NO_PULL="${LOOPPILOT_NO_PULL:-0}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+API_SMOKE_PORT="${LOOPPILOT_API_SMOKE_PORT:-17860}"
 
 usage() {
   cat <<'USAGE'
@@ -26,6 +28,7 @@ Options:
   --repo-url URL        Git repository URL. Defaults to LoopPilot origin.
   --skip-full-tests     Skip full pytest and run only smoke/acceptance commands.
   --skip-acceptance     Skip version acceptance scripts.
+  --skip-api-smoke      Skip local read-only API bridge smoke check.
   --no-pull             Do not pull when --repo-dir already exists.
   -h, --help            Show this help.
 
@@ -34,6 +37,8 @@ Environment:
   LOOPPILOT_REPO_URL
   LOOPPILOT_SKIP_FULL_TESTS=1
   LOOPPILOT_SKIP_ACCEPTANCE=1
+  LOOPPILOT_SKIP_API_SMOKE=1
+  LOOPPILOT_API_SMOKE_PORT=17860
   LOOPPILOT_NO_PULL=1
   PYTHON_BIN=python3.11
 USAGE
@@ -66,6 +71,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-acceptance)
       SKIP_ACCEPTANCE=1
+      shift
+      ;;
+    --skip-api-smoke)
+      SKIP_API_SMOKE=1
       shift
       ;;
     --no-pull)
@@ -115,6 +124,35 @@ check_python() {
     apt_hint
     die "Python venv module is missing"
   }
+}
+
+api_bridge_smoke() {
+  local api_log="$LOG_DIR/api-bridge-smoke.log"
+  local api_pid
+
+  log "Running read-only API bridge smoke on port $API_SMOKE_PORT"
+  loop-pilot api serve --host 127.0.0.1 --port "$API_SMOKE_PORT" >"$api_log" 2>&1 &
+  api_pid=$!
+
+  for _ in $(seq 1 30); do
+    if python -c 'import json, sys, urllib.request; port=sys.argv[1]; data=json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)); raise SystemExit(0 if data.get("status") == "ok" and data.get("readOnly") is True else 1)' "$API_SMOKE_PORT" 2>/dev/null; then
+      kill "$api_pid" 2>/dev/null || true
+      wait "$api_pid" 2>/dev/null || true
+      printf 'API bridge smoke: OK\n'
+      return 0
+    fi
+    if ! kill -0 "$api_pid" 2>/dev/null; then
+      printf 'API bridge exited before smoke completed.\n' >&2
+      sed -n '1,80p' "$api_log" >&2 || true
+      return 1
+    fi
+    sleep 0.25
+  done
+
+  kill "$api_pid" 2>/dev/null || true
+  wait "$api_pid" 2>/dev/null || true
+  sed -n '1,80p' "$api_log" >&2 || true
+  die "API bridge smoke failed on port $API_SMOKE_PORT"
 }
 
 ensure_repo() {
@@ -200,6 +238,11 @@ main() {
   log "Running CLI smoke workflow"
   run loop-pilot run all --fixture-set mini --dry-run
   run loop-pilot status
+  if [[ "$SKIP_API_SMOKE" == "1" ]]; then
+    log "Skipping API bridge smoke by request"
+  else
+    api_bridge_smoke
+  fi
 
   log "LoopPilot WSL deployment verified"
   printf '\nRepository: %s\n' "$(pwd)"
