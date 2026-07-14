@@ -216,6 +216,7 @@ main() {
 
   log "Running static checks"
   run ruff check .
+  run python scripts/verify_wechat_miniprogram_static.py
 
   if [[ "$SKIP_FULL_TESTS" == "1" ]]; then
     log "Skipping full pytest by request"

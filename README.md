@@ -228,7 +228,7 @@ loop-pilot doctor
 bash scripts/deploy_wsl.sh --repo-dir "$HOME/LoopPilot"
 ```
 
-脚本会自动完成 clone/pull、`.venv`、依赖安装、`doctor`、`ruff`、`pytest`、0.4/0.5 验收、dry-run smoke 和只读 API bridge smoke。全新 WSL 环境先安装：
+脚本会自动完成 clone/pull、`.venv`、依赖安装、`doctor`、`ruff`、小程序静态验收、`pytest`、0.4/0.5 验收、dry-run smoke 和只读 API bridge smoke。全新 WSL 环境先安装：
 
 ```bash
 sudo apt-get update
@@ -287,6 +287,7 @@ python scripts/verify_0_5_prep.py
 
 # 基础质量
 ruff check .
+python scripts/verify_wechat_miniprogram_static.py
 pytest -q
 ```
 
@@ -302,6 +303,7 @@ pytest -q
 | `verify_0_4d_acceptance.py` | Summary + Schedule preview | 前置 0.3/0.4-b/0.4-c 通过 + 自身 READY | ✅ READY |
 | `verify_0_4_acceptance.py` | **Truthful 0.4 聚合** | **11/11** 全绿 + `(READY)` | ✅ **11/11 READY** |
 | `verify_0_5_prep.py` | SafetyGate 脚手架 | `0.5-prep: PASS`；`0.5-ready: NOT READY` | ✅ prep PASS |
+| `verify_wechat_miniprogram_static.py` | 小程序骨架 | 页面文件完整 + 只读 API adapter | ✅ PASS |
 | `pytest -q` | 全量单元/集成 | 0 failed | ✅ **257 passed** |
 | `ruff check .` | 静态检查 | 无违规 | ✅ PASS |
 

@@ -47,3 +47,9 @@ Run detail responses include `reportPath` and a read-only `artifacts` preview fr
 
 Review mutations are intentionally not wired in the first client milestone.
 When live API requests fail, pages fall back to mock data and show a visible source/status notice.
+
+Static scaffold validation is available without Node.js:
+
+```bash
+python scripts/verify_wechat_miniprogram_static.py
+```
