@@ -117,13 +117,13 @@ def check_settings_health_shape() -> str:
     wxml_path = CLIENT_ROOT / "pages" / "settings" / "settings.wxml"
     js_source = js_path.read_text(encoding="utf-8")
     wxml_source = wxml_path.read_text(encoding="utf-8")
-    for marker in ("healthRows", "Read-only", "Mutations", "Endpoints"):
+    for marker in ("healthRows", "endpointRows", "normalizeEndpoints", "Read-only", "Mutations", "Endpoints"):
         if marker not in js_source:
             raise AssertionError(f"settings.js missing health marker: {marker}")
-    for marker in ("healthRows", "detail-list"):
+    for marker in ("healthRows", "endpointRows", "只读接口", "detail-list"):
         if marker not in wxml_source:
             raise AssertionError(f"settings.wxml missing health marker: {marker}")
-    return "settings health detail"
+    return "settings health detail with endpoint list"
 
 
 def check_review_detail_run_context() -> str:

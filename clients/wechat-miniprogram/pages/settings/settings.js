@@ -17,13 +17,22 @@ function normalizeHealth(data) {
   ];
 }
 
+function normalizeEndpoints(data) {
+  const endpoints = Array.isArray(data.endpoints) ? data.endpoints : [];
+  return endpoints.map((endpoint) => ({
+    label: "GET",
+    value: endpoint
+  }));
+}
+
 Page({
   data: {
     apiBaseUrl: "",
     useMock: true,
     connection: {},
     healthText: "",
-    healthRows: []
+    healthRows: [],
+    endpointRows: []
   },
 
   onShow() {
@@ -32,7 +41,8 @@ Page({
       useMock: wx.getStorageSync("useMock") === "" ? true : Boolean(wx.getStorageSync("useMock")),
       connection: api.connectionState(),
       healthText: "",
-      healthRows: []
+      healthRows: [],
+      endpointRows: []
     });
   },
 
@@ -57,7 +67,12 @@ Page({
   testHealth() {
     this.save();
     if (this.data.useMock) {
-      this.setData({ healthText: "mock mode", healthRows: [], connection: api.connectionState() });
+      this.setData({
+        healthText: "mock mode",
+        healthRows: [],
+        endpointRows: [],
+        connection: api.connectionState()
+      });
       return;
     }
     api.checkHealth()
@@ -65,6 +80,7 @@ Page({
         this.setData({
           healthText: data.status || "ok",
           healthRows: normalizeHealth(data),
+          endpointRows: normalizeEndpoints(data),
           connection: api.connectionState()
         });
       })
@@ -72,6 +88,7 @@ Page({
         this.setData({
           healthText: error.message || "failed",
           healthRows: [],
+          endpointRows: [],
           connection: api.connectionState()
         });
       });

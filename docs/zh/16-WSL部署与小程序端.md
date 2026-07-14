@@ -109,7 +109,7 @@ POST /api/reviews/{run_id}/reject    # 后置，必须带 reason
 loop-pilot api serve --host 127.0.0.1 --port 7860
 ```
 
-`/api/health` 返回版本、状态后端、只读标记、endpoint 清单和写接口禁用状态，供小程序设置页确认 live 连接边界。`/api/summary/today` 返回今日 run 数、阻塞数、outcome 计数、最近运行和待审阅预览，供小程序首页只读展示。`/api/runs/{run_id}` 返回运行详情、`reportPath` 和 manifest 中的只读 `artifacts` 预览，供小程序运行详情页复制报告/产物路径。
+`/api/health` 返回版本、状态后端、只读标记、endpoint 清单和写接口禁用状态，供小程序设置页确认 live 连接边界；设置页会展示只读接口清单，方便真机/开发者工具核对当前 bridge 能力。`/api/summary/today` 返回今日 run 数、阻塞数、outcome 计数、最近运行和待审阅预览，供小程序首页只读展示。`/api/runs/{run_id}` 返回运行详情、`reportPath` 和 manifest 中的只读 `artifacts` 预览，供小程序运行详情页复制报告/产物路径。
 
 `python scripts/verify_api_bridge_contract.py` 不绑定端口，使用临时 SQLite 状态验证 health、today summary、run artifact 预览、review 详情和 POST 拒绝，适合 WSL 部署前置检查。
 

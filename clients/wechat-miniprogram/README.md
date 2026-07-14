@@ -43,7 +43,7 @@ GET /api/reviews
 GET /api/reviews/{run_id}
 ```
 
-The settings health check displays bridge version, state backend, read-only status, mutation status, adapter mode, and endpoint count.
+The settings health check displays bridge version, state backend, read-only status, mutation status, adapter mode, endpoint count, and the read-only endpoint list returned by `/api/health`.
 
 Run detail responses include `reportPath` and a read-only `artifacts` preview from `artifact-manifest.json`, so the client can copy report or artifact paths without executing local actions.
 
