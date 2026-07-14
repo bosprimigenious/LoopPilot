@@ -14,6 +14,7 @@ function normalizeReview(data) {
     phase: run.phase || "-",
     outcome,
     gate: run.gate || "-",
+    reportPath: run.reportPath || "",
     badgeClass: badgeClass(outcome)
   } : null;
   return {

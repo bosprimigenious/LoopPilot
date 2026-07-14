@@ -24,6 +24,7 @@
           </view>
           <view class="button-row">
             <button class="button button-secondary" data-path="{{item.artifactPath}}" catchtap="copyPath">复制产物路径</button>
+            <button wx:if="{{item.runSummary.reportPath}}" class="button" data-path="{{item.runSummary.reportPath}}" catchtap="copyPath">复制报告路径</button>
           </view>
         </view>
       </block>

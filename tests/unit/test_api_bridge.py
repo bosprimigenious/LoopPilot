@@ -108,6 +108,7 @@ def test_api_bridge_reviews_are_read_only(sqlite_config_dir: Path) -> None:
     assert payload["items"][0]["status"] == "pending"
     assert payload["items"][0]["run"]["phase"] == "WAITING_APPROVAL"
     assert payload["items"][0]["run"]["outcome"] == "partial"
+    assert "reportPath" in payload["items"][0]["run"]
 
     status, detail = bridge.dispatch("GET", "/api/reviews/run-review-1")
     assert status == 200

@@ -172,13 +172,19 @@ def check_review_list_run_context() -> str:
     wxml_path = CLIENT_ROOT / "pages" / "review" / "review.wxml"
     js_source = js_path.read_text(encoding="utf-8")
     wxml_source = wxml_path.read_text(encoding="utf-8")
-    for marker in ("runSummary", "normalizeReview", "badgeClass"):
+    for marker in ("runSummary", "normalizeReview", "badgeClass", "reportPath"):
         if marker not in js_source:
             raise AssertionError(f"review.js missing run context marker: {marker}")
-    for marker in ("item.runSummary", "item.runSummary.phase", "item.runSummary.badgeClass"):
+    for marker in (
+        "item.runSummary",
+        "item.runSummary.phase",
+        "item.runSummary.badgeClass",
+        "item.runSummary.reportPath",
+        "复制报告路径",
+    ):
         if marker not in wxml_source:
             raise AssertionError(f"review.wxml missing run context marker: {marker}")
-    return "review list run context"
+    return "review list run context with report copy"
 
 
 def main() -> int:

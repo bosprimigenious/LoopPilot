@@ -162,6 +162,7 @@ def check_reviews(bridge: ApiBridge) -> str:
     assert payload["items"][0]["runId"] == "contract-review-1"
     assert payload["items"][0]["run"]["phase"] == "WAITING_APPROVAL"
     assert payload["items"][0]["run"]["outcome"] == "partial"
+    assert "reportPath" in payload["items"][0]["run"]
     status, detail = bridge.dispatch("GET", "/api/reviews/contract-review-1")
     assert status == 200
     assert detail["runId"] == "contract-review-1"
