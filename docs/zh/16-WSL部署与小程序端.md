@@ -107,6 +107,8 @@ POST /api/reviews/{run_id}/reject    # 后置，必须带 reason
 loop-pilot api serve --host 127.0.0.1 --port 7860
 ```
 
+`/api/summary/today` 返回今日 run 数、阻塞数、outcome 计数、最近运行和待审阅预览，供小程序首页只读展示。
+
 第一阶段小程序端默认消费 mock 数据；第二阶段可在设置页关闭 mock 并配置上述 API base URL。live API 请求失败时页面会回退 mock 数据并显示数据源/错误提示；第三阶段再接人工确认后的 review 操作。
 
 ## 开发顺序

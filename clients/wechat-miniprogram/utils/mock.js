@@ -3,6 +3,13 @@ const summary = {
   plannedCount: 3,
   pendingReviewCount: 2,
   blockedCount: 0,
+  outcomeCounts: {
+    succeeded: 1,
+    partial: 2,
+    blocked: 0,
+    failed: 0,
+    other: 0
+  },
   latestRuns: [
     {
       runId: "20260715T090000Z-daily_news-demo",
@@ -20,7 +27,8 @@ const summary = {
       title: "InternLoop 修复建议",
       updatedAt: "09:18"
     }
-  ]
+  ],
+  needsReview: []
 };
 
 const runs = [
@@ -51,6 +59,8 @@ const reviews = [
     artifactPath: "var/artifacts/paper/..."
   }
 ];
+
+summary.needsReview = reviews;
 
 module.exports = {
   summary,

@@ -147,7 +147,9 @@ class ApiBridge:
             "plannedCount": len(runs),
             "pendingReviewCount": len(reviews),
             "blockedCount": len(blocked),
+            "outcomeCounts": self._outcome_counts(runs),
             "latestRuns": [self.run_summary(record) for record in latest],
+            "needsReview": reviews[:3],
         }
 
     def _review_rows_from_runs(self) -> list[dict[str, Any]]:
@@ -191,6 +193,23 @@ class ApiBridge:
         if record.review_status in {"pending", "needs_review", "needs_revision", "resume_requested"}:
             return True
         return record.outcome in self.REVIEW_OUTCOMES
+
+    @staticmethod
+    def _outcome_counts(runs: list[RunRecord]) -> dict[str, int]:
+        counts = {
+            "succeeded": 0,
+            "partial": 0,
+            "blocked": 0,
+            "failed": 0,
+            "other": 0,
+        }
+        for record in runs:
+            outcome = record.outcome.value if record.outcome else "other"
+            if outcome in counts:
+                counts[outcome] += 1
+            else:
+                counts["other"] += 1
+        return counts
 
     def _gate(self, record: RunRecord) -> str | None:
         path = self.cfg.artifact_dir / record.loop_type.replace("_", "-") / record.run_id / "gate_result.json"

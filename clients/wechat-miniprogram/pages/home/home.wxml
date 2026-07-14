@@ -25,6 +25,11 @@
         <text class="metric-label">阻塞</text>
       </view>
     </view>
+    <view class="outcome-strip">
+      <text>成功 {{summary.outcomeCounts.succeeded || 0}}</text>
+      <text>部分 {{summary.outcomeCounts.partial || 0}}</text>
+      <text>失败 {{summary.outcomeCounts.failed || 0}}</text>
+    </view>
     <view class="button-row">
       <button class="button" bindtap="openRuns">运行记录</button>
       <button class="button button-secondary" bindtap="openReview">审阅队列</button>
@@ -45,5 +50,21 @@
       </block>
     </block>
     <view wx:else class="empty">暂无运行记录</view>
+  </view>
+
+  <view class="panel">
+    <view class="panel-title">待审阅</view>
+    <block wx:if="{{needsReview.length}}">
+      <block wx:for="{{needsReview}}" wx:key="runId">
+        <view class="item item-link" data-run-id="{{item.runId}}" bindtap="openReviewDetail">
+          <view class="row">
+            <view class="item-title">{{item.title}}</view>
+            <text class="badge badge-review">{{item.status}}</text>
+          </view>
+          <view class="item-meta">{{item.loopType}} · {{item.runId}}</view>
+        </view>
+      </block>
+    </block>
+    <view wx:else class="empty">暂无待审阅事项</view>
   </view>
 </view>

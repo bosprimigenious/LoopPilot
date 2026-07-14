@@ -4,6 +4,7 @@ Page({
   data: {
     summary: {},
     latestRuns: [],
+    needsReview: [],
     connection: {},
     loading: true
   },
@@ -18,6 +19,7 @@ Page({
       this.setData({
         summary,
         latestRuns: summary.latestRuns || [],
+        needsReview: summary.needsReview || [],
         connection: api.connectionState(),
         loading: false
       });
@@ -30,5 +32,12 @@ Page({
 
   openReview() {
     wx.switchTab({ url: "/pages/review/review" });
+  },
+
+  openReviewDetail(event) {
+    const runId = event.currentTarget.dataset.runId;
+    wx.navigateTo({
+      url: `/pages/review-detail/review-detail?runId=${encodeURIComponent(runId)}`
+    });
   }
 });

@@ -94,6 +94,15 @@ page {
   margin-top: 8rpx;
 }
 
+.outcome-strip {
+  color: #475569;
+  display: flex;
+  font-size: 23rpx;
+  gap: 18rpx;
+  justify-content: center;
+  margin-top: 18rpx;
+}
+
 .item {
   border-top: 1rpx solid #e5ebf3;
   padding: 20rpx 0;

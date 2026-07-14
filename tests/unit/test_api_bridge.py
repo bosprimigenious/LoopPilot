@@ -92,4 +92,7 @@ def test_api_bridge_today_summary(sqlite_config_dir: Path) -> None:
     assert payload["date"] == today
     assert payload["plannedCount"] == 2
     assert payload["pendingReviewCount"] == 1
+    assert payload["outcomeCounts"]["succeeded"] == 1
+    assert payload["outcomeCounts"]["partial"] == 1
+    assert payload["needsReview"][0]["runId"] == "run-today-2"
     assert [item["runId"] for item in payload["latestRuns"]] == ["run-today-2", "run-today-1"]
