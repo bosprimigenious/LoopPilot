@@ -111,6 +111,8 @@ loop-pilot api serve --host 127.0.0.1 --port 7860
 
 `/api/health` 返回版本、状态后端、只读标记、endpoint 清单和写接口禁用状态，供小程序设置页确认 live 连接边界。`/api/summary/today` 返回今日 run 数、阻塞数、outcome 计数、最近运行和待审阅预览，供小程序首页只读展示。`/api/runs/{run_id}` 返回运行详情、`reportPath` 和 manifest 中的只读 `artifacts` 预览，供小程序运行详情页复制报告/产物路径。
 
+`python scripts/verify_api_bridge_contract.py` 不绑定端口，使用临时 SQLite 状态验证 health、today summary、run/review 详情和 POST 拒绝，适合 WSL 部署前置检查。
+
 第一阶段小程序端默认消费 mock 数据；第二阶段可在设置页关闭 mock 并配置上述 API base URL。live API 请求失败时页面会回退 mock 数据并显示数据源/错误提示；第三阶段再接人工确认后的 review 操作。
 
 ## 开发顺序

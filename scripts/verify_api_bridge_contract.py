@@ -58,6 +58,7 @@ def _check(name: str, fn) -> tuple[str, bool, str]:
 
 def _seed_app(base: Path) -> App:
     app = App.from_config_dir(_write_config(base))
+    today = ApiBridge(app)._today()
     app.state_store.save_run(
         RunRecord(
             run_id="contract-run-1",
@@ -65,8 +66,8 @@ def _seed_app(base: Path) -> App:
             phase=RunPhase.TERMINATED,
             outcome=RunOutcome.SUCCEEDED,
             terminal_reason="contract ok",
-            started_at="2026-07-14T00:00:00+00:00",
-            finished_at="2026-07-14T00:01:00+00:00",
+            started_at=f"{today}T00:00:00+00:00",
+            finished_at=f"{today}T00:01:00+00:00",
         )
     )
     review_record = RunRecord(
@@ -75,7 +76,7 @@ def _seed_app(base: Path) -> App:
         phase=RunPhase.WAITING_APPROVAL,
         outcome=RunOutcome.PARTIAL,
         review_status="needs_review",
-        started_at="2026-07-14T00:02:00+00:00",
+        started_at=f"{today}T00:02:00+00:00",
     )
     app.state_store.save_run(review_record)
     ReviewStore(app.config.sqlite_path).upsert_pending(
@@ -109,6 +110,21 @@ def check_runs(bridge: ApiBridge) -> str:
     return "runs list/detail"
 
 
+def check_summary(bridge: ApiBridge) -> str:
+    status, payload = bridge.dispatch("GET", "/api/summary/today")
+    assert status == 200
+    assert payload["plannedCount"] == 2
+    assert payload["pendingReviewCount"] == 1
+    assert payload["outcomeCounts"]["succeeded"] == 1
+    assert payload["outcomeCounts"]["partial"] == 1
+    assert payload["needsReview"][0]["runId"] == "contract-review-1"
+    assert [item["runId"] for item in payload["latestRuns"]] == [
+        "contract-review-1",
+        "contract-run-1",
+    ]
+    return "today summary"
+
+
 def check_reviews(bridge: ApiBridge) -> str:
     status, payload = bridge.dispatch("GET", "/api/reviews")
     assert status == 200
@@ -133,6 +149,7 @@ def main() -> int:
         checks = [
             _check("health", lambda: check_health(bridge)),
             _check("runs", lambda: check_runs(bridge)),
+            _check("summary", lambda: check_summary(bridge)),
             _check("reviews", lambda: check_reviews(bridge)),
             _check("read_only_rejection", lambda: check_read_only_rejection(bridge)),
         ]

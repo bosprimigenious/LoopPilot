@@ -50,7 +50,7 @@ Run detail responses include `reportPath` and a read-only `artifacts` preview fr
 Review mutations are intentionally not wired in the first client milestone.
 When live API requests fail, pages fall back to mock data and show a visible source/status notice.
 
-The API bridge contract can be validated without binding a local port:
+The API bridge contract can be validated without binding a local port, including health, today summary, run detail, review detail, and POST rejection:
 
 ```bash
 python scripts/verify_api_bridge_contract.py
