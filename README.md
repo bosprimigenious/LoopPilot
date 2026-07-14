@@ -262,6 +262,14 @@ loop-pilot summary today
 loop-pilot schedule print
 ```
 
+### 本地 API Bridge（只读）
+
+```bash
+loop-pilot api serve --host 127.0.0.1 --port 7860
+```
+
+用于小程序端或轻量 dashboard 读取 `/api/health`、`/api/summary/today`、`/api/runs`、`/api/reviews`。当前不提供 approve/reject 写接口。
+
 ### 验收门禁（CI / 本地）
 
 ```bash

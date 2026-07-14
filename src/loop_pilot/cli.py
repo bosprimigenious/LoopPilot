@@ -12,6 +12,7 @@ from loop_pilot.adapters.doctor import diagnose_adapters
 from loop_pilot.adapters.factory import list_adapters
 from loop_pilot.adapters.registry import is_real_adapter_kind
 from loop_pilot.app import App
+from loop_pilot.cli_api import api
 from loop_pilot.cli_db import db
 from loop_pilot.cli_review import approve, cancel, defer, reject, report, resume, review
 from loop_pilot.cli_safety import safety
@@ -399,6 +400,7 @@ def _run_single(
 
 
 app.add_command(db)
+app.add_command(api)
 app.add_command(review)
 app.add_command(approve)
 app.add_command(reject)

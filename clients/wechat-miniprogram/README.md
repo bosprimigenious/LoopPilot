@@ -18,7 +18,19 @@ This is a lightweight mobile client for LoopPilot. The first milestone is a read
 
 ## API Boundary
 
-The client expects a future local LoopPilot API bridge:
+Run the local read-only LoopPilot API bridge:
+
+```bash
+loop-pilot api serve --host 127.0.0.1 --port 7860
+```
+
+Then set API Base URL in the settings tab:
+
+```text
+http://127.0.0.1:7860
+```
+
+The first bridge exposes:
 
 ```text
 GET /api/health

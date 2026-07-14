@@ -98,15 +98,21 @@ POST /api/reviews/{run_id}/approve   # 后置，必须仍走 ReviewService
 POST /api/reviews/{run_id}/reject    # 后置，必须带 reason
 ```
 
-第一阶段小程序端只消费 mock 数据；第二阶段接只读 API；第三阶段再接人工确认后的 review 操作。
+只读 API bridge 已提供第一版入口：
+
+```bash
+loop-pilot api serve --host 127.0.0.1 --port 7860
+```
+
+第一阶段小程序端默认消费 mock 数据；第二阶段可在设置页关闭 mock 并配置上述 API base URL；第三阶段再接人工确认后的 review 操作。
 
 ## 开发顺序
 
 1. 完成并验证 `scripts/deploy_wsl.sh`。
 2. 将 WSL 快速入口写入 README。
 3. 建立小程序端目录、页面、mock 数据和 API adapter。
-4. 增加本地 API bridge 规格与只读实现。
-5. 小程序从 mock 切换到 live base URL。
+4. 增加本地 API bridge 规格与只读实现。（已开始：`loop-pilot api serve`）
+5. 小程序从 mock 切换到 live base URL，并验证真机/开发者工具访问方式。
 6. 在 review 操作前加入二次确认和后端安全门禁。
 
 ## 安全原则
