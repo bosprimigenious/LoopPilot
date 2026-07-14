@@ -7,7 +7,7 @@ from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from loop_pilot import __version__
 from loop_pilot.app import App
@@ -44,13 +44,19 @@ class ApiBridge:
         if path == "/api/runs":
             return 200, {"items": self.list_runs(limit=self._limit(query, default=50))}
         if path.startswith("/api/runs/"):
-            run_id = path.removeprefix("/api/runs/")
+            run_id = unquote(path.removeprefix("/api/runs/"))
             record = self.app.state_store.get_run(run_id)
             if record is None:
                 return 404, {"error": "not_found", "message": f"run not found: {run_id}"}
             return 200, self.run_detail(record)
         if path == "/api/reviews":
             return 200, {"items": self.list_reviews()}
+        if path.startswith("/api/reviews/"):
+            run_id = unquote(path.removeprefix("/api/reviews/"))
+            review = self.review_detail(run_id)
+            if review is None:
+                return 404, {"error": "not_found", "message": f"review not found: {run_id}"}
+            return 200, review
         if path == "/api/summary/today":
             return 200, self.today_summary()
         return 404, {"error": "not_found", "message": f"unknown endpoint: {path}"}
@@ -102,6 +108,21 @@ class ApiBridge:
                 return [self._review_item_to_dict(item) for item in items]
         return self._review_rows_from_runs()
 
+    def review_detail(self, run_id: str) -> dict[str, Any] | None:
+        record = self.app.state_store.get_run(run_id)
+        backend = str(self.cfg.runtime.get("state_backend", "json")).lower()
+        if backend == "sqlite" and self.cfg.sqlite_path.exists():
+            item = ReviewStore(self.cfg.sqlite_path).get_by_run_id(run_id)
+            if item is not None:
+                detail = self._review_item_to_dict(item)
+                detail["run"] = self.run_summary(record) if record is not None else None
+                return detail
+        if record is None or not self._needs_review(record):
+            return None
+        detail = self._review_row_from_record(record)
+        detail["run"] = self.run_summary(record)
+        return detail
+
     def today_summary(self) -> dict[str, Any]:
         today = self._today()
         runs = [
@@ -130,25 +151,26 @@ class ApiBridge:
         }
 
     def _review_rows_from_runs(self) -> list[dict[str, Any]]:
-        rows: list[dict[str, Any]] = []
-        for record in self.app.state_store.list_runs(limit=500):
-            if not self._needs_review(record):
-                continue
-            rows.append(
-                {
-                    "runId": record.run_id,
-                    "loopType": record.loop_type,
-                    "status": record.review_status or "needs_review",
-                    "title": record.terminal_reason or f"{record.loop_type} needs review",
-                    "artifactPath": str(
-                        self.cfg.artifact_dir
-                        / record.loop_type.replace("_", "-")
-                        / record.run_id
-                    ),
-                    "createdAt": record.finished_at or record.started_at,
-                }
-            )
-        return rows
+        return [
+            self._review_row_from_record(record)
+            for record in self.app.state_store.list_runs(limit=500)
+            if self._needs_review(record)
+        ]
+
+    def _review_row_from_record(self, record: RunRecord) -> dict[str, Any]:
+        return {
+            "runId": record.run_id,
+            "loopType": record.loop_type,
+            "status": record.review_status or "needs_review",
+            "title": record.terminal_reason or f"{record.loop_type} needs review",
+            "reason": record.terminal_reason,
+            "artifactPath": str(
+                self.cfg.artifact_dir
+                / record.loop_type.replace("_", "-")
+                / record.run_id
+            ),
+            "createdAt": record.finished_at or record.started_at,
+        }
 
     def _review_item_to_dict(self, item: ReviewItem) -> dict[str, Any]:
         data = asdict(item)

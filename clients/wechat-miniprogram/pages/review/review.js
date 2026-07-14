@@ -29,5 +29,12 @@ Page({
   copyPath(event) {
     const path = event.currentTarget.dataset.path;
     wx.setClipboardData({ data: path || "" });
+  },
+
+  openReview(event) {
+    const runId = event.currentTarget.dataset.runId;
+    wx.navigateTo({
+      url: `/pages/review-detail/review-detail?runId=${encodeURIComponent(runId)}`
+    });
   }
 });

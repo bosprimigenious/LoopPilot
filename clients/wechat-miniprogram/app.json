@@ -4,6 +4,7 @@
     "pages/runs/runs",
     "pages/run-detail/run-detail",
     "pages/review/review",
+    "pages/review-detail/review-detail",
     "pages/settings/settings"
   ],
   "window": {

@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="header">
+    <view class="eyebrow">Review</view>
+    <view class="title">审阅详情</view>
+  </view>
+
+  <view wx:if="{{connection.source && connection.source !== 'live'}}" class="notice">
+    {{connection.useMock ? "Mock 数据模式" : "Live API 不可用，已回退 Mock 数据"}}
+    <text wx:if="{{connection.error}}"> · {{connection.error}}</text>
+  </view>
+
+  <view wx:if="{{error}}" class="notice">{{error}}</view>
+
+  <view wx:if="{{review}}" class="panel">
+    <view class="row">
+      <view class="item-title">{{review.title}}</view>
+      <text class="badge badge-review">{{review.status}}</text>
+    </view>
+    <view class="item-meta">{{review.runId}}</view>
+
+    <view class="detail-list">
+      <block wx:for="{{review.rows}}" wx:key="label">
+        <view class="detail-row">
+          <text class="detail-label">{{item.label}}</text>
+          <text class="detail-value">{{item.value}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view wx:if="{{review.reason}}" class="reason">{{review.reason}}</view>
+    <view wx:if="{{review.artifactPath}}" class="reason">{{review.artifactPath}}</view>
+
+    <view class="button-row">
+      <button class="button button-secondary" data-value="{{review.runId}}" bindtap="copyValue">复制 Run ID</button>
+      <button wx:if="{{review.artifactPath}}" class="button" data-value="{{review.artifactPath}}" bindtap="copyValue">复制产物路径</button>
+    </view>
+    <view wx:if="{{review.run}}" class="button-row">
+      <button class="button button-secondary" bindtap="openRun">查看运行详情</button>
+    </view>
+  </view>
+</view>

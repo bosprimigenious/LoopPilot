@@ -85,6 +85,11 @@ function listReviews() {
   return fallback(request("/api/reviews"), { items: mock.reviews }).then((data) => data.items || data);
 }
 
+function getReview(runId) {
+  const local = mock.reviews.find((item) => item.runId === runId) || null;
+  return fallback(request(`/api/reviews/${encodeURIComponent(runId)}`), local);
+}
+
 function checkHealth() {
   return request("/api/health");
 }
@@ -94,6 +99,7 @@ module.exports = {
   listRuns,
   getRun,
   listReviews,
+  getReview,
   checkHealth,
   connectionState
 };

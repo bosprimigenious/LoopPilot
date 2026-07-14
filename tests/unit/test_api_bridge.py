@@ -54,6 +54,12 @@ def test_api_bridge_reviews_are_read_only(sqlite_config_dir: Path) -> None:
     assert payload["items"][0]["runId"] == "run-review-1"
     assert payload["items"][0]["status"] == "pending"
 
+    status, detail = bridge.dispatch("GET", "/api/reviews/run-review-1")
+    assert status == 200
+    assert detail["runId"] == "run-review-1"
+    assert detail["artifactPath"] == "var/artifacts/paper/run-review-1"
+    assert detail["run"]["phase"] == "WAITING_APPROVAL"
+
     status, denied = bridge.dispatch("POST", "/api/reviews/run-review-1/approve")
     assert status == 405
     assert denied["error"] == "method_not_allowed"

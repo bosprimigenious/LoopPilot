@@ -70,7 +70,7 @@ MVP 页面：
 |------|------|----------|
 | 首页 | 今日概览、最新运行、待审阅数量 | mock，后续接本地 API |
 | 运行 | 最近 run 列表、详情与 outcome | mock，后续接 `/api/runs`、`/api/runs/{run_id}` |
-| 审阅 | 待处理 review item | mock，后续接 `/api/reviews` |
+| 审阅 | 待处理 review item 与只读详情 | mock，后续接 `/api/reviews`、`/api/reviews/{run_id}` |
 | 设置 | 配置 API base URL、切换 mock/live | local storage |
 
 首版不做：
@@ -96,6 +96,7 @@ GET  /api/summary/today
 GET  /api/runs
 GET  /api/runs/{run_id}
 GET  /api/reviews
+GET  /api/reviews/{run_id}
 POST /api/reviews/{run_id}/approve   # 后置，必须仍走 ReviewService
 POST /api/reviews/{run_id}/reject    # 后置，必须带 reason
 ```

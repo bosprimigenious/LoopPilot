@@ -15,6 +15,7 @@ This is a lightweight mobile client for LoopPilot. The first milestone is a read
 - `pages/runs/runs`: recent run records.
 - `pages/run-detail/run-detail`: read-only run detail.
 - `pages/review/review`: pending review items.
+- `pages/review-detail/review-detail`: read-only review detail.
 - `pages/settings/settings`: API base URL and mock/live toggle.
 
 ## API Boundary
@@ -39,6 +40,7 @@ GET /api/summary/today
 GET /api/runs
 GET /api/runs/{run_id}
 GET /api/reviews
+GET /api/reviews/{run_id}
 ```
 
 Review mutations are intentionally not wired in the first client milestone.
