@@ -126,6 +126,24 @@ def check_settings_health_shape() -> str:
     return "settings health detail"
 
 
+def check_review_detail_run_context() -> str:
+    js_path = CLIENT_ROOT / "pages" / "review-detail" / "review-detail.js"
+    wxml_path = CLIENT_ROOT / "pages" / "review-detail" / "review-detail.wxml"
+    mock_path = CLIENT_ROOT / "utils" / "mock.js"
+    js_source = js_path.read_text(encoding="utf-8")
+    wxml_source = wxml_path.read_text(encoding="utf-8")
+    mock_source = mock_path.read_text(encoding="utf-8")
+    for marker in ("runSummary", "normalizeRunSummary", "reportPath"):
+        if marker not in js_source:
+            raise AssertionError(f"review-detail.js missing run context marker: {marker}")
+    for marker in ("关联运行", "review.runSummary", "复制报告路径"):
+        if marker not in wxml_source:
+            raise AssertionError(f"review-detail.wxml missing run context marker: {marker}")
+    if "run: runs.find" not in mock_source:
+        raise AssertionError("mock.js missing review run context")
+    return "review detail run context"
+
+
 def main() -> int:
     checks = [
         _check("app_json", check_app_json),
@@ -134,6 +152,7 @@ def main() -> int:
         _check("api_adapter_read_only", check_api_adapter_is_read_only),
         _check("mock_run_detail_shape", check_mock_run_detail_shape),
         _check("settings_health_shape", check_settings_health_shape),
+        _check("review_detail_run_context", check_review_detail_run_context),
     ]
     passed = sum(1 for _, ok, _ in checks if ok)
     total = len(checks)

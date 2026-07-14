@@ -62,14 +62,16 @@ const reviews = [
     loopType: "intern",
     title: "检查 patch.diff 与 pytest 证据",
     status: "needs_review",
-    artifactPath: "var/artifacts/intern/..."
+    artifactPath: "var/artifacts/intern/...",
+    run: runs.find((item) => item.runId === "20260715T091000Z-intern-demo")
   },
   {
     runId: "20260715T092000Z-paper-demo",
     loopType: "paper",
     title: "确认 SOURCE REQUIRED 标记",
     status: "needs_review",
-    artifactPath: "var/artifacts/paper/..."
+    artifactPath: "var/artifacts/paper/...",
+    run: runs.find((item) => item.runId === "20260715T092000Z-paper-demo")
   }
 ];
 

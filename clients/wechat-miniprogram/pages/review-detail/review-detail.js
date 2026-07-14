@@ -1,7 +1,41 @@
 const api = require("../../utils/api");
 
+function badgeClass(outcome) {
+  if (outcome === "succeeded") return "badge-pass";
+  if (outcome === "blocked" || outcome === "failed") return "badge-blocked";
+  if (outcome === "partial" || outcome === "exhausted") return "badge-review";
+  return "badge-neutral";
+}
+
 function pick(data, camel, snake) {
   return data[camel] !== undefined ? data[camel] : data[snake];
+}
+
+function normalizeRunSummary(data) {
+  if (!data) return null;
+  const runId = pick(data, "runId", "run_id") || "";
+  const loopType = pick(data, "loopType", "loop_type") || "";
+  const phase = data.phase || "-";
+  const outcome = data.outcome || "unknown";
+  const gate = data.gate || "-";
+  const reportPath = data.reportPath || "";
+  return {
+    runId,
+    title: data.title || `${loopType} run`,
+    loopType,
+    phase,
+    outcome,
+    gate,
+    reportPath,
+    badgeClass: badgeClass(outcome),
+    rows: [
+      { label: "Loop", value: loopType || "-" },
+      { label: "Phase", value: phase },
+      { label: "Outcome", value: outcome },
+      { label: "Gate", value: gate },
+      { label: "Report", value: reportPath || "-" }
+    ]
+  };
 }
 
 function normalizeReview(data) {
@@ -14,6 +48,7 @@ function normalizeReview(data) {
   const status = data.status || "needs_review";
   const reason = data.reason || data.title || "";
   const run = data.run || null;
+  const runSummary = normalizeRunSummary(run);
   return {
     runId,
     loopType,
@@ -25,6 +60,7 @@ function normalizeReview(data) {
     createdAt,
     decidedAt,
     run,
+    runSummary,
     rows: [
       { label: "Run", value: runId },
       { label: "Loop", value: loopType || "-" },

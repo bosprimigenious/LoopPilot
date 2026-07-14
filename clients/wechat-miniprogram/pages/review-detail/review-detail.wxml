@@ -34,8 +34,28 @@
       <button class="button button-secondary" data-value="{{review.runId}}" bindtap="copyValue">复制 Run ID</button>
       <button wx:if="{{review.artifactPath}}" class="button" data-value="{{review.artifactPath}}" bindtap="copyValue">复制产物路径</button>
     </view>
-    <view wx:if="{{review.run}}" class="button-row">
+  </view>
+
+  <view wx:if="{{review && review.runSummary}}" class="panel">
+    <view class="panel-title">关联运行</view>
+    <view class="row">
+      <view class="item-title">{{review.runSummary.title}}</view>
+      <text class="badge {{review.runSummary.badgeClass}}">{{review.runSummary.outcome}}</text>
+    </view>
+    <view class="item-meta">{{review.runSummary.runId}}</view>
+
+    <view class="detail-list">
+      <block wx:for="{{review.runSummary.rows}}" wx:key="label">
+        <view class="detail-row">
+          <text class="detail-label">{{item.label}}</text>
+          <text class="detail-value">{{item.value}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="button-row">
       <button class="button button-secondary" bindtap="openRun">查看运行详情</button>
+      <button wx:if="{{review.runSummary.reportPath}}" class="button" data-value="{{review.runSummary.reportPath}}" bindtap="copyValue">复制报告路径</button>
     </view>
   </view>
 </view>
