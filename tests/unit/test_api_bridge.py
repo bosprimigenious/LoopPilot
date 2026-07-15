@@ -156,4 +156,6 @@ def test_api_bridge_today_summary(sqlite_config_dir: Path) -> None:
     assert payload["outcomeCounts"]["partial"] == 1
     assert payload["needsReview"][0]["runId"] == "run-today-2"
     assert payload["needsReview"][0]["run"]["phase"] == "WAITING_APPROVAL"
+    assert payload["needsReview"][0]["run"]["outcome"] == "partial"
+    assert "reportPath" in payload["needsReview"][0]["run"]
     assert [item["runId"] for item in payload["latestRuns"]] == ["run-today-2", "run-today-1"]

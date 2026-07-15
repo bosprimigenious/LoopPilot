@@ -7,6 +7,21 @@ function badgeClass(outcome) {
   return "badge-neutral";
 }
 
+function normalizeReview(data) {
+  const run = data.run || null;
+  const outcome = run ? run.outcome || "unknown" : "";
+  const runSummary = run ? {
+    phase: run.phase || "-",
+    outcome,
+    gate: run.gate || "-",
+    badgeClass: badgeClass(outcome)
+  } : null;
+  return {
+    ...data,
+    runSummary
+  };
+}
+
 Page({
   data: {
     summary: {},
@@ -29,7 +44,7 @@ Page({
           ...run,
           badgeClass: badgeClass(run.outcome)
         })),
-        needsReview: summary.needsReview || [],
+        needsReview: (summary.needsReview || []).map(normalizeReview),
         connection: api.connectionState(),
         loading: false
       });

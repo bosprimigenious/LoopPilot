@@ -11,7 +11,7 @@ This is a lightweight mobile client for LoopPilot. The first milestone is a read
 
 ## Pages
 
-- `pages/home/home`: daily overview with latest run and review detail links.
+- `pages/home/home`: daily overview with latest run and review context links.
 - `pages/runs/runs`: recent run records.
 - `pages/run-detail/run-detail`: read-only run detail.
 - `pages/review/review`: pending review items with linked run context and report path copy.

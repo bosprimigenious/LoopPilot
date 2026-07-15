@@ -126,6 +126,20 @@ def check_home_run_detail_navigation() -> str:
     return "home latest runs link to detail"
 
 
+def check_home_review_run_context() -> str:
+    js_path = CLIENT_ROOT / "pages" / "home" / "home.js"
+    wxml_path = CLIENT_ROOT / "pages" / "home" / "home.wxml"
+    js_source = js_path.read_text(encoding="utf-8")
+    wxml_source = wxml_path.read_text(encoding="utf-8")
+    for marker in ("needsReview", "normalizeReview", "runSummary"):
+        if marker not in js_source:
+            raise AssertionError(f"home.js missing review context marker: {marker}")
+    for marker in ("item.runSummary", "item.runSummary.phase", "item.runSummary.badgeClass"):
+        if marker not in wxml_source:
+            raise AssertionError(f"home.wxml missing review context marker: {marker}")
+    return "home review preview run context"
+
+
 def check_settings_health_shape() -> str:
     js_path = CLIENT_ROOT / "pages" / "settings" / "settings.js"
     wxml_path = CLIENT_ROOT / "pages" / "settings" / "settings.wxml"
@@ -195,6 +209,7 @@ def main() -> int:
         _check("api_adapter_read_only", check_api_adapter_is_read_only),
         _check("mock_run_detail_shape", check_mock_run_detail_shape),
         _check("home_run_detail_navigation", check_home_run_detail_navigation),
+        _check("home_review_run_context", check_home_review_run_context),
         _check("settings_health_shape", check_settings_health_shape),
         _check("review_detail_run_context", check_review_detail_run_context),
         _check("review_list_run_context", check_review_list_run_context),

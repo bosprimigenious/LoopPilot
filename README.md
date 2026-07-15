@@ -306,8 +306,8 @@ pytest -q
 | `verify_0_4_acceptance.py` | **Truthful 0.4 聚合** | **11/11** 全绿 + `(READY)` | ✅ **11/11 READY** |
 | `verify_0_5_prep.py` | SafetyGate 脚手架 | `0.5-prep: PASS`；`0.5-ready: NOT READY` | ✅ prep PASS |
 | `verify_wsl_deploy_static.py` | WSL 部署入口 | flags/env + prerequisite + gate + read-only API smoke marker 完整 | ✅ PASS |
-| `verify_api_bridge_contract.py` | 本地 API bridge | 只读 health + summary/run artifact/review run context + POST 拒绝 + OPTIONS 预检 | ✅ PASS |
-| `verify_wechat_miniprogram_static.py` | 小程序骨架 | 页面文件完整 + 只读 API adapter + 首页详情导航 + review run context/report copy + health endpoint 清单 | ✅ PASS |
+| `verify_api_bridge_contract.py` | 本地 API bridge | 只读 health + summary/review run context + run artifacts + POST 拒绝 + OPTIONS 预检 | ✅ PASS |
+| `verify_wechat_miniprogram_static.py` | 小程序骨架 | 页面文件完整 + 只读 API adapter + 首页/review run context + health endpoint 清单 | ✅ PASS |
 | `pytest -q` | 全量单元/集成 | 0 failed | ✅ **258 passed** |
 | `ruff check .` | 静态检查 | 无违规 | ✅ PASS |
 

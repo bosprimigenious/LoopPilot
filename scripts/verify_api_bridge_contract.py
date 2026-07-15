@@ -149,11 +149,14 @@ def check_summary(bridge: ApiBridge) -> str:
     assert payload["outcomeCounts"]["succeeded"] == 1
     assert payload["outcomeCounts"]["partial"] == 1
     assert payload["needsReview"][0]["runId"] == "contract-review-1"
+    assert payload["needsReview"][0]["run"]["phase"] == "WAITING_APPROVAL"
+    assert payload["needsReview"][0]["run"]["outcome"] == "partial"
+    assert "reportPath" in payload["needsReview"][0]["run"]
     assert [item["runId"] for item in payload["latestRuns"]] == [
         "contract-review-1",
         "contract-run-1",
     ]
-    return "today summary"
+    return "today summary with review run context"
 
 
 def check_reviews(bridge: ApiBridge) -> str:
