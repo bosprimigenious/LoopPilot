@@ -111,6 +111,8 @@ def check_paper_standard_docs() -> str:
             "Paper gate",
             "Open-source gate",
             "Artifact review bundle",
+            "- [x] Title and abstract state terminal trust, not generic agent orchestration.",
+            "- [x] Related work distinguishes trust objects: completion claim, action certificate, policy action, terminal run.",
             "- [x] Acceptance snapshot pins commit, commands, environment, and results.",
             "- [x] Threats to validity separate fixture-heavy evidence from live-adapter evidence.",
         ),
@@ -121,7 +123,8 @@ def check_paper_standard_docs() -> str:
         (
             "terminal-trust layer",
             "A-conference bar",
-            "fault-injection",
+            "Post-loop next steps",
+            "explicit source/workspace fault injection",
             "without private credentials",
         ),
         label="paper direction",
@@ -147,6 +150,20 @@ def check_paper_standard_docs() -> str:
             "artifact review bundle generator",
         ),
         label="paper latex threats",
+    )
+    _require_markers(
+        latex,
+        (
+            r"Terminal Lies in Personal AI Agents",
+            r"Completion Admission Control for Long-Running Automation",
+            "runtime admission decision",
+            r"\caption{Related-work contrast by trust object.}",
+            "Completion claim checked by verifier",
+            "Action certificate",
+            "Policy action / tool capability",
+            "Terminal run admitted across review, evidence, recovery, and summaries",
+        ),
+        label="paper latex title abstract related work",
     )
     _require_markers(
         snapshot,

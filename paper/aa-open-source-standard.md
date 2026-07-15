@@ -32,8 +32,8 @@ LoopPilot should not claim A-level maturity until both gates pass.
 
 ### Paper gate
 
-- [ ] Title and abstract state terminal trust, not generic agent orchestration.
-- [ ] Related work distinguishes trust objects: completion claim, action certificate, policy action, terminal run.
+- [x] Title and abstract state terminal trust, not generic agent orchestration.
+- [x] Related work distinguishes trust objects: completion claim, action certificate, policy action, terminal run.
 - [x] Fault-injection table maps each terminal lie to an executable oracle.
 - [x] Acceptance snapshot pins commit, commands, environment, and results.
 - [x] Threats to validity separate fixture-heavy evidence from live-adapter evidence.

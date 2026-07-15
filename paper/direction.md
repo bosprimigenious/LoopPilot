@@ -52,11 +52,9 @@ The A-level version of this paper must be judged as both a research contribution
 - Do not make "human approval" the novelty. The novelty is durable terminal admission across evidence, review, policy, recovery, and summaries.
 - Do not cite current README badge counts unless the paper records a version-pinned rerun.
 
-## Next iteration queue
+## Post-loop next steps
 
-1. Refresh evidence snapshot after rerunning `ruff`, `pytest`, `verify_0_4_acceptance.py`, `verify_0_5_prep.py`, and the API/mobile static checks.
-2. Grow `scripts/run_failure_injection_bench.py` from oracle execution into explicit fault injection.
-3. Replace conceptual baselines with executable ablations where possible.
-4. Add an explicit "threats to validity" subsection before Related Work.
-5. Decide whether the first submission target is a systems workshop, SE workshop, or arXiv technical report.
-6. Add `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `GOVERNANCE.md` before inviting external artifact review.
+1. Grow `scripts/run_failure_injection_bench.py` from oracle execution into explicit source/workspace fault injection.
+2. Replace conceptual baselines with executable ablations where possible.
+3. Decide whether the first submission target is a systems workshop, SE workshop, or arXiv technical report.
+4. Add controlled-real E2E evidence only after real-adapter runs are executed and pinned.

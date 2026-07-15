@@ -598,6 +598,27 @@ Version-pinned paper claims must be refreshed only after rerunning the recorded 
 \section{Related Work}
 \label{sec:related}
 
+Table~\ref{tab:related-trust-objects} summarizes the trust-object distinction that organizes this section.
+\looppilot{} does not compete with these lines on planning quality, action certificates, or enterprise policy coverage; it narrows the trust object to whether a \emph{terminal run} may be propagated as done.
+
+\begin{table}[t]
+  \centering
+  \caption{Related-work contrast by trust object.}
+  \label{tab:related-trust-objects}
+  \small
+  \begin{tabularx}{\linewidth}{@{}p{0.28\linewidth} X X@{}}
+    \toprule
+    \textbf{Line of work} & \textbf{Primary trust object} & \textbf{\looppilot{} contrast} \\
+    \midrule
+    Verify-gated completion & Completion claim checked by verifier & Terminal run admitted across review, evidence, recovery, and summaries \\
+    Proof-carrying actions & Action certificate & Run-level evidence bundle and post-admission terminal truth \\
+    Policy-constrained runtimes & Policy action / tool capability & Personal terminal truthfulness after safe actions have completed \\
+    Software-engineering agents & Patch correctness / issue resolution & Whether an unapproved patch run may be called complete \\
+    Artifact evaluation & Reproducible package & Per-run runtime bundle plus repository-level review bundle \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
 \paragraph{Agent orchestration.}
 LangGraph, CrewAI, and AutoGen optimize the Task Loop~\cite{langgraph2024,crewai2024,autogen2023}.
 They rarely mandate evidence-carrying runs, checksum-sealed manifests, or durable review queues.
