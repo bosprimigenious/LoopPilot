@@ -110,6 +110,7 @@ def check_paper_standard_docs() -> str:
             "Paper gate",
             "Open-source gate",
             "Artifact review bundle",
+            "- [x] Threats to validity separate fixture-heavy evidence from live-adapter evidence.",
         ),
         label="paper standard",
     )
@@ -129,8 +130,21 @@ def check_paper_standard_docs() -> str:
             "Mature Systems Direction",
             "artifact-readiness gate",
             "fault-injection map",
+            "Threats to Validity",
         ),
         label="paper outline",
+    )
+    latex = _read("paper/latex/main.tex")
+    _require_markers(
+        latex,
+        (
+            r"\section{Threats to Validity}",
+            "fixture-heavy",
+            "real adapter behavior",
+            "not measure task-level correctness",
+            "artifact review bundle generator",
+        ),
+        label="paper latex threats",
     )
     return "paper standard, direction, and outline aligned"
 

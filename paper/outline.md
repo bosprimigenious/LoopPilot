@@ -78,19 +78,23 @@ PR #8 regression + measured acceptance table + fault-injection map. Separate ver
 
 ---
 
-## 7. Discussion (~0.75 page)
+## 7. Discussion (~0.5 page)
 
-Core sentences + workshop positioning, scope, limitations.
+Core sentences + workshop positioning, scope, operational lessons.
+
+## 8. Threats to Validity (~0.75 page)
+
+Separate fixture-heavy executable evidence from live-adapter evidence. State external validity limits: single-user personal runtime, not enterprise governance. State construct limits: terminal truthfulness, not task quality or production reliability. State artifact limits: clean checkout and Python environment still required.
 
 ---
 
-## 8. Related Work (~1.5 pages)
+## 9. Related Work (~1.5 pages)
 
 2 paragraphs each: verify-gated completion, proof-carrying agent actions, policy-constrained execution / governance by construction. Shorter: orchestration, SE agents, artifact eval. The contrast must stay at the trust-object level: completion claim, action certificate, policy action, terminal run.
 
 ---
 
-## 9. Conclusion (~0.5 page)
+## 10. Conclusion (~0.5 page)
 
 Core sentences + slogan.
 

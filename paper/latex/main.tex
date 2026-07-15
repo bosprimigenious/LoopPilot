@@ -566,15 +566,32 @@ Governance artifacts serve local audit needs rather than fleet monitoring~\cite{
 \paragraph{Complementarity.}
 LangGraph interrupt/resume resembles \texttt{WAITING\_APPROVAL}, but lacks system-wide summary exclusion, deferred persistence, and sole-writer manifest sealing~\cite{langgraph2024}.
 
-\paragraph{Limitations.}
-(1)~Controlled-real E2E under real adapters is incomplete.
-(2)~Acceptance oracles are mock-heavy; task quality under live backends is under-explored.
-(3)~0.5 unattended mode is prep fail-closed only.
-(4)~Single-user review---no multi-party chains.
-(5)~Full semantic runtime CI benchmark suites are not yet executed.
-
 \paragraph{Operational lessons.}
 Codex-driven redesign shows terminal lies are reproducible when acceptance scripts encode invariants as oracles.
+
+\section{Threats to Validity}
+\label{sec:threats}
+
+\paragraph{Internal validity.}
+The strongest evidence in this paper is executable but fixture-heavy: unit tests, acceptance scripts, and PR~\#8 regression oracles exercise semantic runtime invariants under controlled local conditions.
+These checks are appropriate for terminal truthfulness because the claim concerns runtime state consistency, not open-ended task quality.
+However, they can miss failures caused by long tool latencies, operating-system differences, or real adapter behavior.
+
+\paragraph{External validity.}
+\looppilot{} is a single-user personal runtime.
+The design deliberately avoids enterprise assumptions such as centralized audit teams, IAM policy services, or multi-party approval chains.
+As a result, the paper should not be read as evidence that \cac{} is sufficient for organization-scale governance.
+The transferable claim is narrower: long-running personal agents need a runtime admission layer before terminal success propagates to summaries, schedules, and recovery.
+
+\paragraph{Construct validity.}
+The measured oracles evaluate false completion, manifest integrity, review-state preservation, safety-boundary blocking, and summary truthfulness.
+They do not measure task-level correctness, user satisfaction, or production reliability.
+The fault-injection bench currently binds PR~\#8 findings to non-mutating oracles; explicit source/workspace mutation remains future work and is therefore not reported as benchmark coverage.
+
+\paragraph{Artifact validity.}
+The open-source artifact now includes governance documents, WSL setup, static API/mobile checks, and a clean-checkout artifact review bundle generator.
+This improves inspectability, but reproducibility still depends on a reviewer-provided Python 3.11+ environment and network access for dependency installation after checkout.
+Version-pinned paper claims must be refreshed only after rerunning the recorded commands at a pinned commit.
 
 \section{Related Work}
 \label{sec:related}

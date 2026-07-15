@@ -36,7 +36,7 @@ LoopPilot should not claim A-level maturity until both gates pass.
 - [ ] Related work distinguishes trust objects: completion claim, action certificate, policy action, terminal run.
 - [x] Fault-injection table maps each terminal lie to an executable oracle.
 - [ ] Acceptance snapshot pins commit, commands, environment, and results.
-- [ ] Threats to validity separate fixture-heavy evidence from live-adapter evidence.
+- [x] Threats to validity separate fixture-heavy evidence from live-adapter evidence.
 
 ### Open-source gate
 
