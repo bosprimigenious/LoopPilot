@@ -12,7 +12,7 @@ This is a lightweight mobile client for LoopPilot. The first milestone is a read
 ## Pages
 
 - `pages/home/home`: daily overview with latest run and review context links.
-- `pages/runs/runs`: recent run records.
+- `pages/runs/runs`: recent run records with review/report status and report path copy.
 - `pages/run-detail/run-detail`: read-only run detail.
 - `pages/review/review`: pending review items with linked run context and report path copy.
 - `pages/review-detail/review-detail`: read-only review detail with linked run context.
@@ -45,7 +45,7 @@ GET /api/reviews/{run_id}
 
 The settings health check displays bridge version, state backend, read-only status, mutation status, allowed methods, preflight status, adapter mode, endpoint count, and the read-only endpoint list returned by `/api/health`.
 
-Run detail responses include `reportPath` and a read-only `artifacts` preview from `artifact-manifest.json`, so the client can copy report or artifact paths without executing local actions.
+Run list and detail responses include `reviewStatus`, `reportStatus`, and `reportPath`; detail responses also include a read-only `artifacts` preview from `artifact-manifest.json`, so the client can copy report or artifact paths without executing local actions.
 
 Review mutations are intentionally not wired in the first client milestone.
 When live API requests fail, pages fall back to mock data and show a visible source/status notice.

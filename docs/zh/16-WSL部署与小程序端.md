@@ -72,7 +72,7 @@ MVP 页面：
 | 页面 | 作用 | 数据来源 |
 |------|------|----------|
 | 首页 | 今日概览、最新运行详情入口、待审阅 run 快照 | mock，后续接本地 API |
-| 运行 | 最近 run 列表、详情与 outcome | mock，后续接 `/api/runs`、`/api/runs/{run_id}` |
+| 运行 | 最近 run 列表、详情与 outcome、review/report 状态、报告路径复制 | mock，后续接 `/api/runs`、`/api/runs/{run_id}` |
 | 审阅 | 待处理 review item、列表/详情关联 run 快照、报告路径复制 | mock，后续接 `/api/reviews`、`/api/reviews/{run_id}` |
 | 设置 | 配置 API base URL、切换 mock/live | local storage |
 
@@ -110,7 +110,7 @@ POST /api/reviews/{run_id}/reject    # 后置，必须带 reason
 loop-pilot api serve --host 127.0.0.1 --port 7860
 ```
 
-`/api/health` 返回版本、状态后端、只读标记、GET/OPTIONS 方法边界、endpoint 清单和写接口禁用状态，供小程序设置页确认 live 连接边界；设置页会展示只读接口清单，方便真机/开发者工具核对当前 bridge 能力。`/api/summary/today` 返回今日 run 数、阻塞数、outcome 计数、最近运行和待审阅预览，供小程序首页只读展示。`/api/runs/{run_id}` 返回运行详情、`reportPath` 和 manifest 中的只读 `artifacts` 预览，供小程序运行详情页复制报告/产物路径。
+`/api/health` 返回版本、状态后端、只读标记、GET/OPTIONS 方法边界、endpoint 清单和写接口禁用状态，供小程序设置页确认 live 连接边界；设置页会展示只读接口清单，方便真机/开发者工具核对当前 bridge 能力。`/api/summary/today` 返回今日 run 数、阻塞数、outcome 计数、最近运行和待审阅预览，供小程序首页只读展示。`/api/runs` 列表返回 review/report 状态、gate 与 `reportPath`，供运行页直接定位报告；`/api/runs/{run_id}` 返回运行详情、`reportPath` 和 manifest 中的只读 `artifacts` 预览，供小程序运行详情页复制报告/产物路径。
 
 `python scripts/verify_api_bridge_contract.py` 不绑定端口，使用临时 SQLite 状态验证 health、today summary、run artifact 预览、review 详情、POST 拒绝和 OPTIONS 预检，适合 WSL 部署前置检查。
 

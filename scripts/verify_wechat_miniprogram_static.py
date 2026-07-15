@@ -201,6 +201,26 @@ def check_review_list_run_context() -> str:
     return "review list run context with report copy"
 
 
+def check_run_list_summary_context() -> str:
+    js_path = CLIENT_ROOT / "pages" / "runs" / "runs.js"
+    wxml_path = CLIENT_ROOT / "pages" / "runs" / "runs.wxml"
+    js_source = js_path.read_text(encoding="utf-8")
+    wxml_source = wxml_path.read_text(encoding="utf-8")
+    for marker in ("normalizeRun", "reviewStatus", "reportStatus", "reportPath"):
+        if marker not in js_source:
+            raise AssertionError(f"runs.js missing run summary marker: {marker}")
+    for marker in (
+        "item.reviewStatus",
+        "item.reportStatus",
+        "item.reportPath",
+        "复制报告路径",
+        "catchtap=\"copyPath\"",
+    ):
+        if marker not in wxml_source:
+            raise AssertionError(f"runs.wxml missing run summary marker: {marker}")
+    return "run list status context with report copy"
+
+
 def main() -> int:
     checks = [
         _check("app_json", check_app_json),
@@ -213,6 +233,7 @@ def main() -> int:
         _check("settings_health_shape", check_settings_health_shape),
         _check("review_detail_run_context", check_review_detail_run_context),
         _check("review_list_run_context", check_review_list_run_context),
+        _check("run_list_summary_context", check_run_list_summary_context),
     ]
     passed = sum(1 for _, ok, _ in checks if ok)
     total = len(checks)

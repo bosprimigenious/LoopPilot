@@ -7,6 +7,31 @@ function badgeClass(outcome) {
   return "badge-neutral";
 }
 
+function pick(data, camel, snake) {
+  return data[camel] !== undefined ? data[camel] : data[snake];
+}
+
+function normalizeRun(data) {
+  const outcome = data.outcome || "unknown";
+  const startedAt = pick(data, "startedAt", "started_at") || "";
+  const finishedAt = pick(data, "finishedAt", "finished_at") || "";
+  const updatedAt = pick(data, "updatedAt", "updated_at") || finishedAt || startedAt;
+  const reviewStatus = pick(data, "reviewStatus", "review_status") || "";
+  const reportStatus = pick(data, "reportStatus", "report_status") || "";
+  return {
+    ...data,
+    outcome,
+    startedAt,
+    finishedAt,
+    updatedAt,
+    reviewStatus,
+    reportStatus,
+    reportPath: data.reportPath || "",
+    gate: data.gate || "",
+    badgeClass: badgeClass(outcome)
+  };
+}
+
 Page({
   data: {
     runs: [],
@@ -26,14 +51,16 @@ Page({
     this.setData({ loading: true });
     return api.listRuns().then((runs) => {
       this.setData({
-        runs: runs.map((run) => ({
-          ...run,
-          badgeClass: badgeClass(run.outcome)
-        })),
+        runs: runs.map(normalizeRun),
         connection: api.connectionState(),
         loading: false
       });
     });
+  },
+
+  copyPath(event) {
+    const path = event.currentTarget.dataset.path;
+    wx.setClipboardData({ data: path || "" });
   },
 
   openRun(event) {

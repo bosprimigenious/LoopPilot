@@ -18,7 +18,12 @@
             <text class="badge {{item.badgeClass}}">{{item.outcome}}</text>
           </view>
           <view class="item-meta">{{item.loopType}} · {{item.phase}}</view>
+          <view class="item-meta">{{item.updatedAt || "-"}} · Review {{item.reviewStatus || "-"}} · Report {{item.reportStatus || "-"}}</view>
+          <view wx:if="{{item.gate}}" class="item-meta">Gate {{item.gate}}</view>
           <view class="item-meta">{{item.runId}}</view>
+          <view wx:if="{{item.reportPath}}" class="button-row">
+            <button class="button" data-path="{{item.reportPath}}" catchtap="copyPath">复制报告路径</button>
+          </view>
         </view>
       </block>
     </block>

@@ -17,7 +17,11 @@ const summary = {
       outcome: "succeeded",
       phase: "TERMINATED",
       title: "DailyNews 信号筛选",
-      updatedAt: "09:05"
+      updatedAt: "09:05",
+      reviewStatus: "not_required",
+      reportStatus: "ready",
+      gate: "pass",
+      reportPath: "var/artifacts/daily_news/20260715T090000Z-daily_news-demo/daily-news-report.md"
     },
     {
       runId: "20260715T091000Z-intern-demo",
@@ -26,6 +30,9 @@ const summary = {
       phase: "WAITING_APPROVAL",
       title: "InternLoop 修复建议",
       updatedAt: "09:18",
+      reviewStatus: "needs_review",
+      reportStatus: "ready",
+      gate: "needs_review",
       reportPath: "var/artifacts/intern/20260715T091000Z-intern-demo/development-report.md",
       artifacts: [
         {
@@ -52,7 +59,11 @@ const runs = [
     outcome: "partial",
     phase: "WAITING_APPROVAL",
     title: "PaperLoop 证据修订",
-    updatedAt: "09:28"
+    updatedAt: "09:28",
+    reviewStatus: "needs_review",
+    reportStatus: "ready",
+    gate: "needs_review",
+    reportPath: "var/artifacts/paper/20260715T092000Z-paper-demo/paper-development-report.md"
   }
 ];
 
