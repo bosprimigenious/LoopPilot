@@ -54,7 +54,7 @@ python -m pytest -q
 python scripts/verify_0_4_acceptance.py
 python scripts/verify_0_5_prep.py
 loop-pilot run all --fixture-set mini --dry-run
-loop-pilot api serve --host 127.0.0.1 --port 17860  # 脚本会临时启动并检查 /api/health
+loop-pilot api serve --host 127.0.0.1 --port 17860  # 脚本会临时启动并检查 /api/health 只读边界
 ```
 
 其中 `InternLoop` / `PaperLoop` 在 dry-run smoke 中得到 `partial` 是预期结果，因为 patch/revision 需要人工 review 后才能最终通过。

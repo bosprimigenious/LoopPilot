@@ -106,6 +106,9 @@ def check_api_smoke() -> str:
             "/api/health",
             'data.get("readOnly") is True',
             'data.get("mutationsEnabled") is False',
+            'methods == ["GET", "OPTIONS"]',
+            '"POST" not in methods',
+            'data.get("corsPreflight") is True',
             '"/api/reviews/{run_id}" in data.get("endpoints", [])',
             'kill "$api_pid"',
             'wait "$api_pid"',
@@ -113,7 +116,7 @@ def check_api_smoke() -> str:
         ),
         label="API smoke",
     )
-    return "read-only bridge health smoke"
+    return "read-only bridge health and method smoke"
 
 
 def check_final_output() -> str:
