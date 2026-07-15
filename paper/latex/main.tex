@@ -457,12 +457,13 @@ Each became a named regression test---\textbf{failure-driven design evidence}, n
 Historical pre-PR~\#8 behavior exhibited F1: patch runs reached \texttt{TERMINATED}/\texttt{SUCCEEDED} while \texttt{gate\_result.json} still read \texttt{needs\_review}.
 
 \subsection{Measured Acceptance Oracles}
-Table~\ref{tab:acceptance-measured} records commands executed on 2026-06-22.
+Table~\ref{tab:acceptance-measured} records a pinned local snapshot executed on 2026-07-16 for commit \texttt{03d9dae}.
+The full hash, environment notes, commands, and artifact-bundle hash are archived in the paper experiment snapshot.
 Newer repository badges must not be cited in this paper until the same gates are rerun and the commit hash is pinned.
 
 \begin{table}[t]
   \centering
-  \caption{Measured acceptance oracle results (2026-06-22).}
+  \caption{Measured acceptance oracle results (2026-07-16; commit \texttt{03d9dae}).}
   \label{tab:acceptance-measured}
   \small
   \begin{tabular}{@{}lll@{}}
@@ -470,9 +471,10 @@ Newer repository badges must not be cited in this paper until the same gates are
     \textbf{Check} & \textbf{Command} & \textbf{Result} \\
     \midrule
     Lint & \texttt{ruff check .} & pass \\
-    Unit + integration & \texttt{pytest -q} & 227 passed \\
+    Unit + integration & \texttt{pytest -q} & 258 passed \\
     0.4 aggregate & \texttt{verify\_0\_4\_acceptance.py} & 11/11 READY \\
-    0.4-c review layer & \texttt{verify\_0\_4c\_acceptance.py} & 36/36 READY \\
+    PR \#8 oracles & \texttt{run\_failure\_injection\_bench.py --execute-oracles} & FI-1..FI-9 pass \\
+    Artifact review & \texttt{build\_artifact\_review\_bundle.py} & sha256 pinned \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -634,7 +636,7 @@ Artifact evaluation traditions emphasize reproducible packages~\cite{icse2019rep
 Personal AI agents do not merely fail by producing wrong actions; they fail by producing false terminal claims.
 \looppilot{} reframes completion as an admission-control problem.
 \textbf{Agent completion must be admitted, not emitted.}
-\textbf{Completion admission control} addresses terminal lies through the \textbf{Three-Loop Runtime Model} and \textbf{evidence-carrying runs}, instantiated in \looppilot{} with executable semantic runtime oracles from regression evidence (11/11 aggregate; 227 pytest passed in the version-pinned 2026-06-22 snapshot).
+\textbf{Completion admission control} addresses terminal lies through the \textbf{Three-Loop Runtime Model} and \textbf{evidence-carrying runs}, instantiated in \looppilot{} with executable semantic runtime oracles from regression evidence (11/11 aggregate; 258 pytest passed in the version-pinned 2026-07-16 snapshot).
 Future work executes semantic runtime CI benchmark suites and completes controlled-real E2E evaluation.
 
 \section*{Acknowledgments}

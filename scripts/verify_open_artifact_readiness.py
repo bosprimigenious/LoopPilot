@@ -102,6 +102,7 @@ def check_paper_standard_docs() -> str:
     standard = _read("paper/aa-open-source-standard.md")
     direction = _read("paper/direction.md")
     outline = _read("paper/outline.md")
+    snapshot = _read("paper/experiments/acceptance-snapshot-2026-07-16.md")
     _require_markers(
         standard,
         (
@@ -110,6 +111,7 @@ def check_paper_standard_docs() -> str:
             "Paper gate",
             "Open-source gate",
             "Artifact review bundle",
+            "- [x] Acceptance snapshot pins commit, commands, environment, and results.",
             "- [x] Threats to validity separate fixture-heavy evidence from live-adapter evidence.",
         ),
         label="paper standard",
@@ -145,6 +147,19 @@ def check_paper_standard_docs() -> str:
             "artifact review bundle generator",
         ),
         label="paper latex threats",
+    )
+    _require_markers(
+        snapshot,
+        (
+            "03d9dae814623a5005d97d784069867caf80480d",
+            "Python 3.14.6",
+            "Truthful 0.4 aggregate acceptance (READY): 11/11 passed",
+            "258 passed in 5.69s",
+            "FI-1..FI-9 oracle execution",
+            "057872cbffe85f9d38ab2f81645e3c2e374f744277beaa260e23c3a67c60a052",
+            "does not claim task-level",
+        ),
+        label="acceptance snapshot",
     )
     return "paper standard, direction, and outline aligned"
 

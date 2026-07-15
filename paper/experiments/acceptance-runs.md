@@ -39,9 +39,17 @@ python scripts/verify_0_4_acceptance.py
 
 Ideas controlled-real E2E — Intern/Paper/DailyNews on real tasks — **NOT READY**; do not cite as paper results.
 
+## Current pinned snapshot
+
+See `acceptance-snapshot-2026-07-16.md` for the current paper-facing snapshot:
+commit `03d9dae814623a5005d97d784069867caf80480d`, Python `3.14.6`,
+`verify_0_4_acceptance.py` 11/11 READY, full pytest `258 passed`, PR #8
+failure-oracle bench FI-1..FI-9 PASS, WSL/API/mobile static checks PASS, and
+artifact bundle sha256 `057872cbffe85f9d38ab2f81645e3c2e374f744277beaa260e23c3a67c60a052`.
+
 ## Evidence to capture for paper
 
-- [ ] CI log snippet with 11/11 READY (PENDING: pin commit hash post-merge)
+- [x] Local log snippet with 11/11 READY and pinned commit hash
 - [ ] One sample artifact dir under `var/artifacts/` per loop type
 - [ ] Link PR #8 URL in appendix
 - [ ] Table A partial fills from unit/integration tests
