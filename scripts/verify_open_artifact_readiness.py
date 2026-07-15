@@ -85,6 +85,7 @@ def check_readme_artifact_path() -> str:
             "bash scripts/deploy_wsl.sh",
             "loop-pilot api serve --host 127.0.0.1 --port 7860",
             "python scripts/verify_open_artifact_readiness.py",
+            "python scripts/build_artifact_review_bundle.py",
             "python scripts/verify_wsl_deploy_static.py",
             "python scripts/verify_api_bridge_contract.py",
             "python scripts/verify_wechat_miniprogram_static.py",
@@ -161,11 +162,23 @@ def check_fault_injection_map() -> str:
     return "PR #8 findings mapped to FI-1..FI-9 and bench harness"
 
 
-def check_no_premature_artifact_claim() -> str:
+def check_artifact_bundle_generator() -> str:
     source = _read("paper/aa-open-source-standard.md")
-    if "- [x] Artifact review bundle can be generated" in source:
-        raise AssertionError("artifact review bundle must remain unchecked until generator exists")
-    return "artifact bundle claim remains pending"
+    generator = _read("scripts/build_artifact_review_bundle.py")
+    if "- [x] Artifact review bundle can be generated" not in source:
+        raise AssertionError("artifact review bundle gate must be checked once generator exists")
+    _require_markers(
+        generator,
+        (
+            "git-tracked files only",
+            "private_credentials_required",
+            "VALIDATION_COMMANDS",
+            "run_failure_injection_bench.py --execute-oracles",
+            "tarfile.open",
+        ),
+        label="artifact review bundle generator",
+    )
+    return "clean-checkout artifact bundle generator exists"
 
 
 def main() -> int:
@@ -174,7 +187,7 @@ def main() -> int:
         _check("readme_artifact_path", check_readme_artifact_path),
         _check("paper_standard_docs", check_paper_standard_docs),
         _check("fault_injection_map", check_fault_injection_map),
-        _check("no_premature_artifact_claim", check_no_premature_artifact_claim),
+        _check("artifact_bundle_generator", check_artifact_bundle_generator),
     ]
     passed = sum(1 for _, ok, _ in checks if ok)
     total = len(checks)

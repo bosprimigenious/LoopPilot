@@ -45,7 +45,7 @@ LoopPilot should not claim A-level maturity until both gates pass.
 - [x] `CONTRIBUTING.md` explains local setup, tests, SafetyGate boundaries, and review expectations.
 - [x] `CODE_OF_CONDUCT.md` or equivalent community norm exists before soliciting external contributors.
 - [x] `GOVERNANCE.md` states who may release, approve artifact claims, and change safety policy.
-- [ ] Artifact review bundle can be generated from a clean checkout without private credentials.
+- [x] Artifact review bundle can be generated from a clean checkout without private credentials.
 
 ## Engineering implication
 
