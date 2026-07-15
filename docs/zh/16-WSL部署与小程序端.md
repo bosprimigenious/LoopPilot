@@ -38,6 +38,8 @@ sudo apt-get install -y git python3 python3-venv python3-pip
 - 仓库路径
 - 虚拟环境激活命令
 - 部署日志路径 `var/logs/wsl-deploy-*.log`
+- 只读 API bridge 启动命令
+- 小程序设置页可填写的 API Base URL
 
 ## 验收标准
 

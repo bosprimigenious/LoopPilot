@@ -251,6 +251,8 @@ main() {
   printf '\nRepository: %s\n' "$(pwd)"
   printf 'Activate:   source %s/.venv/bin/activate\n' "$(pwd)"
   printf 'Log file:   %s/%s\n' "$(pwd)" "$LOG_FILE"
+  printf 'API bridge: loop-pilot api serve --host 127.0.0.1 --port 7860\n'
+  printf 'Mini app:   import clients/wechat-miniprogram and set API Base URL to http://127.0.0.1:7860\n'
 }
 
 main "$@"

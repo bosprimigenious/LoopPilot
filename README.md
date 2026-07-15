@@ -228,7 +228,7 @@ loop-pilot doctor
 bash scripts/deploy_wsl.sh --repo-dir "$HOME/LoopPilot"
 ```
 
-脚本会自动完成 clone/pull、`.venv`、依赖安装、`doctor`、`ruff`、小程序静态验收、`pytest`、0.4/0.5 验收、dry-run smoke 和只读 API bridge smoke。全新 WSL 环境先安装：
+脚本会自动完成 clone/pull、`.venv`、依赖安装、`doctor`、`ruff`、小程序静态验收、`pytest`、0.4/0.5 验收、dry-run smoke 和只读 API bridge smoke，并在最后打印 API bridge 启动命令与小程序 API Base URL。全新 WSL 环境先安装：
 
 ```bash
 sudo apt-get update

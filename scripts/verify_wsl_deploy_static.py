@@ -130,10 +130,13 @@ def check_final_output() -> str:
             "Repository: %s",
             "Activate:   source %s/.venv/bin/activate",
             "Log file:   %s/%s",
+            "API bridge: loop-pilot api serve --host 127.0.0.1 --port 7860",
+            "Mini app:   import clients/wechat-miniprogram",
+            "API Base URL to http://127.0.0.1:7860",
         ),
         label="final output",
     )
-    return "repo, venv, and log summary"
+    return "repo, venv, log, and mini app API summary"
 
 
 def main() -> int:
