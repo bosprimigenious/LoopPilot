@@ -55,7 +55,7 @@ The A-level version of this paper must be judged as both a research contribution
 ## Next iteration queue
 
 1. Refresh evidence snapshot after rerunning `ruff`, `pytest`, `verify_0_4_acceptance.py`, `verify_0_5_prep.py`, and the API/mobile static checks.
-2. Turn PR #8 regressions into a compact fault-injection table: injected fault, terminal lie type, oracle, expected block.
+2. Grow `scripts/run_failure_injection_bench.py` from oracle execution into explicit fault injection.
 3. Replace conceptual baselines with executable ablations where possible.
 4. Add an explicit "threats to validity" subsection before Related Work.
 5. Decide whether the first submission target is a systems workshop, SE workshop, or arXiv technical report.

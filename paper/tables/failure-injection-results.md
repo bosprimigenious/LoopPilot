@@ -24,4 +24,4 @@ For the concrete injected-fault-to-oracle mapping, see `tables/pr8-fault-injecti
 
 ## How to fill
 
-Run `scripts/run_failure_injection_bench.py` (TODO) and paste measured counts. Until then, mark **Partial** where unit/acceptance tests cover the fault class.
+Run `python scripts/run_failure_injection_bench.py --execute-oracles` and paste measured oracle counts. Until explicit source/workspace mutation is implemented, mark **Partial** where unit/acceptance tests cover the fault class.

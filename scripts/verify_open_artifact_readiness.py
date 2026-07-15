@@ -136,9 +136,12 @@ def check_paper_standard_docs() -> str:
 
 def check_fault_injection_map() -> str:
     source = _read("paper/tables/pr8-fault-injection-map.md")
+    bench = _read("scripts/run_failure_injection_bench.py")
     for fault_id in (f"FI-{index}" for index in range(1, 10)):
         if fault_id not in source:
             raise AssertionError(f"fault map missing {fault_id}")
+        if f'"{fault_id}"' not in bench:
+            raise AssertionError(f"bench harness missing {fault_id}")
     _require_markers(
         source,
         (
@@ -150,7 +153,12 @@ def check_fault_injection_map() -> str:
         ),
         label="PR #8 fault map",
     )
-    return "PR #8 findings mapped to FI-1..FI-9"
+    _require_markers(
+        bench,
+        ("--execute-oracles", "oracle_command", "expected_block", "observed_status"),
+        label="failure-injection bench harness",
+    )
+    return "PR #8 findings mapped to FI-1..FI-9 and bench harness"
 
 
 def check_no_premature_artifact_claim() -> str:

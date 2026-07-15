@@ -20,7 +20,7 @@ This table should be cited as **failure-driven design evidence** until the unifi
 
 ## Next engineering step
 
-Implement `scripts/run_failure_injection_bench.py` so each row becomes an executable scenario with:
+Grow `scripts/run_failure_injection_bench.py` beyond oracle execution so each row becomes an injected scenario with:
 
 ```text
 fault_id, fixture, injected_mutation, oracle_command, expected_status, observed_status

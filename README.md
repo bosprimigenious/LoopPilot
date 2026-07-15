@@ -288,6 +288,7 @@ python scripts/verify_0_5_prep.py
 # 基础质量
 ruff check .
 python scripts/verify_open_artifact_readiness.py
+python scripts/run_failure_injection_bench.py --execute-oracles
 python scripts/verify_wsl_deploy_static.py
 python scripts/verify_api_bridge_contract.py
 python scripts/verify_wechat_miniprogram_static.py
@@ -307,6 +308,7 @@ pytest -q
 | `verify_0_4_acceptance.py` | **Truthful 0.4 聚合** | **11/11** 全绿 + `(READY)` | ✅ **11/11 READY** |
 | `verify_0_5_prep.py` | SafetyGate 脚手架 | `0.5-prep: PASS`；`0.5-ready: NOT READY` | ✅ prep PASS |
 | `verify_open_artifact_readiness.py` | A 会论文 + 开源 artifact | license/security/contributing/governance + README 路径 + PR #8 fault map | ✅ PASS |
+| `run_failure_injection_bench.py --execute-oracles` | PR #8 semantic runtime CI | FI-1..FI-9 绑定到非破坏性 oracle 命令；当前仍是 oracle evidence，不宣称完整注入 bench | ✅ PASS |
 | `verify_wsl_deploy_static.py` | WSL 部署入口 | flags/env + prerequisite + gate + read-only API smoke marker 完整 | ✅ PASS |
 | `verify_api_bridge_contract.py` | 本地 API bridge | 只读 health + summary/review run context + run artifacts + POST 拒绝 + OPTIONS 预检 | ✅ PASS |
 | `verify_wechat_miniprogram_static.py` | 小程序骨架 | 页面文件完整 + 只读 API adapter + 首页/review/运行 run context + report path 复制 + health endpoint 清单 | ✅ PASS |
