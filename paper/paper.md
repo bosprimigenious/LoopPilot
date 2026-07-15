@@ -1,4 +1,4 @@
-# Terminal Lies in Personal AI Agents: Completion Admission Control for Daily Automation
+# Terminal Lies in Personal AI Agents: Completion Admission Control for Long-Running Automation
 
 **Subtitle:** The LoopPilot Position Paper
 
@@ -25,7 +25,7 @@ The central claim of this paper is that personal AI agents fail not only when th
 - **C1** We identify terminal lies as a distinct failure mode in personal AI agent workflows.
 - **C2** We propose completion admission control as a runtime principle for preventing terminal lies.
 - **C3** We introduce the Three-Loop Runtime Model to separate task execution, evidence sealing, and governance admission.
-- **C4** We instantiate the model in LoopPilot and provide preliminary acceptance evidence from regression oracles.
+- **C4** We instantiate the model in LoopPilot and provide executable semantic runtime oracles from regression evidence.
 
 ---
 
@@ -41,11 +41,19 @@ See `latex/main.tex` for full workshop draft. Key artifacts:
 
 ---
 
+## Mature Direction
+
+LoopPilot should be framed as a terminal-trust layer for long-running personal agent runtimes. The mature claim is deliberately narrow: a runtime should not say a run is done until evidence, review, policy, recovery, and summary state agree. This makes the work comparable to verify-gated completion, proof-carrying agent actions, and policy-constrained runtime governance, but keeps the trust object different: LoopPilot certifies the terminal run, not merely a verifier event, an action certificate, or a policy-admitted tool call.
+
+The first submission should be a systems position/design study with executable oracle evidence. The full-paper path is to run fault-injection and ablation suites around false completion, manifest integrity, review-state preservation, safety-boundary blocking, and daily-use summary truthfulness.
+
+The open-source repository is not only dissemination. It is evidence. If reviewers cannot run the artifact from a clean checkout, inspect the gates, or understand contribution and governance boundaries, the paper's claim about terminal truthfulness is weaker. The mature artifact target is therefore ACM-style artifact evaluation readiness: functional, reusable, available, and documented enough for external inspection.
+
 ## Related Work (sharp differentiation)
 
-1. **Verify-gated completion** — step/claim verification; LoopPilot = terminal trust across personal daily workflow
+1. **Verify-gated completion** — step/claim verification; LoopPilot = terminal trust across long-running personal workflow
 2. **Proof-carrying agent actions** — action-level certificates; LoopPilot = run-level evidence-carrying terminal bundle
-3. **Policy-constrained execution / Governance by Construction** — action safety / enterprise checkpoints; LoopPilot = terminal truthfulness for single-user daily automation
+3. **Policy-constrained execution / Governance by Construction** — action safety / enterprise checkpoints; LoopPilot = terminal truthfulness for single-user long-running automation
 
 ---
 

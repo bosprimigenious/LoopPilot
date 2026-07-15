@@ -82,6 +82,7 @@ def check_deployment_gates() -> str:
             "run loop-pilot adapters doctor",
             "run ruff check .",
             "run python scripts/verify_wsl_deploy_static.py",
+            "run python scripts/verify_open_artifact_readiness.py",
             "run python scripts/verify_api_bridge_contract.py",
             "run python scripts/verify_wechat_miniprogram_static.py",
             "run python -m pytest -q",

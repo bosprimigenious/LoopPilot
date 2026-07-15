@@ -1,6 +1,6 @@
-# Paper Outline — Workshop Position + Design Study + Preliminary Evidence
+# Paper Outline — Mature Systems Direction
 
-**Title:** Terminal Lies in Personal AI Agents: Completion Admission Control for Daily Automation  
+**Title:** Terminal Lies in Personal AI Agents: Completion Admission Control for Long-Running Automation
 **Subtitle:** The LoopPilot Position Paper
 
 ---
@@ -11,6 +11,7 @@
 - Abstract (`abstract.md`)
 - Keywords: terminal lies, completion admission control, personal AI agents, evidence-carrying runs, semantic runtime CI
 - **Slogan:** Agent completion must be admitted, not emitted.
+- **Stance:** systems position + design study + executable oracle evidence
 
 ---
 
@@ -30,6 +31,14 @@
 
 - Personal AI agents do not merely fail by producing wrong actions; they fail by producing false terminal claims.
 - LoopPilot reframes completion as an admission-control problem.
+
+---
+
+## Mature scope statement
+
+The paper studies terminal trust, not task success. A coding agent can produce a correct patch and still create a terminal lie if the runtime marks the run complete before review admission, manifest sealing, or recovery consistency. The evaluation therefore prioritizes false completion, manifest integrity, review-state preservation, safety-boundary blocking, and summary truthfulness.
+
+The open-source artifact is part of the claim. The repository must make admission control inspectable through clean setup, runnable oracles, documented governance, and reproducible fault injections.
 
 ---
 
@@ -63,9 +72,9 @@ CAC-to-LoopPilot table. RGR/RGT/SAC/SafetyGate as implementation. 11-step Intern
 
 ---
 
-## 6. Preliminary Evidence and Research Agenda (~1 page)
+## 6. Executable Oracle Evidence and Research Agenda (~1 page)
 
-PR #8 regression + measured acceptance table. Brief semantic runtime CI agenda (RQ1–RQ7 → appendix).
+PR #8 regression + measured acceptance table + fault-injection map. Separate version-pinned acceptance evidence from future benchmark protocols. Add artifact-readiness gate: license, setup, contribution boundary, governance, and clean-checkout reproducibility. Brief semantic runtime CI agenda (RQ1–RQ7 → appendix).
 
 ---
 
@@ -77,7 +86,7 @@ Core sentences + workshop positioning, scope, limitations.
 
 ## 8. Related Work (~1.5 pages)
 
-2 paragraphs each: verify-gated completion, proof-carrying agent actions, policy-constrained execution / governance by construction. Shorter: orchestration, SE agents, artifact eval.
+2 paragraphs each: verify-gated completion, proof-carrying agent actions, policy-constrained execution / governance by construction. Shorter: orchestration, SE agents, artifact eval. The contrast must stay at the trust-object level: completion claim, action certificate, policy action, terminal run.
 
 ---
 

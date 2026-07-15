@@ -1,4 +1,4 @@
-% LoopPilot workshop position paper — Position + Design Study + Preliminary Evidence
+% LoopPilot systems position paper — Design Study + Executable Oracle Evidence
 % Compile: pdflatex + bibtex + pdflatex × 2 (Windows)
 
 \documentclass[11pt]{article}
@@ -21,6 +21,7 @@
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, backgrounds}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{array}
 
 \hypersetup{
   colorlinks=true,
@@ -48,7 +49,7 @@
 
 \title{%
   Terminal Lies in Personal AI Agents:\\
-  Completion Admission Control for Daily Automation\\[0.4em]
+  Completion Admission Control for Long-Running Automation\\[0.4em]
   \large The \looppilot{} Position Paper
 }
 
@@ -65,11 +66,12 @@
 
 \begin{abstract}
 Personal AI agents do not merely fail by producing wrong actions; they fail by producing false terminal claims.
-They are deployed as long-running daily workflows that mutate workspaces, invoke tools, and accumulate state across days.
+They are deployed as long-running workflows that mutate workspaces, invoke tools, accumulate state across days, and feed later summaries, schedules, and recovery decisions.
 Orchestration frameworks excel at planning and multi-step execution, yet they treat terminal success as a model-visible output rather than a runtime admission decision.
-\looppilot{} reframes completion as an admission-control problem: agents may propose completion, but terminal success is admitted only when evidence has been sealed, review decisions preserved, policy boundaries checked, and semantic runtime acceptance oracles agree.
+\looppilot{} reframes completion as an admission-control problem: agents may propose completion, but terminal success is admitted only when evidence has been sealed, review decisions preserved, policy boundaries checked, recovery state remains consistent, and semantic runtime acceptance oracles agree.
 We call inconsistent terminal claims \textbf{terminal lies} and address them through \textbf{completion admission control (\cac{})}, the \textbf{Three-Loop Runtime Model} (Task, Evidence, Governance), and \textbf{evidence-carrying runs}, implemented in \textbf{\looppilot{}} for InternLoop, PaperLoop, and DailyNewsLoop.
-This paper is a \textbf{position and design study with preliminary acceptance evidence}: Codex PR~\#8 regression cases, measured acceptance oracles (ruff pass; pytest 227 passed; \texttt{verify\_0\_4} 11/11; \texttt{verify\_0\_4c} 36/36), and a research agenda for \textbf{semantic runtime CI}.
+This paper is a \textbf{systems position and design study with executable oracle evidence}: Codex PR~\#8 regression cases, version-pinned acceptance oracles, and a research agenda for \textbf{semantic runtime CI}.
+The claim is not task-level SOTA or production safety; it is narrower and testable: terminal truthfulness can be encoded as runtime invariants over evidence bundles, review state, policy boundaries, recovery scans, and post-admission summaries.
 \end{abstract}
 
 \noindent\textbf{Keywords:} terminal lies, completion admission control, personal AI agents, evidence-carrying runs, semantic runtime CI
@@ -112,11 +114,21 @@ Evidence must precede trust.
   \item[\textbf{C1}] We identify terminal lies as a distinct failure mode in personal AI agent workflows.
   \item[\textbf{C2}] We propose completion admission control as a runtime principle for preventing terminal lies.
   \item[\textbf{C3}] We introduce the Three-Loop Runtime Model to separate task execution, evidence sealing, and governance admission.
-  \item[\textbf{C4}] We instantiate the model in \looppilot{} and provide preliminary acceptance evidence from regression oracles.
+  \item[\textbf{C4}] We instantiate the model in \looppilot{} and provide executable semantic runtime oracles from regression evidence.
 \end{itemize}
 
 \textbf{Positioning.} We do not claim task-level SOTA or a new general-purpose agent framework.
-We claim that personal daily automation fails through \textbf{terminal lies}---governance failures, not planning errors---that are reproducible, testable, and fixable when completion is treated as admission control.
+We claim that long-running personal automation fails through \textbf{terminal lies}---governance failures, not planning errors---that are reproducible, testable, and fixable when completion is treated as admission control.
+
+\textbf{Mature scope.} The unit of trust in this paper is the \emph{terminal run}.
+Neighboring systems admit completion claims, certify individual actions, or govern policy-constrained execution.
+\looppilot{} instead asks whether a long-running personal workflow may propagate ``done'' into summaries, schedules, and recovery scans.
+A correct patch can still create a terminal lie if it is summarized as completed before review admission; a safe action can still lead to untrusted terminal state if its evidence bundle is unsealed.
+This scope keeps the paper out of task-SOTA competition and makes its claims executable as runtime invariants.
+
+\textbf{Open artifact thesis.} The open-source repository is part of the scientific claim.
+If reviewers cannot run the artifact, inspect the gates, or understand contribution and governance boundaries, the claim that completion is admitted by runtime evidence is weaker.
+Therefore, the mature \looppilot{} paper treats open-source readiness---license, setup, contribution boundary, governance, fixtures, and reproducible commands---as an evaluation object rather than a dissemination afterthought.
 
 \begin{figure}[t]
   \centering
@@ -433,10 +445,11 @@ Agents may propose outcomes; runtimes make commitments.
 \textbf{PaperLoop} --- claim-evidence governance blocks writes without sources.
 \textbf{DailyNewsLoop} --- signal-to-action boundary keeps triage non-mutating; candidates flow to inbox for deliberate action.
 
-\section{Preliminary Evidence and Research Agenda}
+\section{Executable Oracle Evidence and Research Agenda}
 \label{sec:evidence}
 
-This section reports \textbf{measured} acceptance evidence and \textbf{design-study} regression cases---not full benchmark results.
+This section reports \textbf{version-pinned} acceptance evidence and \textbf{design-study} regression cases---not full benchmark results.
+Evidence is divided into two classes: executed acceptance oracles that are safe to cite for the named snapshot, and proposed benchmark protocols that remain future work.
 
 \subsection{Regression Evidence from PR \#8}
 Codex automated review on PR~\#8 surfaced seven governance engineering issues mapping to terminal lie types F1--F6: false completion, stale manifest, report misrouting, suggestion ordering, trace dishonesty, deferred sync regression, and approve/resume ambiguity.
@@ -445,6 +458,7 @@ Historical pre-PR~\#8 behavior exhibited F1: patch runs reached \texttt{TERMINAT
 
 \subsection{Measured Acceptance Oracles}
 Table~\ref{tab:acceptance-measured} records commands executed on 2026-06-22.
+Newer repository badges must not be cited in this paper until the same gates are rerun and the commit hash is pinned.
 
 \begin{table}[t]
   \centering
@@ -474,6 +488,65 @@ Table~\ref{tab:semantic-ci} (Appendix) sketches oracle mappings; measured accept
 We outline benchmark protocols (gate correctness, manifest integrity, recovery preservation, safety boundaries, cross-loop coverage, overhead profiling, daily-use trials) as future semantic runtime CI suites; full protocol execution remains future work.
 Metric abbreviations are deferred to Appendix~\ref{app:metrics}; RQ-style protocol sketches appear in Appendix~\ref{app:rq-protocols}.
 
+\subsection{Mature Evaluation Path}
+\label{sec:mature-eval}
+
+The full-paper path is to convert acceptance oracles into fault-injection suites and executable ablations.
+GateBench injects patch-review faults and measures false completion.
+ArtifactTruthBench injects stale manifests and missing required artifacts.
+RecoveryFaultBench exercises defer, reject, and resume histories.
+SafetyBoundaryBench attempts forbidden unattended scheduling and mutation.
+DailyUseBench measures whether summaries remain actionable across repeated runs.
+This path turns the position claim into a systems result without requiring task-level SOTA claims.
+Table~\ref{tab:pr8-fault-map} shows the first consolidated map from PR~\#8 findings to injectable faults and expected blocks.
+
+\begin{table*}[t]
+  \centering
+  \caption{PR~\#8 fault-injection map for semantic runtime CI.}
+  \label{tab:pr8-fault-map}
+  \small
+  \begin{tabularx}{\linewidth}{@{}p{0.08\linewidth} X X X@{}}
+    \toprule
+    \textbf{ID} & \textbf{Injected fault} & \textbf{Oracle / guard} & \textbf{Expected block} \\
+    \midrule
+    FI-1 & Patch run finalizes \texttt{SUCCEEDED} while gate is \texttt{needs\_review} & 0.4-c review tests; aggregate gate & Hold at \texttt{WAITING\_APPROVAL}/\texttt{PARTIAL} \\
+    FI-2 & Manifest written before all artifacts exist & Terminal artifact tests & Finalizer recomputes disk state before seal \\
+    FI-3 & Manifest includes itself & Manifest self-exclusion assertion & Self-entry rejected \\
+    FI-4 & \texttt{diff-summary.md} promoted as canonical report & Report path priority test & Canonical loop report selected \\
+    FI-5 & Review suggestion written after finalization & Checksum inclusion test & Suggestion written before finalizer \\
+    FI-6 & Terminal trace appended before review downgrade & Trace truthfulness assertion & Trace records post-gate state \\
+    FI-7 & Deferred review item reset to pending during sync & Review sync preservation test & \texttt{deferred\_until} survives sync \\
+    FI-8 & Approved patch treated as resume request & Approve/resume behavior test & Approve directly admits terminal success \\
+    FI-9 & Prep-stage schedule install allowed & SafetyGate prep tests & Install/unattended path denied \\
+    \bottomrule
+  \end{tabularx}
+\end{table*}
+
+\subsection{Open Artifact Readiness}
+\label{sec:open-artifact}
+
+Artifact review standards distinguish whether artifacts are evaluated, available, and independently validated.
+\looppilot{} should target the first two before submission: a reviewer should be able to start from a clean checkout, run the WSL setup, execute acceptance oracles, inspect generated artifacts, and understand who may change safety policy.
+Table~\ref{tab:open-artifact-gate} turns open-source practice into a paper gate.
+
+\begin{table}[t]
+  \centering
+  \caption{Open-source artifact gate for an A-level \looppilot{} submission.}
+  \label{tab:open-artifact-gate}
+  \small
+  \begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.23\linewidth} X@{}}
+    \toprule
+    Layer & Required evidence \\
+    \midrule
+    License & Explicit root license and artifact license statement. \\
+    Setup & WSL path, Python environment, API bridge, mobile client, and full validation commands. \\
+    Contribution & Contribution guide that explains tests, SafetyGate boundaries, and review expectations. \\
+    Governance & Maintainer authority, release gate, artifact-claim gate, and safety-policy change process. \\
+    Reproducibility & Pinned commit, command log, expected outputs, fixtures, and generated artifact bundle. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -483,7 +556,7 @@ Personal AI agents do not merely fail by producing wrong actions; they fail by p
 A terminal state is a promise to the future; personal habit formation depends on summaries and schedules reflecting post-admission truth only.
 
 \paragraph{Workshop positioning.}
-This paper is a \textbf{position and design study with preliminary acceptance evidence}, not an empirical benchmark paper.
+This paper is a \textbf{systems position and design study with executable oracle evidence}, not an empirical benchmark paper.
 We name terminal lies and \cac{} to sharpen workshop discourse beyond ``add human approval'' (Figure~\ref{fig:comparison}, Appendix).
 
 \paragraph{Scope.}
@@ -527,7 +600,7 @@ The trust object is \textbf{action-level}: each certificate attests what was aut
 Policy-constrained execution frameworks externalize governance into a runtime layer that mediates agent-proposed actions through capability admission, policy checking, and rollback handling~\cite{qin2026policy}.
 SARC and related governance-by-architecture approaches compile regulatory and enterprise obligations into runtime constraints at declared enforcement sites in the agent loop~\cite{besanson2026sarc}.
 These lines of work protect \textbf{action safety} and \textbf{enterprise policy checkpoints}---blocking unsafe tool use, enforcing compliance predicates, and routing escalations to human operators.
-\looppilot{} targets \textbf{terminal truthfulness} for single-user daily automation without an ops team: defer persistence, manifest sealing, and summary truthfulness so personal habit formation is not corrupted by false ``done'' states.
+\looppilot{} targets \textbf{terminal truthfulness} for single-user long-running automation without an ops team: defer persistence, manifest sealing, and summary truthfulness so personal habit formation is not corrupted by false ``done'' states.
 SafeAgent-style benchmarks~\cite{safeagent2024} similarly emphasize unsafe \emph{actions}; terminal lies can persist even when every action was individually safe.
 
 \paragraph{Software-engineering agents.}
@@ -544,7 +617,7 @@ Artifact evaluation traditions emphasize reproducible packages~\cite{icse2019rep
 Personal AI agents do not merely fail by producing wrong actions; they fail by producing false terminal claims.
 \looppilot{} reframes completion as an admission-control problem.
 \textbf{Agent completion must be admitted, not emitted.}
-\textbf{Completion admission control} addresses terminal lies through the \textbf{Three-Loop Runtime Model} and \textbf{evidence-carrying runs}, instantiated in \looppilot{} with preliminary acceptance evidence from regression oracles (11/11 aggregate; 227 pytest passed).
+\textbf{Completion admission control} addresses terminal lies through the \textbf{Three-Loop Runtime Model} and \textbf{evidence-carrying runs}, instantiated in \looppilot{} with executable semantic runtime oracles from regression evidence (11/11 aggregate; 227 pytest passed in the version-pinned 2026-06-22 snapshot).
 Future work executes semantic runtime CI benchmark suites and completes controlled-real E2E evaluation.
 
 \section*{Acknowledgments}

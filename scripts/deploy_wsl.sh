@@ -217,6 +217,7 @@ main() {
   log "Running static checks"
   run ruff check .
   run python scripts/verify_wsl_deploy_static.py
+  run python scripts/verify_open_artifact_readiness.py
   run python scripts/verify_api_bridge_contract.py
   run python scripts/verify_wechat_miniprogram_static.py
 

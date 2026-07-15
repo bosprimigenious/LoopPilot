@@ -20,6 +20,7 @@
 ## Codex PR #8 evidence (design, not bench)
 
 Cases 1–7 in `logs/codex-review-cases.md` map to rows above. These are **failure-driven design evidence**, not 30-run benchmark results.
+For the concrete injected-fault-to-oracle mapping, see `tables/pr8-fault-injection-map.md`.
 
 ## How to fill
 
